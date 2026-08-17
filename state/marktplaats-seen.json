@@ -1,37 +1,50 @@
 {
   "a1523247555": {
     "first_seen": "2026-08-10",
+    "last_price": "EUR 53.95",
     "last_reported": "2026-08-10",
-    "watchlist_item": "SmallRig teleprompter / autocue",
+    "price_cents": 5395,
     "title": "Mini Teleprompter DSLRe en Smartphone met Remote",
-    "last_price": "€53.95"
+    "watchlist_item": "SmallRig teleprompter / autocue"
   },
   "m2380040277": {
     "first_seen": "2026-08-10",
+    "last_price": "Bieden (vanaf EUR 350.00)",
     "last_reported": "2026-08-10",
-    "watchlist_item": "SmallRig teleprompter / autocue",
+    "price_cents": 35000,
     "title": "Pad prompter autocue",
-    "last_price": "Bieden (vanaf EUR 350)"
+    "watchlist_item": "SmallRig teleprompter / autocue"
   },
   "m2427901561": {
     "first_seen": "2026-08-10",
-    "last_reported": "2026-08-10",
-    "watchlist_item": "SmallRig teleprompter / autocue",
+    "last_price": "Bieden",
+    "last_reported": "2026-08-17",
+    "price_cents": null,
     "title": "Ikan PT3700 Teleprompter - Professionele Video-uitrusting",
-    "last_price": "Bieden (vanaf EUR 850)"
+    "watchlist_item": "SmallRig teleprompter / autocue"
   },
   "m2428147719": {
     "first_seen": "2026-08-10",
+    "last_price": "Bieden (vanaf EUR 55.00)",
     "last_reported": "2026-08-10",
-    "watchlist_item": "SmallRig teleprompter / autocue",
+    "price_cents": 5500,
     "title": "Ulanzi PT-16 teleprompter",
-    "last_price": "Bieden (vanaf EUR 55)"
+    "watchlist_item": "SmallRig teleprompter / autocue"
   },
   "m2429331574": {
     "first_seen": "2026-08-10",
+    "last_price": "EUR 60.00",
     "last_reported": "2026-08-10",
-    "watchlist_item": "SmallRig teleprompter / autocue",
+    "price_cents": 6000,
     "title": "Ulanzi PT-02 Universele Teleprompter voor Smartphone/DSLR",
-    "last_price": "€60.00"
+    "watchlist_item": "SmallRig teleprompter / autocue"
+  },
+  "m2430207919": {
+    "first_seen": "2026-08-17",
+    "last_price": "Bieden",
+    "last_reported": "2026-08-17",
+    "price_cents": null,
+    "title": "Datavideo TP-300 Teleprompter Kit (gebroken spiegel)",
+    "watchlist_item": "SmallRig teleprompter / autocue"
   }
 }
