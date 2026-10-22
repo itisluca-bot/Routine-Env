@@ -73,7 +73,7 @@ node tools/render.mjs "Open Engagers.dc.html" --set variant=2,referenceOverlay=f
 node tools/render.mjs "<page>" --frames 0,120,300 --half --guide                        # spot frames
 ```
 
-- Heavy shots (many masked layers, such as `Vulnerability.dc.html`) need `--settle 60`: without it Chromium can be caught mid-raster and frames come out with whole tiles missing. The pop check finds these.
+- Heavy shots (many masked layers, such as `Vulnerability.dc.html`) need `--settle 60`: without it Chromium can be caught mid-raster and frames come out with whole tiles missing. The pop check finds these. At 4K a frame can still slip through (the 4K export of Vulnerability lost its lit layer on frame 81); run the pop check on the final sequence too, and re-render any such frame on its own with `--frames <n> --settle 300`, which writes it into the same folder.
 - Output: `renders/<slug>/<slug>_0000.png` (git-ignored). `--prores` adds a ProRes 4444 `.mov`.
 - A 22 s shot takes about 6–8 minutes at half resolution. Run long renders in the background, and several concepts in parallel when needed.
 - **Before sending, check for pops:** compare every pair of neighbouring frames (mean absolute difference at low resolution) and flag any pair far above its neighbours. Look at each flagged pair: deliberate hits (a lamp click, a door hit) are fine; anything else gets fixed.
