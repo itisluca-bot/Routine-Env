@@ -2,6 +2,7 @@
 // The lamp is the transition device: whatever is outside its beam is dark, so moving or switching the lamp hides one scene and reveals the next.
 //   Variant 1 · Switch: the lamp clicks off and on between scenes. The door is seen from inside: a red lamp outside shines through it onto the curator child.
 //   Variant 2 · Swing: the lamp swings to reveal each scene. Its beam finds the door of a house with the curator child behind it; the teal family stays outside.
+//     On "This comes from…" the lamp pulls up and out and its beam opens over both: it ends on the teal family outside in the light, the child behind the door.
 const { W, H, OUT_W, OUT_H, MOTION, osc, lerp, lerp2, knock, cam, mix, C, boilFn, polarPath, boilCircle, jitter, headAt, reachTo, Fig, Card, DinnerSide } = window.FU_RIG;
 
 const FL = 670;                      // floor of the lamp world: the hero's feet in the Elbow Room
@@ -15,9 +16,9 @@ const flickOn = (T, t) => MOTION.hit(T, t, t + 0.05, 0, 1) - 0.7 * (MOTION.hit(T
 const settle = (T, t, amp, period = 1.7) => (T > t ? amp * Math.exp(-(T - t) * 1.6) * Math.sin(((T - t) * 2 * Math.PI) / period) : 0);
 
 // cone of light from the shade, swung by a (degrees) about the pivot; cut off just below the floor
-function beamGeom({ sy, wP, a, ts = 30 }) {
+function beamGeom({ sy, wP, a, ts = 30, px = LAMP_X }) {
   const ar = (a * Math.PI) / 180, py = sy - CORD;
-  const S = [LAMP_X + CORD * Math.sin(ar), py + CORD * Math.cos(ar)];
+  const S = [px + CORD * Math.sin(ar), py + CORD * Math.cos(ar)];
   const beta = Math.atan2(wP - ts, FL - sy);
   const perp = [Math.cos(ar), -Math.sin(ar)];
   const edge = (sg) => {
@@ -28,7 +29,7 @@ function beamGeom({ sy, wP, a, ts = 30 }) {
   };
   const [El, Fl] = edge(-1), [Er, Fr] = edge(1);
   const pool = [(Fl[0] + Fr[0]) / 2, Math.abs(Fr[0] - Fl[0]) / 2];
-  return { S, P: [LAMP_X, py], a, poly: `M ${El[0]} ${El[1]} L ${Er[0]} ${Er[1]} L ${Fr[0]} ${Fr[1]} L ${Fl[0]} ${Fl[1]} Z`, pool };
+  return { S, P: [px, py], a, poly: `M ${El[0]} ${El[1]} L ${Er[0]} ${Er[1]} L ${Fr[0]} ${Fr[1]} L ${Fl[0]} ${Fl[1]} Z`, pool };
 }
 
 // ── the curator's ring from the Elbow Room ──────────────────────────────────
@@ -45,37 +46,38 @@ function Shot({ k, variant }) {
   const dark = g(q.V - 0.1, w.confidence - 0.1);                 // the Elbow Room goes dark around the hero
   const spot = g(q.V + 0.1, w.confidence);                       // …as a spotlight lands on them
   const dsc = g(w.matters + 0.1, q.Tb + 0.35);                   // the spotlight's source comes down: it is the lamp
-  const rise = g(w.position - 0.3, w.position + 0.7);            // privilege: the lamp hangs higher, its pool grows
+  const rise = swing ? 0 : g(w.position - 0.3, w.position + 0.7);  // privilege (variant 1): the lamp hangs higher, its pool grows
+  const mo = swing ? g(q.P + 0.1, q.P + 1.3) : 0;                     // privilege (variant 2): the lamp pulls up and out, its beam opens over house and family
   const sy = lerp(-430, 294, dsc) - 260 * rise;
   const wP = lerp(210, 304, dsc) + 250 * rise;
   let a = 2.2 * osc(T, 3.4) * dsc;
   let power;
   if (swing) {
     a += -32 * g(q.Tb + 0.4, q.Tb + 1.0) + 32 * g(q.Tb + 1.0, q.Tb + 1.8) + settle(T, q.Tb + 1.8, 5);
-    a += 38 * g(q.Tb + 5.45, q.Tb + 6.1) + settle(T, q.Tb + 6.1, 3) - 38 * g(q.P - 0.1, q.P + 0.9) + settle(T, q.P + 0.9, -4);
+    a += 38 * g(q.Tb + 5.45, q.Tb + 6.1) + settle(T, q.Tb + 6.1, 3);
+    a = lerp(a, 1.2 * osc(T, 3.4), mo);
     power = spot;
   } else {
     power = spot * (1 - off(T, q.Tb + 0.55)) + flickOn(T, q.Tb + 1.05) * (1 - off(T, q.Tb + 5.78)) + flickOn(T, q.P + 0.2);
   }
   const flash = swing ? 0.5 * (MOTION.hit(T, w.threat, w.threat + 0.08, 0, 1) - g(w.threat + 0.08, w.threat + 0.4)) + 0.5 * (MOTION.hit(T, w.door, w.door + 0.08, 0, 1) - g(w.door + 0.08, w.door + 0.4)) : 0;
-  const B = beamGeom({ sy, wP: wP * (1 - 0.3 * clamp(Math.abs(a) / 38, 0, 1)), a });
+  const B = beamGeom({ sy: lerp(sy, -210, mo), wP: lerp(wP * (1 - 0.3 * clamp(Math.abs(a) / 38, 0, 1)), 780, mo), a, px: lerp(LAMP_X, 1100, mo) });
   const boost = 1 + 0.3 * g(w.voice - 0.2, w.voice + 0.4) * (1 - dsc) + flash;
 
   // which scene is under the lamp
   const swapA = swing ? q.Tb + 0.95 : q.Tb + 0.8;
   const heroVis = 1 - g(swapA - 0.08, swapA + 0.08);
-  const dinnerVis = g(swapA - 0.08, swapA + 0.08) * (1 - g(q.P - 0.08, q.P + 0.08));
-  const privVis = g(q.P - 0.08, q.P + 0.08);
+  const dinnerVis = g(swapA - 0.08, swapA + 0.08) * (swing ? 1 : 1 - g(q.P - 0.08, q.P + 0.08));
+  const privVis = swing ? 0 : g(q.P - 0.08, q.P + 0.08);
 
   // ── camera ────────────────────────────────────────────────────────────────
   let cp = [960, 540], z = 1;
   let m = g(q.V, w.voice + 0.2); cp = lerp2(cp, [700, 500], m); z = lerp(z, 1.22, m);
   z += 0.05 * g(q.Tb + 1.2, q.D);
-  const privCam = (t0) => { const mm = g(t0, t0 + 1.2); return [lerp2(cp, [1000, 430], mm), lerp(z, 0.9 - 0.03 * g(t0 + 1.2, q.E + 0.24), mm)]; };
   const doorV1 = !swing && T >= q.D && T < q.P + 0.05;
   if (swing) {
     m = g(q.Tb + 5.4, q.D + 0.2); cp = lerp2(cp, [1480, 470], m); z = lerp(z, 1.15, m);
-    [cp, z] = privCam(q.P - 0.1);
+    m = g(q.P + 0.1, q.P + 1.3); cp = lerp2(cp, [1200, 420], m); z = lerp(z, 0.95, m) - 0.025 * g(q.P + 1.3, q.E + 0.24);
   } else if (doorV1) {
     cp = [2600, 470]; z = 1.2 + 0.06 * g(q.D, q.P);
   } else if (T >= q.P + 0.05) {
@@ -122,7 +124,7 @@ function Shot({ k, variant }) {
 
   // ── door, variant 2: outside, the teal lamp's beam finds the door ────────
   const HX0 = 1320, HX1 = 1900, DXo = 1590;
-  const houseVis = g(q.Tb + 5.3, q.D) * (1 - g(q.P + 0.6, q.P + 1.2));
+  const houseVis = g(q.Tb + 5.3, q.D);
   const inLight = g(q.Tb + 5.8, q.D + 0.1);
   const duck = MOTION.hit(T, w.threat, w.threat + 0.2, 0, 1) - g(w.threat + 0.3, w.door - 0.05) + MOTION.hit(T, w.door, w.door + 0.2, 0, 1) - g(w.door + 0.4, q.P);
   const kno = (knock(T, w.threat) + knock(T, w.door) + knock(T, w.door + 0.15)) * 5;
