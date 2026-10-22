@@ -970,3 +970,9 @@ function FUOpenConcepts() {
 }
 
 window.FUOpenConcepts = FUOpenConcepts;
+
+// shared rig for later rounds of this segment (open-engagers.jsx)
+window.FU_RIG = {
+  W, H, OUT_W, OUT_H, MOTION, osc, lerp, lerp2, fade, knock, cam, bez, mix, C, hash, boilFn, polarPath, boilCircle, jitter,
+  figGeom, headAt, reachTo, Fig, TopFig, Card, Ripples, Rings, Table, Chair, DinnerSide, DoorRoom,
+};

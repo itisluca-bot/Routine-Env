@@ -9,6 +9,7 @@ Read `HANDOFF.md` first. It covers the film, the standing rules, every concept, 
 | `Curation Topography.dc.html` + `curation-topography.jsx` | Current final shot |
 | `Top-down Figure Options.dc.html` | Figure-model options; 1e was chosen |
 | `Open Engagers Concepts.dc.html` + `open-engagers-concepts.jsx` | "We find that open engagers…" (22s12f, `timing_2.srt`): ideation roughs, concepts A–H plus a Script card, picked with the Concept tweak or `--set concept=C` |
+| `Open Engagers.dc.html` + `open-engagers.jsx` | Round 2 of the same segment: the Elbow Room opening, then a lamp carries the rest. Variant 1 (Switch) and 2 (Swing), picked with the Variant tweak or `--set variant=2`. Uses the rig from `open-engagers-concepts.jsx` (`window.FU_RIG`) |
 | `animations-v3.jsx`, `tweaks-panel.jsx`, `support.js` | Engine, tweak panel, Design Component runtime |
 | `archive/` | Round 1 and round 2 concepts, with their own copy of the runtime |
 | `reference/` | `timing_1.srt`, `timing_2.srt`. The reference stills live here locally but are not committed |
