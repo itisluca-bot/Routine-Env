@@ -73,6 +73,39 @@ function mothAt(T, i, cx, calm) {
   const flap = 0.25 + 0.75 * Math.abs(Math.cos(T * (9 + 4 * h(9)) + 6.28 * h(10)));
   return { p: [x, y], rot: 28 * Math.sin(T * 1.3 * sp + 6.28 * h(11)), flap };
 }
+// ── background for the opening: other people under their own lamps, further off (two rows) ──
+const WD = { body: '#46647a', head: '#2f4560' };
+const FAR = [
+  { f: 0.55, y: 590, s: 0.5, op: 0.55, xs: [[-260, WD], [250, C.open], [1170, C.cur], [1760, C.open], [2330, WD]] },
+  { f: 0.32, y: 552, s: 0.32, op: 0.38, xs: [[-620, C.open], [20, C.cur], [560, WD], [1460, C.open], [2020, C.cur], [2640, WD]] },
+];
+function FarLamp({ x, y, s, c, pow, T, i, J }) {
+  const sy = y - 376 * s, wd = 280 * s, ry = 0.08 * wd;
+  return (
+    <g>
+      <line x1={x} y1={sy - 3000} x2={x} y2={sy - 52 * s} stroke="#333" strokeWidth={3 * s} />
+      <g opacity={pow}>
+        <path d={`M ${x - MOUTH * s} ${sy} L ${x + MOUTH * s} ${sy} L ${x + wd} ${y} A ${wd} ${ry} 0 0 1 ${x - wd} ${y} Z`} fill={LIGHT} opacity="0.08" />
+        <ellipse cx={x} cy={y} rx={wd} ry={ry} fill={LIGHT} opacity="0.09" />
+      </g>
+      <g transform={`translate(${x} ${sy}) scale(${s})`}>
+        <path d={`M ${-MOUTH} 0 C ${-MOUTH} -28 -22 -46 0 -48 C 22 -46 ${MOUTH} -28 ${MOUTH} 0 Z`} fill="#3a3a3a" />
+        <ellipse cx="0" cy="0" rx={MOUTH} ry="7" fill="#222" />
+        <ellipse cx="0" cy="2" rx="15" ry="5" fill={LIGHT} opacity={0.15 + 0.6 * pow} />
+      </g>
+      <g opacity={0.25 + 0.75 * pow}><Fig x={x} y={y} s={0.8 * s} dir={i % 2 ? -1 : 1} c={c} tilt={5 * osc(T, 2.4 + (i % 3) * 0.4, i * 0.17)} j={J(80 + i)} /></g>
+    </g>
+  );
+}
+// dust drifting in a beam; fades in and out at the ends of its fall so nothing pops
+const motes = (T, cx, n, seed) => Array.from({ length: n }, (_, i) => {
+  const h = (k) => hash(seed * 31 + i * 7.3 + k * 1.9);
+  const u = (((h(1) - T * (0.02 + 0.03 * h(2))) % 1) + 1) % 1;
+  const y = 300 + u * 370;
+  const x = cx + (h(3) - 0.5) * 2 * (36 + (y - 294) * 0.72) + 6 * osc(T, 3 + 2 * h(4), h(5));
+  return <circle key={i} cx={x} cy={y} r={1.2 + 1.3 * h(6)} fill={LIGHT} opacity={(0.25 + 0.3 * h(7)) * Math.sin(Math.PI * u)} />;
+});
+
 // now and then one of the curator's moths dives at them
 const SWOOPS = [1.1, 2.9, 4.5, 6.2];
 
@@ -116,9 +149,14 @@ function Shot({ k, variant }) {
   const dinnerVis = g(swapA - 0.08, swapA + 0.08) * (swing ? 1 : 1 - g(q.P - 0.08, q.P + 0.08));
   const privVis = swing ? 0 : g(q.P - 0.08, q.P + 0.08);
 
-  // ── camera: both lamps, then one slow zoom onto teal from the first frame ─
-  let cp = [1055, 440], z = 1.1;
-  let m = g(0, w.voice + 0.2); cp = lerp2(cp, [700, 500], m); z = lerp(z, 1.22, m);
+  // ── camera: a slow push-in on teal from the first frame (teal stays nearly put, the world grows round them),
+  //    a second push close on "confidence … voice", then back out as the lamp moves on to the dinner table ──
+  const A = [680, 560];
+  const anchorCam = (Sa, zz) => [[A[0] - (Sa[0] - 960) / zz, A[1] - (Sa[1] - 540) / zz], zz];
+  const m1 = g(0, q.V + 0.4), m2 = g(w.confidence - 0.05, w.voice + 0.4);
+  let [cp, z] = anchorCam(lerp2(lerp2([547, 672], [660, 600], m1), [960, 590], m2), lerp(lerp(1.1, 1.42, m1), 1.75, m2));
+  const cp0 = anchorCam([547, 672], 1.1)[0], camF = [cp, z];
+  let m = g(q.Tb + 0.3, q.Tb + 1.7); cp = lerp2(cp, [700, 500], m); z = lerp(z, 1.22, m);
   z += 0.05 * g(q.Tb + 1.2, q.D);
   const doorV1 = !swing && T >= q.D && T < q.P + 0.05;
   if (swing) {
@@ -188,8 +226,30 @@ function Shot({ k, variant }) {
   const peek = 46 * (1 - g(q.Tb + 5.7, q.D + 0.3)) + 5 * osc(T, 1.7);   // the child rises into the window, then just hovers
   const peekX = 3 * osc(T, 2.3, 0.2);
 
+  // background: the far lamps click off one by one as the camera closes in on teal; the floor fades with them
+  const bgOn = 1 - g(w.confidence + 0.4, w.voice + 0.5);
+  const farCam = (f) => cam(lerp(cp0[0], camF[0][0], f), lerp(cp0[1], camF[0][1], f), Math.pow(camF[1], f));
+  let farN = 0;
+
   const st = 'url(#oeBeam)';
   return (
+    <g>
+    {bgOn > 0 && (
+      <g opacity={bgOn}>
+        <defs>
+          <linearGradient id="oeFloor" gradientUnits="userSpaceOnUse" x1="0" y1="520" x2="0" y2="760">
+            <stop offset="0" stopColor={C.bg} />
+            <stop offset="1" stopColor="#151515" />
+          </linearGradient>
+        </defs>
+        <g transform={farCam(0.32)}><rect x="-3000" y="520" width="8000" height="3000" fill="url(#oeFloor)" /></g>
+        {FAR.map((row, r) => (
+          <g key={r} transform={farCam(row.f)} opacity={row.op}>
+            {row.xs.map(([x, c], i) => { const n = farN++; return <FarLamp key={i} x={x} y={row.y} s={row.s} c={c} T={T} i={n} J={J} pow={1 - off(T, w.confidence + 0.35 + ((n * 5) % 11) * 0.09)} />; })}
+          </g>
+        ))}
+      </g>
+    )}
     <g transform={cam(cp[0], cp[1], z)}>
       <defs>
         <filter id="oeSoft" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="10" /></filter>
@@ -214,11 +274,13 @@ function Shot({ k, variant }) {
       <g opacity={oraAmb}><Fig {...oraO} j={J(2)} /></g>
       <g opacity={0.7 * (1 - oraGone)}>{oraMoths.map((mt, i) => <Card key={i} x={mt.p[0]} y={mt.p[1]} s={0.6} rot={mt.rot} flip={mt.flip} lit={0} />)}</g>
       <g opacity={0.7 * heroVis}>{tealMoths.map((mt, i) => <Card key={i} x={mt.p[0]} y={mt.p[1]} s={0.6} rot={mt.rot} flip={mt.flip} lit={0} />)}</g>
-      <line x1="-2000" y1={FL} x2="4000" y2={FL} stroke={C.line} strokeWidth="3" opacity="0.5" />
+      <line x1="-2000" y1={FL} x2="4000" y2={FL} stroke={C.line} strokeWidth="3" opacity={0.5 * (1 - bgOn)} />
       {swing && <g opacity={0.2 * houseVis * dinnerVis}><DinnerSide k={k} x={LAMP_X} y={FL} s={0.8} /></g>}
 
       {/* everything the lamp reveals */}
       <g mask={st}>
+        {motes(T, LAMP_X, 30, 1)}
+        <g opacity={1 - oraGone}>{motes(T, ORA_X, 24, 2)}</g>
         <g opacity={1 - oraGone}>
           <Fig {...oraO} j={J(2)} />
           {oraMoths.map((mt, i) => <Card key={i} x={mt.p[0]} y={mt.p[1]} s={0.6} rot={mt.rot} flip={mt.flip} />)}
@@ -292,6 +354,7 @@ function Shot({ k, variant }) {
       <path d={B.poly} fill="url(#oeHaze)" opacity={clamp(power * boost, 0, 1.5)} />
       <ellipse cx={B.pool[0]} cy={FL} rx={B.pool[1]} ry={B.pool[2]} fill={LIGHT} opacity={0.12 * clamp(power * boost, 0, 1.5)} />
       <Lamp L={B} pow={power} id="oeLampT" />
+    </g>
     </g>
   );
 }
