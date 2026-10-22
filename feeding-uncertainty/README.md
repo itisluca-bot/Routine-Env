@@ -8,9 +8,10 @@ Read `HANDOFF.md` first. It covers the film, the standing rules, every concept, 
 |---|---|
 | `Curation Topography.dc.html` + `curation-topography.jsx` | Current final shot |
 | `Top-down Figure Options.dc.html` | Figure-model options; 1e was chosen |
+| `Open Engagers Concepts.dc.html` + `open-engagers-concepts.jsx` | "We find that open engagers…" (22s12f, `timing_2.srt`): ideation roughs, concepts A–H plus a Script card, picked with the Concept tweak or `--set concept=C` |
 | `animations-v3.jsx`, `tweaks-panel.jsx`, `support.js` | Engine, tweak panel, Design Component runtime |
 | `archive/` | Round 1 and round 2 concepts, with their own copy of the runtime |
-| `reference/` | `timing_1.srt`. The reference stills live here locally but are not committed |
+| `reference/` | `timing_1.srt`, `timing_2.srt`. The reference stills live here locally but are not committed |
 | `tools/render.mjs` | Headless 4K PNG-sequence renderer |
 
 ## Preview in a browser
@@ -26,6 +27,7 @@ node tools/render.mjs "Curation Topography.dc.html" --preview      # + 1080p H.2
 node tools/render.mjs "Curation Topography.dc.html" --prores       # + ProRes 4444 .mov
 node tools/render.mjs "Curation Topography.dc.html" --boundaries   # only the frames either side of each section cue
 node tools/render.mjs "Curation Topography.dc.html" --frames 0,40,126
+node tools/render.mjs "Open Engagers Concepts.dc.html" --set concept=C --half --guide --preview   # quick labelled review of one concept
 ```
 
 Output goes to `renders/<shot>/<shot>_0000.png` and so on (git-ignored). Other options: `--fps`, `--out <dir>`, `--boilAmp <px>`, `--noBoil`, and `--guide`, which turns on the narration caption for timing review only, never for final renders.

@@ -7,7 +7,8 @@
 //   node tools/render.mjs "Curation Topography.dc.html" --prores        also writes a ProRes 4444 .mov
 //   node tools/render.mjs "Curation Topography.dc.html" --preview       also writes a 1080p H.264 .mp4
 //
-// Options: --fps 25, --out <dir>, --boilAmp <px>, --noBoil, --guide (narration caption; never for final renders)
+// Options: --fps 25, --out <dir>, --boilAmp <px>, --noBoil, --guide (narration caption; never for final renders),
+//          --set key=value[,key=value] (any tweak, e.g. --set concept=C), --half (1920x1080 frames for quick review)
 import fs from 'node:fs';
 import path from 'node:path';
 import { execFileSync } from 'node:child_process';
@@ -28,7 +29,10 @@ const page = argv.find((a) => !a.startsWith('--') && /\.html$/.test(a));
 if (!page) { console.error('usage: node tools/render.mjs "<shot>.dc.html" [options]'); process.exit(1); }
 const opt = (name, def) => { const i = argv.indexOf('--' + name); return i < 0 ? def : (argv[i + 1] && !argv[i + 1].startsWith('--') ? argv[i + 1] : true); };
 const fps = Number(opt('fps', 25));
-const slug = path.basename(page).replace(/\.dc\.html$|\.html$/, '').toLowerCase().replace(/[^a-z0-9]+/g, '-');
+const sets = opt('set', null) ? Object.fromEntries(String(opt('set')).split(',').map((kv) => kv.split('='))) : {};
+const half = !!opt('half', false);
+const slug = [path.basename(page).replace(/\.dc\.html$|\.html$/, ''), ...Object.values(sets), half ? 'half' : '']
+  .filter(Boolean).join('-').toLowerCase().replace(/[^a-z0-9]+/g, '-');
 const outDir = path.resolve(ROOT, opt('out', path.join('renders', slug)));
 fs.mkdirSync(outDir, { recursive: true });
 
@@ -40,7 +44,7 @@ const base = 'http://fu.local/';
 // ── browser ─────────────────────────────────────────────────────────────────
 const proxy = process.env.HTTPS_PROXY ? { server: process.env.HTTPS_PROXY } : undefined;
 const browser = await chromium.launch({ proxy });
-const ctx = await browser.newContext({ viewport: { width: OUT_W, height: OUT_H }, deviceScaleFactor: 1 });
+const ctx = await browser.newContext({ viewport: { width: OUT_W, height: OUT_H }, deviceScaleFactor: half ? 0.5 : 1 });
 const tab = await ctx.newPage();
 tab.on('pageerror', (e) => console.error('[page error]', e.message));
 tab.on('requestfailed', (r) => console.error('[request failed]', r.url(), r.failure() && r.failure().errorText));
@@ -62,6 +66,7 @@ await tab.route(/fonts\.(googleapis|gstatic)\.com/, (route) => route.fulfill({ s
 // tweak overrides go in before the page's own scripts read TWEAK_DEFAULTS
 const tweaks = { referenceOverlay: !!opt('guide', false), lineBoil: !opt('noBoil', false) };
 if (opt('boilAmp', null) != null) tweaks.boilAmp = Number(opt('boilAmp'));
+for (const [k, v] of Object.entries(sets)) tweaks[k] = v === 'true' ? true : v === 'false' ? false : isNaN(Number(v)) ? v : Number(v);
 await tab.addInitScript((tw) => {
   let v;
   Object.defineProperty(window, 'TWEAK_DEFAULTS', { configurable: true, get: () => v, set: (x) => { v = Object.assign({}, x, tw); } });
@@ -115,6 +120,6 @@ if (full && opt('prores', false)) {
   console.log('  wrote ProRes 4444');
 }
 if (full && opt('preview', false)) {
-  execFileSync('ffmpeg', ['-y', '-loglevel', 'error', '-framerate', String(fps), '-i', pattern, '-vf', 'scale=1920:1080:flags=lanczos', '-c:v', 'libx264', '-crf', '16', '-pix_fmt', 'yuv420p', path.join(outDir, `${slug}_preview_1080p.mp4`)], { stdio: 'inherit' });
+  execFileSync('ffmpeg', ['-y', '-loglevel', 'error', '-framerate', String(fps), '-i', pattern, ...(half ? [] : ['-vf', 'scale=1920:1080:flags=lanczos']), '-c:v', 'libx264', '-crf', '16', '-pix_fmt', 'yuv420p', path.join(outDir, `${slug}_preview_1080p.mp4`)], { stdio: 'inherit' });
   console.log('  wrote 1080p preview');
 }
