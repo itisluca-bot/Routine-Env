@@ -9,6 +9,7 @@
 //
 // Options: --fps 25, --out <dir>, --boilAmp <px>, --noBoil, --guide (narration caption; never for final renders),
 //          --set key=value[,key=value] (any tweak, e.g. --set concept=C), --half (1920x1080 frames for quick review)
+//          --settle <ms> for heavy shots: wait after each seek, then re-capture until two captures match, so no tile is caught half-drawn
 import fs from 'node:fs';
 import path from 'node:path';
 import { execFileSync } from 'node:child_process';
@@ -103,10 +104,24 @@ const seek = (t) => tab.evaluate(({ sel, t }) => new Promise((res) => {
   requestAnimationFrame(() => requestAnimationFrame(res));
 }), { sel: SEL, t });
 
+const settle = Number(opt('settle', 0)) || 0;
+const clip = { x: 0, y: 0, width: OUT_W, height: OUT_H };
 const t0 = Date.now();
 for (const [n, f] of frames.entries()) {
   await seek(f / fps);
-  await tab.screenshot({ path: path.join(outDir, `${slug}_${String(f).padStart(4, '0')}.png`), clip: { x: 0, y: 0, width: OUT_W, height: OUT_H } });
+  const file = path.join(outDir, `${slug}_${String(f).padStart(4, '0')}.png`);
+  if (!settle) await tab.screenshot({ path: file, clip });
+  else {
+    await tab.waitForTimeout(settle);
+    let prev = await tab.screenshot({ clip });
+    for (let tries = 0; tries < 6; tries++) {
+      await tab.waitForTimeout(settle);
+      const cur = await tab.screenshot({ clip });
+      if (cur.equals(prev)) break;
+      prev = cur;
+    }
+    fs.writeFileSync(file, prev);
+  }
   if (n % 10 === 0 || n === frames.length - 1) process.stdout.write(`\r  frame ${n + 1}/${frames.length}`);
 }
 console.log(`\n  done in ${((Date.now() - t0) / 1000).toFixed(1)} s`);

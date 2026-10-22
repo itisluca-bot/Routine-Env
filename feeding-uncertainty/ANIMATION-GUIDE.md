@@ -40,6 +40,7 @@ This is the working guide for a new Claude session. Read it together with `CLAUD
 | `open-engagers-concepts.jsx` | Round-1 ideation (concepts A–H). Also exports shared helpers as `window.FU_RIG`: `MOTION`, `osc`, `lerp`, `lerp2`, `cam`, `mix`, `C`, `hash`, `Card` (the red post), `Ripples`, `Table`, `Chair`, … |
 | `open-engagers.jsx` | **The current open engagers shot** (see §8) |
 | `curation-topography.jsx` | The finished Topography shot |
+| `vulnerability.jsx` | **The vulnerability shot** (see §9) |
 | `tools/render.mjs` | Headless renderer (§6) |
 
 Load order in a page: `./animations-v3.jsx ./tweaks-panel.jsx ./rigs/bean-rig.jsx ./open-engagers-concepts.jsx ./your-shot.jsx`.
@@ -72,6 +73,7 @@ node tools/render.mjs "Open Engagers.dc.html" --set variant=2,referenceOverlay=f
 node tools/render.mjs "<page>" --frames 0,120,300 --half --guide                        # spot frames
 ```
 
+- Heavy shots (many masked layers, such as `Vulnerability.dc.html`) need `--settle 60`: without it Chromium can be caught mid-raster and frames come out with whole tiles missing. The pop check finds these.
 - Output: `renders/<slug>/<slug>_0000.png` (git-ignored). `--prores` adds a ProRes 4444 `.mov`.
 - A 22 s shot takes about 6–8 minutes at half resolution. Run long renders in the background, and several concepts in parallel when needed.
 - **Before sending, check for pops:** compare every pair of neighbouring frames (mean absolute difference at low resolution) and flag any pair far above its neighbours. Look at each flagged pair: deliberate hits (a lamp click, a door hit) are fine; anything else gets fixed.
@@ -87,6 +89,7 @@ node tools/render.mjs "<page>" --frames 0,120,300 --half --guide                
 
 1. **Curation / Topography** (`curation-topography.jsx`, `timing_1.srt`, 8.24 s). Finished. See `HANDOFF.md`.
 2. **Open engagers** (`open-engagers.jsx`, `timing_2.srt`, 22.48 s). In refinement. The user chose **variant 2**.
+3. **Vulnerability** (`vulnerability.jsx`, 5.00 s, no SRT yet). First round, three variants.
 
 ## 8. Open engagers shot: what is approved
 
@@ -100,3 +103,13 @@ Beats: Curiosity 0–7.48, Voice 7.48–10.84, Table 10.84–16.80, Door 16.80�
 - Variant 1 (lamp switches off and on, door seen from inside) is kept in the file but was not chosen.
 
 Rejected along the way, so do not bring back: the Elbow Room circles as the opening, background rows of other lamps ("ugly"), erratic curator motion, a stiff cable and trapezoid shade, a beam that does not meet its floor pool, dust only near one lamp.
+
+## 9. Vulnerability shot: first round
+
+Line: "They bear the weight of vulnerability, produced by the ongoing crises." 5.00 s. Sections: Weight 0–2.28, Crises 2.28–4.76, Hold to 5.00. Word times in `Piece` are estimates until the SRT arrives.
+
+- **Set:** gallery-access apartment blocks at night, three rows deep with parallax (`LAYERS`: far, mid, near). Each floor is a dark recessed strip with doors and windows behind a parapet.
+- **People:** orange Bean figures in about half the doorways, half hidden behind the open door leaf. They lean out to look, follow the nearest flock with their head, and pull back behind the door when it comes close. On "the weight" their heads drop a little.
+- **Moths:** flocks of red posts fly through between the blocks in each row; the biggest one crosses the near row on "crises".
+- **Searchlight:** only the pool is lit (one mask over all rows, so near blocks still hide far ones). Outside it the blocks are dark shapes, people are faint, and posts are red outlines. The pool glides between waypoints, so it lingers a moment on each.
+- Variants: 1 Search (one light sweeps left to right, camera trucks), 2 Crossing (two lights cross on "crises", camera pushes in), 3 Opens (on "the ongoing crises" the pool opens over the whole city as the camera pulls back).
