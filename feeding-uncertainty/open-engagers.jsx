@@ -5,7 +5,9 @@
 //   Variant 1 · Switch: the lamp clicks off and on between scenes. The door is seen from inside: a red lamp outside shines through it onto the curator child.
 //   Variant 2 · Swing: the lamp swings to reveal each scene. Its beam finds the door of a house with the curator child behind it; the teal family stays outside.
 //     On "This comes from…" the lamp pulls up and out and its beam opens over both: it ends on the teal family outside in the light, the child behind the door.
-const { W, H, OUT_W, OUT_H, MOTION, osc, lerp, lerp2, knock, cam, mix, C, hash, jitter, figGeom, headAt, reachTo, Fig, Card, DinnerSide } = window.FU_RIG;
+// People use the Bean rig (rigs/bean-rig.jsx); dust hangs in the air everywhere and shows wherever a beam falls.
+const { W, H, OUT_W, OUT_H, MOTION, osc, lerp, lerp2, knock, cam, mix, C, hash, jitter, Card, Ripples, Table, Chair } = window.FU_RIG;
+const { BeanFig, POSES, blendPose, rig, PAL } = window.FU_BEAN;   // people are drawn with the Bean rig (rigs/BEAN.md)
 
 const FL = 670;                      // floor of the lamp world
 const LAMP_X = 680, CORD = 700;      // the teal lamp hangs over the hero; it swings about a pivot CORD above its shade
@@ -57,11 +59,73 @@ function Lamp({ L, pow = 1, op = 1, id }) {
     </g>
   );
 }
-// where a figure's near hand is, in the frame the figure is drawn in
-function handWorld(f, h) {
-  const { sc, dir, hipY, shX, shY } = figGeom(f);
-  const ar = ((f.lean || 0) * Math.PI) / 180, lx = shX + h[0], ly = shY + h[1] - hipY;
-  return [f.x + dir * sc * (lx * Math.cos(ar) - ly * Math.sin(ar)), f.y + sc * (lx * Math.sin(ar) + ly * Math.cos(ar) + hipY)];
+// ── Bean helpers. A figure is { x, y, s, dir, c, pose, headScale } ───────────
+const UA = 44, FA = 42;                                  // upper arm, forearm
+const toWorld = (f, p) => [f.x + (f.dir || 1) * f.s * p[0], f.y + f.s * p[1]];
+const headW = (f) => toWorld(f, rig(f.pose, f.headScale || 1).Hc);
+const handW = (f) => toWorld(f, rig(f.pose, f.headScale || 1).armN[2]);
+// near-arm angles that put the hand on world point P (two-bone IK; the elbow bends the natural way)
+function reachArm(f, P) {
+  const A = rig(f.pose, f.headScale || 1).armN[0];
+  const dx = ((f.dir || 1) * (P[0] - f.x)) / f.s - A[0], dy = (P[1] - f.y) / f.s - A[1];
+  const d = clamp(Math.hypot(dx, dy), Math.abs(UA - FA) + 1, UA + FA - 0.5);
+  const deg = (r) => (r * 180) / Math.PI;
+  const al = deg(Math.acos((UA * UA + d * d - FA * FA) / (2 * UA * d)));
+  const ga = deg(Math.acos((UA * UA + FA * FA - d * d) / (2 * UA * FA)));
+  return [deg(Math.atan2(dx, dy)) - al - f.pose.lean, 180 - ga];
+}
+const armTo = (f, P, t) => { if (t <= 0) return; const r = reachArm(f, P); f.pose = { ...f.pose, armN: [lerp(f.pose.armN[0], r[0], t), lerp(f.pose.armN[1], r[1], t)] }; };
+// seated: thighs forward, shins down (hip about 55 above the feet)
+const SIT = (T, ph = 0) => ({ hx: 0, lean: 4 + 1.5 * osc(T, 3.3, ph), tilt: 2 * osc(T, 4.1, ph), legN: [86, 88], legF: [80, 84], armN: [24, 56], armF: [18, 52], phone: 0 });
+// the curator shying away: arms held in close, then a squat with the arms over the head
+const guardPose = (T) => { const b = POSES.idle(T + 1.3); return { ...b, lean: b.lean + 4 + 3 * osc(T, 1.9), tilt: 8 + 5 * osc(T, 1.5, 0.2), armN: [40, 88], armF: [30, 92] }; };
+const COVER = { hx: 0, lean: 28, tilt: 26, legN: [70, 120], legF: [55, 110], armN: [128, 128], armF: [118, 135], phone: 0 };
+const cower = (T, c) => blendPose(guardPose(T), COVER, c);
+const KID_HEAD = 1.3;                                    // children: smaller, with a bigger head
+function Bean({ f, k, id, op = 1 }) {
+  return <BeanFig x={f.x} y={f.y} dir={f.dir || 1} s={f.s} pose={f.pose} c={f.c} T={k.T} boil={k.amp > 0} boilAmp={k.amp} headScale={f.headScale || 1} id={id} op={op} />;
+}
+
+// Childhood dinner, side view (the Lamplight table beat, on the Bean rig). A red post sits on the table;
+// it is lifted, talked over and passed round. Local frame: floor at y = 0, table from -150 to 150.
+function DinnerBean({ k, x = 960, y = 820, s = 1, idb = 30 }) {
+  const { T, w } = k;
+  const g = (a, b) => MOTION.glide(T, a, b, 0, 1);
+  const kid = { x: -215, y: -50, s: 0.7, dir: 1, c: PAL.open, headScale: KID_HEAD, pose: SIT(T, 0.2) };
+  const mom = { x: 215, y: 0, s: 1, dir: -1, c: PAL.open, pose: SIT(T, 0.6) };
+  const dad = { x: 55, y: 0, s: 1, dir: -1, c: PAL.open, pose: POSES.idle(T + 0.7) };
+  const P0 = [0, -132], Pup = [0, -160], Pm = [150, -170], Pk = [-160, -160];
+  const a0 = g(w.politics2 - 0.1, w.politics2 + 0.4), a1 = g(w.conversation - 0.3, w.conversation + 0.2);
+  const a2 = g(w.around, w.around + 0.6), a3 = g(w.dinner, w.table + 0.3);
+  let cp = lerp2(P0, Pup, a0); cp = lerp2(cp, Pm, a1); cp = lerp2(cp, Pk, a2); cp = lerp2(cp, P0, a3);
+  const leanIn = 8 * g(w.dinner - 0.2, w.table + 0.2);
+  // who is talking: the far arm gestures while they speak
+  const talkM = g(w.conversation - 0.2, w.conversation) * (1 - g(w.around + 0.2, w.around + 0.5));
+  const talkK = g(w.around + 0.3, w.around + 0.5) * (1 - g(w.dinner - 0.4, w.dinner - 0.1));
+  const talkD = g(w.dinner - 0.3, w.dinner) * (1 - g(w.table + 0.4, w.table + 1));
+  const gest = (f, t) => { const tk = POSES.talk(T + f.x * 0.01).armN; f.pose = { ...f.pose, armF: [lerp(f.pose.armF[0], tk[0], t), lerp(f.pose.armF[1], tk[1], t)] }; };
+  mom.pose = { ...mom.pose, lean: mom.pose.lean + 2 + 0.6 * leanIn, tilt: -4 * g(w.around, w.around + 0.4) };
+  kid.pose = { ...kid.pose, lean: kid.pose.lean + leanIn, tilt: -10 - 6 * talkM + 4 * osc(T, 1.7) };
+  dad.pose = { ...dad.pose, lean: dad.pose.lean + 4 + 0.5 * leanIn, tilt: 4 + 6 * osc(T, 2.1, 0.3) };
+  gest(mom, talkM); gest(kid, talkK); gest(dad, talkD);
+  armTo(mom, cp, a1 * (1 - a2));
+  armTo(kid, cp, a2 * (1 - a3));
+  const hM = headW(mom), hK = headW(kid), hD = headW(dad);
+  return (
+    <g transform={`translate(${x} ${y}) scale(${s})`}>
+      <line x1="-520" y1="0" x2="520" y2="0" stroke={C.line} strokeWidth="4" />
+      <Bean f={dad} k={k} id={idb + 1} />
+      <Chair x={-215} y={0} h={88} w={56} dir={1} />
+      <Chair x={225} y={0} h={50} dir={-1} />
+      <Bean f={mom} k={k} id={idb + 2} />
+      <Bean f={kid} k={k} id={idb + 3} />
+      <Table x0={-150} x1={150} y={0} />
+      <Card x={cp[0]} y={cp[1]} s={0.85} rot={-6 + 6 * osc(T, 2.3)} flip={Math.cos(Math.PI * 2 * g(w.around + 0.6, w.dinner))} />
+      <Ripples T={T} x={hM[0] - 30} y={hM[1]} dir={-1} t0={w.conversation - 0.1} t1={w.conversation + 0.9} R={150} />
+      <Ripples T={T} x={hK[0] + 26} y={hK[1]} dir={1} t0={w.around + 0.4} t1={w.around + 1.1} R={130} />
+      <Ripples T={T} x={hD[0] - 30} y={hD[1]} dir={-1} t0={w.dinner - 0.2} t1={w.table + 0.4} R={150} />
+    </g>
+  );
 }
 
 // ── moths: red posts fluttering in a beam. calm = the teal lamp's; otherwise faster and wider ──
@@ -73,37 +137,12 @@ function mothAt(T, i, cx, calm) {
   const flap = 0.25 + 0.75 * Math.abs(Math.cos(T * (9 + 4 * h(9)) + 6.28 * h(10)));
   return { p: [x, y], rot: 28 * Math.sin(T * 1.3 * sp + 6.28 * h(11)), flap };
 }
-// ── background for the opening: other people under their own lamps, further off (two rows) ──
-const WD = { body: '#46647a', head: '#2f4560' };
-const FAR = [
-  { f: 0.55, y: 590, s: 0.5, op: 0.55, xs: [[-260, WD], [250, C.open], [1170, C.cur], [1760, C.open], [2330, WD]] },
-  { f: 0.32, y: 552, s: 0.32, op: 0.38, xs: [[-620, C.open], [20, C.cur], [560, WD], [1460, C.open], [2020, C.cur], [2640, WD]] },
-];
-function FarLamp({ x, y, s, c, pow, T, i, J }) {
-  const sy = y - 376 * s, wd = 280 * s, ry = 0.08 * wd;
-  return (
-    <g>
-      <line x1={x} y1={sy - 3000} x2={x} y2={sy - 52 * s} stroke="#333" strokeWidth={3 * s} />
-      <g opacity={pow}>
-        <path d={`M ${x - MOUTH * s} ${sy} L ${x + MOUTH * s} ${sy} L ${x + wd} ${y} A ${wd} ${ry} 0 0 1 ${x - wd} ${y} Z`} fill={LIGHT} opacity="0.08" />
-        <ellipse cx={x} cy={y} rx={wd} ry={ry} fill={LIGHT} opacity="0.09" />
-      </g>
-      <g transform={`translate(${x} ${sy}) scale(${s})`}>
-        <path d={`M ${-MOUTH} 0 C ${-MOUTH} -28 -22 -46 0 -48 C 22 -46 ${MOUTH} -28 ${MOUTH} 0 Z`} fill="#3a3a3a" />
-        <ellipse cx="0" cy="0" rx={MOUTH} ry="7" fill="#222" />
-        <ellipse cx="0" cy="2" rx="15" ry="5" fill={LIGHT} opacity={0.15 + 0.6 * pow} />
-      </g>
-      <g opacity={0.25 + 0.75 * pow}><Fig x={x} y={y} s={0.8 * s} dir={i % 2 ? -1 : 1} c={c} tilt={5 * osc(T, 2.4 + (i % 3) * 0.4, i * 0.17)} j={J(80 + i)} /></g>
-    </g>
-  );
-}
-// dust drifting in a beam; fades in and out at the ends of its fall so nothing pops
-const motes = (T, cx, n, seed) => Array.from({ length: n }, (_, i) => {
-  const h = (k) => hash(seed * 31 + i * 7.3 + k * 1.9);
-  const u = (((h(1) - T * (0.02 + 0.03 * h(2))) % 1) + 1) % 1;
-  const y = 300 + u * 370;
-  const x = cx + (h(3) - 0.5) * 2 * (36 + (y - 294) * 0.72) + 6 * osc(T, 3 + 2 * h(4), h(5));
-  return <circle key={i} cx={x} cy={y} r={1.2 + 1.3 * h(6)} fill={LIGHT} opacity={(0.25 + 0.3 * h(7)) * Math.sin(Math.PI * u)} />;
+// dust hanging in the air across the whole set; it only shows where a beam falls on it, so it is there in every scene
+const dust = (T) => Array.from({ length: 600 }, (_, i) => {
+  const h = (n) => hash(i * 7.3 + n * 1.9 + 11);
+  const x = -900 + 3600 * h(1) + 14 * osc(T, 4 + 3 * h(2), h(3));
+  const y = -250 + 920 * h(4) + 10 * osc(T, 5 + 3 * h(5), h(6)) - T * (2 + 4 * h(7));
+  return <circle key={i} cx={x} cy={y} r={1.1 + 1.3 * h(8)} fill={LIGHT} opacity={0.22 + 0.3 * h(9)} />;
 });
 
 // now and then one of the curator's moths dives at them
@@ -169,34 +208,31 @@ function Shot({ k, variant }) {
   }
 
   // ── opening: teal stands straight; now and then a post lands on their open hand like a butterfly ──
-  const me = { x: LAMP_X, y: FL, dir: 1, c: C.open, s: 0.8, lean: 1.5 * osc(T, 3.1) };
-  const hMe = headAt(me);
   const out1 = g(1.15, 1.6) * (1 - g(3.2, 3.7));                  // hand held out…
   const land1 = g(1.45, 2.05) * (1 - g(3.05, 3.6));                // …a post settles on it, rests, flies off again
   const out2 = g(w.treat - 0.6, w.treat - 0.15);
   const land2 = g(w.treat - 0.3, w.politics + 0.25);               // the second one stays
-  const palm = lerp2([hMe[0] + 64, hMe[1] + 56], [hMe[0] + 52, hMe[1] + 26], g(w.intellectual - 0.2, w.intellectual + 0.5) * (1 - g(w.confidence - 0.4, w.confidence + 0.2)));
-  me.hand = lerp2([10, 80], reachTo(me, palm), Math.max(out1, out2));
-  const onHand = handWorld(me, me.hand);
-  const perch = [onHand[0] + 4, onHand[1] - 13];
+  const idle = POSES.idle(T);
+  const me = { x: LAMP_X, y: FL, dir: 1, c: PAL.open, s: 0.8 };
+  me.pose = { ...idle, lean: 0.5 * idle.lean, tilt: idle.tilt + 12 * land1 + 14 * g(w.intellectual, w.curiosity) * (1 - g(w.confidence - 0.4, w.confidence)) - 6 * g(w.voice - 0.2, w.voice + 0.3) };
+  const hMe = headW(me);
+  const palm = lerp2([hMe[0] + 44, hMe[1] + 62], [hMe[0] + 36, hMe[1] + 30], g(w.intellectual - 0.2, w.intellectual + 0.5) * (1 - g(w.confidence - 0.4, w.confidence + 0.2)));
+  armTo(me, palm, Math.max(out1, out2));
+  const onHand = handW(me);
+  const perch = [onHand[0] + 3, onHand[1] - 10];
   const tealMoths = Array.from({ length: 5 }, (_, i) => {
     const mth = mothAt(T, i, LAMP_X, true);
     const land = i === 1 ? land1 : i === 3 ? land2 : 0;
     const p = lerp2(mth.p, perch, land);
     return { p: [p[0], p[1] - 34 * Math.sin(Math.PI * land)], rot: lerp(mth.rot, -4 + 4 * osc(T, 2.1), land), flip: lerp(mth.flap, 0.6 + 0.4 * Math.cos(T * 2.6 + i), land) };
   });
-  me.tilt = 12 * land1 + 14 * g(w.intellectual, w.curiosity) * (1 - g(w.confidence - 0.4, w.confidence)) - 6 * g(w.voice - 0.2, w.voice + 0.3) + 3 * osc(T, 2.2);
 
   // ── opening: the curator shies away when one of their posts dives at them ──
   const bumps = SWOOPS.map((t) => MOTION.glide(T, t, t + 0.4, 0, 1) - g(t + 0.6, t + 1.6));
   const crouch = clamp(bumps.reduce((s0, b) => s0 + b, 0), 0, 1);
   const dodge = bumps.reduce((s0, b, k2) => s0 + b * (k2 % 2 ? 22 : -22), 0);
-  const oraO = { x: ORA_X + dodge + 6 * osc(T, 2.6), y: FL, dir: -1, c: C.cur, s: 0.8, sit: 0.5 * crouch };
-  oraO.lean = 22 * crouch + 3 * osc(T, 1.9);
-  oraO.tilt = 20 * crouch + 5 * osc(T, 1.5, 0.2);
-  oraO.hand = lerp2([28, 24], [-2, -46], crouch);
-  oraO.hand2 = lerp2([22, 28], [-14, -42], crouch);
-  const hOO = headAt(oraO);
+  const oraO = { x: ORA_X + dodge + 6 * osc(T, 2.6), y: FL, dir: -1, c: PAL.cur, s: 0.8, pose: cower(T, crouch) };
+  const hOO = headW(oraO);
   const oraMoths = Array.from({ length: 9 }, (_, i) => {
     const mth = mothAt(T, i, ORA_X, false);
     const b = i < SWOOPS.length ? bumps[i] : 0;
@@ -205,8 +241,8 @@ function Shot({ k, variant }) {
   const oraAmb = 0.24 * (1 - oraGone);
 
   // ── privilege: the teal family under the lamp; the curator in the dark with a phone ──
-  const ora = { x: 1480, y: FL, sit: 1, dir: -1, c: C.cur, s: 0.8, lean: 16, tilt: 18, hand: [40, 0], hand2: [34, 6] };
-  const hO = headAt(ora);
+  const ora = { x: 1480, y: FL, dir: -1, c: PAL.cur, s: 0.8, pose: { ...POSES.phone(T), legN: [86, 88], legF: [80, 84] } };
+  const hO = headW(ora);
   const glints = Array.from({ length: 9 }, (_, i) => { const t = (i / 9) * Math.PI * 2 + 0.1 * osc(T, 3, i * 0.1); const r = 150 + 25 * osc(T, 1.1, i * 0.2); return [hO[0] + r * Math.cos(t), hO[1] + 50 + r * 0.8 * Math.sin(t), i * 31]; });
 
   // ── door, variant 1: inside, a red lamp beyond the door ──────────────────
@@ -217,7 +253,7 @@ function Shot({ k, variant }) {
   const slabR = DX - dw / 2 + dw * (1 - open);
   const shaft = `M ${slabR} ${FL - dh} L ${DX + dw / 2} ${FL - dh} L ${DX + dw / 2 + 120} ${FL + 240} L ${slabR - 420} ${FL + 240} Z`;
   const flinch = MOTION.hit(T, w.threat, w.threat + 0.25, 0, 1) - 0.5 * g(w.threat + 0.3, w.door) + MOTION.hit(T, w.door, w.door + 0.25, 0, 0.5);
-  const kidIn = { x: DX - 160, y: FL, s: 0.8, kid: 1, sit: 1, dir: -1, c: C.cur, lean: 20 + 8 * flinch, tilt: 22 + 6 * flinch, hand: [34, 30], hand2: [30, 34] };
+  const kidIn = { x: DX - 160, y: FL, s: 0.56, headScale: KID_HEAD, dir: -1, c: PAL.cur, pose: cower(T, clamp(0.75 + 0.25 * flinch, 0, 1)) };
 
   // ── door, variant 2: outside, the teal lamp's beam finds the door ────────
   const HX0 = 1320, HX1 = 1900, DXo = 1590;
@@ -226,10 +262,9 @@ function Shot({ k, variant }) {
   const peek = 46 * (1 - g(q.Tb + 5.7, q.D + 0.3)) + 5 * osc(T, 1.7);   // the child rises into the window, then just hovers
   const peekX = 3 * osc(T, 2.3, 0.2);
 
-  // background: the far lamps click off one by one as the camera closes in on teal; the floor fades with them
+  // background for the opening: a faint floor receding into the dark, moving slower than the foreground; it fades as the camera closes in
   const bgOn = 1 - g(w.confidence + 0.4, w.voice + 0.5);
   const farCam = (f) => cam(lerp(cp0[0], camF[0][0], f), lerp(cp0[1], camF[0][1], f), Math.pow(camF[1], f));
-  let farN = 0;
 
   const st = 'url(#oeBeam)';
   return (
@@ -243,11 +278,6 @@ function Shot({ k, variant }) {
           </linearGradient>
         </defs>
         <g transform={farCam(0.32)}><rect x="-3000" y="520" width="8000" height="3000" fill="url(#oeFloor)" /></g>
-        {FAR.map((row, r) => (
-          <g key={r} transform={farCam(row.f)} opacity={row.op}>
-            {row.xs.map(([x, c], i) => { const n = farN++; return <FarLamp key={i} x={x} y={row.y} s={row.s} c={c} T={T} i={n} J={J} pow={1 - off(T, w.confidence + 0.35 + ((n * 5) % 11) * 0.09)} />; })}
-          </g>
-        ))}
       </g>
     )}
     <g transform={cam(cp[0], cp[1], z)}>
@@ -271,41 +301,40 @@ function Shot({ k, variant }) {
       </defs>
 
       {/* what can still be made out in the dark */}
-      <g opacity={oraAmb}><Fig {...oraO} j={J(2)} /></g>
+      <g opacity={oraAmb}><Bean f={oraO} k={k} id={2} /></g>
       <g opacity={0.7 * (1 - oraGone)}>{oraMoths.map((mt, i) => <Card key={i} x={mt.p[0]} y={mt.p[1]} s={0.6} rot={mt.rot} flip={mt.flip} lit={0} />)}</g>
       <g opacity={0.7 * heroVis}>{tealMoths.map((mt, i) => <Card key={i} x={mt.p[0]} y={mt.p[1]} s={0.6} rot={mt.rot} flip={mt.flip} lit={0} />)}</g>
       <line x1="-2000" y1={FL} x2="4000" y2={FL} stroke={C.line} strokeWidth="3" opacity={0.5 * (1 - bgOn)} />
-      {swing && <g opacity={0.2 * houseVis * dinnerVis}><DinnerSide k={k} x={LAMP_X} y={FL} s={0.8} /></g>}
+      {swing && <g opacity={0.2 * houseVis * dinnerVis}><DinnerBean k={k} x={LAMP_X} y={FL} s={0.8} idb={40} /></g>}
 
       {/* everything the lamp reveals */}
       <g mask={st}>
-        {motes(T, LAMP_X, 30, 1)}
-        <g opacity={1 - oraGone}>{motes(T, ORA_X, 24, 2)}</g>
+        {dust(T)}
         <g opacity={1 - oraGone}>
-          <Fig {...oraO} j={J(2)} />
+          <Bean f={oraO} k={k} id={3} />
           {oraMoths.map((mt, i) => <Card key={i} x={mt.p[0]} y={mt.p[1]} s={0.6} rot={mt.rot} flip={mt.flip} />)}
         </g>
         <g opacity={heroVis}>
-          <Fig {...me} j={J(1)} />
+          <Bean f={me} k={k} id={1} />
           {tealMoths.map((mt, i) => <Card key={i} x={mt.p[0]} y={mt.p[1]} s={0.6} rot={mt.rot} flip={mt.flip} />)}
         </g>
-        <g opacity={dinnerVis}><DinnerSide k={k} x={LAMP_X} y={FL} s={0.8} /></g>
+        <g opacity={dinnerVis}><DinnerBean k={k} x={LAMP_X} y={FL} s={0.8} idb={30} /></g>
         <g opacity={swing ? houseVis : 0}>
           <rect x={HX0} y={FL - 430} width={HX1 - HX0} height="430" fill="#2a302e" />
           <path d={`M ${HX0 - 40} ${FL - 426} L ${(HX0 + HX1) / 2} ${FL - 640} L ${HX1 + 40} ${FL - 426} Z`} fill="#242927" />
           <rect x={DXo - 65} y={FL - 260} width="130" height="260" fill="#3a403e" />
         </g>
         <g opacity={privVis}>
-          <Fig x={LAMP_X - 135} y={FL} s={0.68} dir={1} c={C.open} tilt={4 * osc(T, 2.6)} j={J(51)} />
-          <Fig x={LAMP_X} y={FL} s={0.8} dir={1} c={C.open} tilt={-4 + 3 * osc(T, 2.2, 0.3)} j={J(52)} />
-          <Fig x={LAMP_X + 120} y={FL} s={0.8} kid={1} dir={-1} c={C.open} tilt={-8 + 3 * osc(T, 1.9)} j={J(53)} />
+          <Bean f={{ x: LAMP_X - 135, y: FL, s: 0.68, dir: 1, c: PAL.open, pose: POSES.idle(T + 0.4) }} k={k} id={51} />
+          <Bean f={{ x: LAMP_X, y: FL, s: 0.8, dir: 1, c: PAL.open, pose: POSES.idle(T) }} k={k} id={52} />
+          <Bean f={{ x: LAMP_X + 120, y: FL, s: 0.56, headScale: KID_HEAD, dir: -1, c: PAL.open, pose: { ...POSES.idle(T + 1.1), tilt: -8 } }} k={k} id={53} />
         </g>
       </g>
 
       {/* the curator in the dark, by phone light (privilege) */}
       <g opacity={privVis * (swing ? g(q.P + 0.6, q.P + 1.2) : g(q.P + 0.2, q.P + 0.7))}>
-        <path d={`M ${hO[0] - 30} ${hO[1] + 56} L ${hO[0] - 8} ${hO[1] + 8} L ${hO[0] + 8} ${hO[1] + 11} Z`} fill={LIGHT} opacity="0.14" />
-        <g opacity="0.6"><Fig {...ora} j={J(60)} /></g>
+        <rect x={ora.x - 26} y={FL - 44} width="52" height="44" fill="#1c1c1c" />
+        <g opacity="0.6"><Bean f={ora} k={k} id={60} /></g>
         {glints.map(([x, y, r], i) => <Card key={i} x={x} y={y} s={0.55} rot={r} lit={0} />)}
       </g>
 
@@ -322,8 +351,8 @@ function Shot({ k, variant }) {
           <rect x={DX - dw / 2} y={FL - 6} width={dw} height="6" fill={C.hot} opacity={gapsOn} />
           <rect x={slabR - 3 + kn} y={FL - dh} width="3" height={dh} fill={C.hot} opacity={gapsOn * 0.8} />
           <circle cx={DX + dw / 2 - 26 - dw * open + kn} cy={FL - dh / 2} r="4" fill={C.hot} opacity={gapsOn} />
-          <g opacity="0.3"><Fig {...kidIn} j={J(70)} /></g>
-          <g mask="url(#oeShaft)"><Fig {...kidIn} j={J(70)} /></g>
+          <g opacity="0.3"><Bean f={kidIn} k={k} id={70} /></g>
+          <g mask="url(#oeShaft)"><Bean f={kidIn} k={k} id={71} /></g>
         </g>
       )}
 
