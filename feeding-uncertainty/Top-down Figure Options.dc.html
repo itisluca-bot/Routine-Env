@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas">
+<link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@500;600&display=swap" rel="stylesheet">
+<style>html,body{margin:0;background:#111214} a{color:#e0a165} a:hover{color:#f2c98a}</style>
+</helmet>
+<section style="padding:56px; display:flex; flex-direction:column; gap:28px; font-family:'Open Sans',sans-serif; color:#e9e6df;">
+  <svg width="0" height="0" style="position:absolute;">
+    <defs>
+      <linearGradient id="gW" gradientUnits="userSpaceOnUse" x1="38" y1="0" x2="17" y2="0">
+        <stop offset="0" stop-color="#f3f1ea" stop-opacity="0.6"></stop>
+        <stop offset="1" stop-color="#f3f1ea" stop-opacity="0.12"></stop>
+      </linearGradient>
+      <linearGradient id="gR" gradientUnits="userSpaceOnUse" x1="38" y1="0" x2="17" y2="0">
+        <stop offset="0" stop-color="#ff4a2e" stop-opacity="0.65"></stop>
+        <stop offset="1" stop-color="#ff4a2e" stop-opacity="0.14"></stop>
+      </linearGradient>
+    </defs>
+  </svg>
+  <div style="display:flex; flex-direction:column; gap:6px;">
+    <div style="font-size:26px; font-weight:600;">Top-down figure</div>
+    <div style="font-size:16px; color:#a9a59c; max-width:760px;">Five arm treatments, same body, head, phone and light. Left: blue with a white phone. Right: orange with a red phone. The light runs from the phone to the face and its outer corners land on the edge of the head.</div>
+  </div>
+  <div style="display:flex; flex-wrap:wrap; gap:24px;">
+
+    <div id="1a" style="width:560px; background:#1b1f25; border-radius:10px; padding:16px; display:flex; flex-direction:column; gap:10px;">
+      <div style="display:flex; gap:10px; align-items:center;"><span style="background:#e0a165; color:#1b1f25; font-weight:600; font-size:14px; padding:2px 8px; border-radius:4px;">1a</span><span style="font-size:16px;">No arms</span></div>
+      <svg viewBox="0 0 480 260" style="width:100%; display:block;">
+        <g fill="none" stroke="#86a9c2" stroke-width="2.5" opacity="0.85"><circle cx="130" cy="130" r="68"></circle><circle cx="130" cy="130" r="80"></circle><circle cx="130" cy="130" r="92"></circle><circle cx="130" cy="130" r="104"></circle></g>
+        <g transform="translate(130 130) rotate(-90)">
+          <ellipse cx="0" cy="0" rx="24" ry="50" fill="#46647a"></ellipse>
+          <circle cx="4" cy="0" r="24" fill="#2f4560"></circle>
+          <path d="M 38 -6 L 17.8 -19.7 A 24 24 0 0 1 17.8 19.7 L 38 6 Z" fill="url(#gW)"></path>
+          <path d="M 17.8 -19.7 A 24 24 0 0 1 17.8 19.7 Q 24.2 0 17.8 -19.7 Z" fill="#f3f1ea" opacity="0.7"></path>
+          <rect x="38" y="-8" width="10" height="16" rx="2.5" fill="#f3f1ea"></rect>
+        </g>
+        <g fill="none" stroke="#e0a165" stroke-width="2.5" opacity="0.95"><circle cx="350" cy="130" r="68"></circle><circle cx="350" cy="130" r="80"></circle><circle cx="350" cy="130" r="92"></circle><circle cx="350" cy="130" r="104"></circle></g>
+        <g transform="translate(350 130) rotate(-90)">
+          <ellipse cx="0" cy="0" rx="24" ry="50" fill="#e0a165"></ellipse>
+          <circle cx="4" cy="0" r="24" fill="#c47449"></circle>
+          <circle cx="-2" cy="-6" r="10" fill="#f2c98a"></circle>
+          <path d="M 38 -6 L 17.8 -19.7 A 24 24 0 0 1 17.8 19.7 L 38 6 Z" fill="url(#gR)"></path>
+          <path d="M 17.8 -19.7 A 24 24 0 0 1 17.8 19.7 Q 24.2 0 17.8 -19.7 Z" fill="#ff4a2e" opacity="0.75"></path>
+          <rect x="38" y="-8" width="10" height="16" rx="2.5" fill="#ff4a2e"></rect>
+        </g>
+      </svg>
+    </div>
+
+    <div id="1b" style="width:560px; background:#1b1f25; border-radius:10px; padding:16px; display:flex; flex-direction:column; gap:10px;">
+      <div style="display:flex; gap:10px; align-items:center;"><span style="background:#e0a165; color:#1b1f25; font-weight:600; font-size:14px; padding:2px 8px; border-radius:4px;">1b</span><span style="font-size:16px;">Hands only</span></div>
+      <svg viewBox="0 0 480 260" style="width:100%; display:block;">
+        <g fill="none" stroke="#86a9c2" stroke-width="2.5" opacity="0.85"><circle cx="130" cy="130" r="68"></circle><circle cx="130" cy="130" r="80"></circle><circle cx="130" cy="130" r="92"></circle><circle cx="130" cy="130" r="104"></circle></g>
+        <g transform="translate(130 130) rotate(-90)">
+          <ellipse cx="0" cy="0" rx="24" ry="50" fill="#46647a"></ellipse>
+          <circle cx="4" cy="0" r="24" fill="#2f4560"></circle>
+          <path d="M 38 -6 L 17.8 -19.7 A 24 24 0 0 1 17.8 19.7 L 38 6 Z" fill="url(#gW)"></path>
+          <path d="M 17.8 -19.7 A 24 24 0 0 1 17.8 19.7 Q 24.2 0 17.8 -19.7 Z" fill="#f3f1ea" opacity="0.7"></path>
+          <rect x="38" y="-8" width="10" height="16" rx="2.5" fill="#f3f1ea"></rect>
+          <circle cx="43" cy="-9.5" r="5.5" fill="#6f8ea3"></circle>
+          <circle cx="43" cy="9.5" r="5.5" fill="#6f8ea3"></circle>
+        </g>
+        <g fill="none" stroke="#e0a165" stroke-width="2.5" opacity="0.95"><circle cx="350" cy="130" r="68"></circle><circle cx="350" cy="130" r="80"></circle><circle cx="350" cy="130" r="92"></circle><circle cx="350" cy="130" r="104"></circle></g>
+        <g transform="translate(350 130) rotate(-90)">
+          <ellipse cx="0" cy="0" rx="24" ry="50" fill="#e0a165"></ellipse>
+          <circle cx="4" cy="0" r="24" fill="#c47449"></circle>
+          <circle cx="-2" cy="-6" r="10" fill="#f2c98a"></circle>
+          <path d="M 38 -6 L 17.8 -19.7 A 24 24 0 0 1 17.8 19.7 L 38 6 Z" fill="url(#gR)"></path>
+          <path d="M 17.8 -19.7 A 24 24 0 0 1 17.8 19.7 Q 24.2 0 17.8 -19.7 Z" fill="#ff4a2e" opacity="0.75"></path>
+          <rect x="38" y="-8" width="10" height="16" rx="2.5" fill="#ff4a2e"></rect>
+          <circle cx="43" cy="-9.5" r="5.5" fill="#f2c98a"></circle>
+          <circle cx="43" cy="9.5" r="5.5" fill="#f2c98a"></circle>
+        </g>
+      </svg>
+    </div>
+
+    <div id="1c" style="width:560px; background:#1b1f25; border-radius:10px; padding:16px; display:flex; flex-direction:column; gap:10px;">
+      <div style="display:flex; gap:10px; align-items:center;"><span style="background:#e0a165; color:#1b1f25; font-weight:600; font-size:14px; padding:2px 8px; border-radius:4px;">1c</span><span style="font-size:16px;">Forearms, body colour</span></div>
+      <svg viewBox="0 0 480 260" style="width:100%; display:block;">
+        <g fill="none" stroke="#86a9c2" stroke-width="2.5" opacity="0.85"><circle cx="130" cy="130" r="68"></circle><circle cx="130" cy="130" r="80"></circle><circle cx="130" cy="130" r="92"></circle><circle cx="130" cy="130" r="104"></circle></g>
+        <g transform="translate(130 130) rotate(-90)">
+          <line x1="6" y1="-36" x2="41" y2="-8" stroke="#46647a" stroke-width="11" stroke-linecap="round"></line>
+          <line x1="6" y1="36" x2="41" y2="8" stroke="#46647a" stroke-width="11" stroke-linecap="round"></line>
+          <ellipse cx="0" cy="0" rx="24" ry="50" fill="#46647a"></ellipse>
+          <circle cx="4" cy="0" r="24" fill="#2f4560"></circle>
+          <path d="M 38 -6 L 17.8 -19.7 A 24 24 0 0 1 17.8 19.7 L 38 6 Z" fill="url(#gW)"></path>
+          <path d="M 17.8 -19.7 A 24 24 0 0 1 17.8 19.7 Q 24.2 0 17.8 -19.7 Z" fill="#f3f1ea" opacity="0.7"></path>
+          <rect x="38" y="-8" width="10" height="16" rx="2.5" fill="#f3f1ea"></rect>
+        </g>
+        <g fill="none" stroke="#e0a165" stroke-width="2.5" opacity="0.95"><circle cx="350" cy="130" r="68"></circle><circle cx="350" cy="130" r="80"></circle><circle cx="350" cy="130" r="92"></circle><circle cx="350" cy="130" r="104"></circle></g>
+        <g transform="translate(350 130) rotate(-90)">
+          <line x1="6" y1="-36" x2="41" y2="-8" stroke="#e0a165" stroke-width="11" stroke-linecap="round"></line>
+          <line x1="6" y1="36" x2="41" y2="8" stroke="#e0a165" stroke-width="11" stroke-linecap="round"></line>
+          <ellipse cx="0" cy="0" rx="24" ry="50" fill="#e0a165"></ellipse>
+          <circle cx="4" cy="0" r="24" fill="#c47449"></circle>
+          <circle cx="-2" cy="-6" r="10" fill="#f2c98a"></circle>
+          <path d="M 38 -6 L 17.8 -19.7 A 24 24 0 0 1 17.8 19.7 L 38 6 Z" fill="url(#gR)"></path>
+          <path d="M 17.8 -19.7 A 24 24 0 0 1 17.8 19.7 Q 24.2 0 17.8 -19.7 Z" fill="#ff4a2e" opacity="0.75"></path>
+          <rect x="38" y="-8" width="10" height="16" rx="2.5" fill="#ff4a2e"></rect>
+        </g>
+      </svg>
+    </div>
+
+    <div id="1d" style="width:560px; background:#1b1f25; border-radius:10px; padding:16px; display:flex; flex-direction:column; gap:10px;">
+      <div style="display:flex; gap:10px; align-items:center;"><span style="background:#e0a165; color:#1b1f25; font-weight:600; font-size:14px; padding:2px 8px; border-radius:4px;">1d</span><span style="font-size:16px;">Forearms, one shade darker</span></div>
+      <svg viewBox="0 0 480 260" style="width:100%; display:block;">
+        <g fill="none" stroke="#86a9c2" stroke-width="2.5" opacity="0.85"><circle cx="130" cy="130" r="68"></circle><circle cx="130" cy="130" r="80"></circle><circle cx="130" cy="130" r="92"></circle><circle cx="130" cy="130" r="104"></circle></g>
+        <g transform="translate(130 130) rotate(-90)">
+          <ellipse cx="0" cy="0" rx="24" ry="50" fill="#46647a"></ellipse>
+          <line x1="6" y1="-36" x2="41" y2="-8" stroke="#3a5568" stroke-width="11" stroke-linecap="round"></line>
+          <line x1="6" y1="36" x2="41" y2="8" stroke="#3a5568" stroke-width="11" stroke-linecap="round"></line>
+          <circle cx="4" cy="0" r="24" fill="#2f4560"></circle>
+          <path d="M 38 -6 L 17.8 -19.7 A 24 24 0 0 1 17.8 19.7 L 38 6 Z" fill="url(#gW)"></path>
+          <path d="M 17.8 -19.7 A 24 24 0 0 1 17.8 19.7 Q 24.2 0 17.8 -19.7 Z" fill="#f3f1ea" opacity="0.7"></path>
+          <rect x="38" y="-8" width="10" height="16" rx="2.5" fill="#f3f1ea"></rect>
+        </g>
+        <g fill="none" stroke="#e0a165" stroke-width="2.5" opacity="0.95"><circle cx="350" cy="130" r="68"></circle><circle cx="350" cy="130" r="80"></circle><circle cx="350" cy="130" r="92"></circle><circle cx="350" cy="130" r="104"></circle></g>
+        <g transform="translate(350 130) rotate(-90)">
+          <ellipse cx="0" cy="0" rx="24" ry="50" fill="#e0a165"></ellipse>
+          <line x1="6" y1="-36" x2="41" y2="-8" stroke="#c98a52" stroke-width="11" stroke-linecap="round"></line>
+          <line x1="6" y1="36" x2="41" y2="8" stroke="#c98a52" stroke-width="11" stroke-linecap="round"></line>
+          <circle cx="4" cy="0" r="24" fill="#c47449"></circle>
+          <circle cx="-2" cy="-6" r="10" fill="#f2c98a"></circle>
+          <path d="M 38 -6 L 17.8 -19.7 A 24 24 0 0 1 17.8 19.7 L 38 6 Z" fill="url(#gR)"></path>
+          <path d="M 17.8 -19.7 A 24 24 0 0 1 17.8 19.7 Q 24.2 0 17.8 -19.7 Z" fill="#ff4a2e" opacity="0.75"></path>
+          <rect x="38" y="-8" width="10" height="16" rx="2.5" fill="#ff4a2e"></rect>
+        </g>
+      </svg>
+    </div>
+
+    <div id="1e" style="width:560px; background:#1b1f25; border-radius:10px; padding:16px; display:flex; flex-direction:column; gap:10px;">
+      <div style="display:flex; gap:10px; align-items:center;"><span style="background:#e0a165; color:#1b1f25; font-weight:600; font-size:14px; padding:2px 8px; border-radius:4px;">1e</span><span style="font-size:16px;">Wedge silhouette</span></div>
+      <svg viewBox="0 0 480 260" style="width:100%; display:block;">
+        <g fill="none" stroke="#86a9c2" stroke-width="2.5" opacity="0.85"><circle cx="130" cy="130" r="68"></circle><circle cx="130" cy="130" r="80"></circle><circle cx="130" cy="130" r="92"></circle><circle cx="130" cy="130" r="104"></circle></g>
+        <g transform="translate(130 130) rotate(-90)">
+          <ellipse cx="0" cy="0" rx="24" ry="50" fill="#46647a"></ellipse>
+          <path d="M 0 -44 L 41 -7 L 41 7 L 0 44 Z" fill="#46647a" stroke="#46647a" stroke-width="6" stroke-linejoin="round"></path>
+          <circle cx="4" cy="0" r="24" fill="#2f4560"></circle>
+          <path d="M 38 -6 L 17.8 -19.7 A 24 24 0 0 1 17.8 19.7 L 38 6 Z" fill="url(#gW)"></path>
+          <path d="M 17.8 -19.7 A 24 24 0 0 1 17.8 19.7 Q 24.2 0 17.8 -19.7 Z" fill="#f3f1ea" opacity="0.7"></path>
+          <rect x="38" y="-8" width="10" height="16" rx="2.5" fill="#f3f1ea"></rect>
+        </g>
+        <g fill="none" stroke="#e0a165" stroke-width="2.5" opacity="0.95"><circle cx="350" cy="130" r="68"></circle><circle cx="350" cy="130" r="80"></circle><circle cx="350" cy="130" r="92"></circle><circle cx="350" cy="130" r="104"></circle></g>
+        <g transform="translate(350 130) rotate(-90)">
+          <ellipse cx="0" cy="0" rx="24" ry="50" fill="#e0a165"></ellipse>
+          <path d="M 0 -44 L 41 -7 L 41 7 L 0 44 Z" fill="#e0a165" stroke="#e0a165" stroke-width="6" stroke-linejoin="round"></path>
+          <circle cx="4" cy="0" r="24" fill="#c47449"></circle>
+          <circle cx="-2" cy="-6" r="10" fill="#f2c98a"></circle>
+          <path d="M 38 -6 L 17.8 -19.7 A 24 24 0 0 1 17.8 19.7 L 38 6 Z" fill="url(#gR)"></path>
+          <path d="M 17.8 -19.7 A 24 24 0 0 1 17.8 19.7 Q 24.2 0 17.8 -19.7 Z" fill="#ff4a2e" opacity="0.75"></path>
+          <rect x="38" y="-8" width="10" height="16" rx="2.5" fill="#ff4a2e"></rect>
+        </g>
+      </svg>
+    </div>
+
+  </div>
+</section>
+</x-dc>
+</body>
+</html>
