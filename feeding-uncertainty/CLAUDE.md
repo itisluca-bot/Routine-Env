@@ -6,3 +6,4 @@
 - Group colours: withdrawal #46647a, open #5fa69a, curators #e0a165, radicalization #a32e11.
 - Timing comes from the user's SRT files; assume 25 fps.
 - Render with `node tools/render.mjs "<shot>.dc.html"` (see README.md); it writes 4K PNG sequences to renders/.
+- New session? Read ANIMATION-GUIDE.md: workflow, techniques, rendering checks, and what is approved in each shot.
