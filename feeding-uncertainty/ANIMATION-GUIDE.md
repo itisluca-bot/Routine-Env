@@ -89,7 +89,7 @@ node tools/render.mjs "<page>" --frames 0,120,300 --half --guide                
 
 1. **Curation / Topography** (`curation-topography.jsx`, `timing_1.srt`, 8.24 s). Finished. See `HANDOFF.md`.
 2. **Open engagers** (`open-engagers.jsx`, `timing_2.srt`, 22.48 s). In refinement. The user chose **variant 2**.
-3. **Vulnerability** (`vulnerability.jsx`, 5.00 s, no SRT yet). First round, three variants.
+3. **Vulnerability** (`vulnerability.jsx`, 5.00 s, no SRT yet). In refinement. The user chose **variant 1**.
 
 ## 8. Open engagers shot: what is approved
 
@@ -104,12 +104,15 @@ Beats: Curiosity 0–7.48, Voice 7.48–10.84, Table 10.84–16.80, Door 16.80�
 
 Rejected along the way, so do not bring back: the Elbow Room circles as the opening, background rows of other lamps ("ugly"), erratic curator motion, a stiff cable and trapezoid shade, a beam that does not meet its floor pool, dust only near one lamp.
 
-## 9. Vulnerability shot: first round
+## 9. Vulnerability shot: what is approved
 
 Line: "They bear the weight of vulnerability, produced by the ongoing crises." 5.00 s. Sections: Weight 0–2.28, Crises 2.28–4.76, Hold to 5.00. Word times in `Piece` are estimates until the SRT arrives.
 
+The user chose **variant 1 (Search)**: one searchlight from above sweeps the facades left to right while the camera trucks slowly. Variants 2 (Crossing) and 3 (Opens) are kept in the file but were not chosen.
+
 - **Set:** gallery-access apartment blocks at night, three rows deep with parallax (`LAYERS`: far, mid, near). Each floor is a dark recessed strip with doors and windows behind a parapet.
-- **People:** orange Bean figures in about half the doorways, half hidden behind the open door leaf. They lean out to look, follow the nearest flock with their head, and pull back behind the door when it comes close. On "the weight" their heads drop a little.
-- **Moths:** flocks of red posts fly through between the blocks in each row; the biggest one crosses the near row on "crises".
+- **People, seen from the front** (`BeanFront`, the Bean rig's front view): orange figures peek from behind their half-open front doors in about half the doorways. Only part of the head shows past the door's edge, with fingers curled round it (sometimes both hands); arms stay hidden. They lean further out to look, follow the nearest swarm with their eyes, and pull back, holding the door closer, when one comes near. On "the weight" they look down a little.
+- **Swarms:** six swarms per row of 4 to 34 red posts, packed toward their centre, bigger swarms with wider clouds and post size varying a little per swarm. Each is partway across the frame at mid-shot. A 40-post swarm crosses the near row on "crises".
 - **Searchlight:** only the pool is lit (one mask over all rows, so near blocks still hide far ones). Outside it the blocks are dark shapes, people are faint, and posts are red outlines. The pool glides between waypoints, so it lingers a moment on each.
-- Variants: 1 Search (one light sweeps left to right, camera trucks), 2 Crossing (two lights cross on "crises", camera pushes in), 3 Opens (on "the ongoing crises" the pool opens over the whole city as the camera pulls back).
+
+Rejected, so do not bring back: side-view people standing in the doorway (the user found them odd), too few swarms of one size.

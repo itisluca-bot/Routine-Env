@@ -163,5 +163,66 @@
     );
   }
 
-  window.FU_BEAN = { BeanFig, POSES, blendPose, rig, LEN, PAL };
+  // ── BeanFront: the same Bean seen from the front ──────────────────────────
+  // pose: { hx, lean, tilt, look: [x, y], legL, legR: [angle, knee], armL, armR }. lean rolls the torso about the hip and
+  // tilt rolls the head about the neck, in degrees, + toward screen right. look moves both eyes (-1..1; + is right / down).
+  // A leg or arm is [angle from straight down, bend], + away from the body; an arm can instead be { to: [x, y] }, a point in
+  // the figure's own frame (origin at the floor under the hips, unscaled, y down) that the hand reaches for, with the elbow
+  // pointing away from the body, or toward it with { to, elbow: 'in' }.
+  const FRONT_BODY = egg(40, 54, 28, 18, 0);
+  const rot = (v, deg) => { const a = rad(deg), c = Math.cos(a), s = Math.sin(a); return [v[0] * c - v[1] * s, v[0] * s + v[1] * c]; };
+  const FRONT_IDLE = { hx: 0, lean: 0, tilt: 0, look: [0, 0], legL: [4, 0], legR: [4, 0], armL: [8, 6], armR: [8, 6] };
+  function frontRig(pose, headScale = 1) {
+    const p = { ...FRONT_IDLE, ...pose };
+    const legEnd = (side, [a, kb]) => { const knee = [side * LEN.thigh * Math.sin(rad(a)), LEN.thigh * Math.cos(rad(a))]; return { knee, ankle: add(knee, [side * LEN.shin * Math.sin(rad(a - kb)), LEN.shin * Math.cos(rad(a - kb))]) }; };
+    const lL = legEnd(-1, p.legL), lR = legEnd(1, p.legR);
+    const H = [p.hx, -6 - Math.max(lL.ankle[1], lR.ankle[1])];
+    const loc = (x, y) => add(H, rot([x, -y], p.lean));
+    const N = loc(0, LEN.torso), uh = rot([0, -1], p.lean + p.tilt), rh = rot([1, 0], p.lean + p.tilt);
+    const r = LEN.head * headScale, Hc = add(N, mul(uh, LEN.gap + r));
+    const eyes = [-1, 1].map((sd) => add(Hc, add(mul(rh, r * (0.34 * sd + 0.2 * p.look[0])), mul(uh, r * (0.12 - 0.16 * p.look[1])))));
+    const arm = (side, a) => {
+      const A = loc(side * 17, LEN.torso - 6);
+      if (Array.isArray(a)) {
+        const elbow = add(A, rot([side * LEN.upper * Math.sin(rad(a[0])), LEN.upper * Math.cos(rad(a[0]))], p.lean));
+        return [A, elbow, add(elbow, rot([side * LEN.fore * Math.sin(rad(a[0] + a[1])), LEN.fore * Math.cos(rad(a[0] + a[1]))], p.lean))];
+      }
+      const d0 = sub(a.to, A), d = clamp(Math.hypot(d0[0], d0[1]), Math.abs(LEN.upper - LEN.fore) + 1, LEN.upper + LEN.fore - 0.5);
+      const base = Math.atan2(d0[1], d0[0]), al = Math.acos((LEN.upper * LEN.upper + d * d - LEN.fore * LEN.fore) / (2 * LEN.upper * d));
+      const els = [base + al, base - al].map((t) => add(A, [LEN.upper * Math.cos(t), LEN.upper * Math.sin(t)]));
+      const away = side * (els[0][0] - els[1][0]) > 0;
+      const elbow = (a.elbow === 'in') !== away ? els[0] : els[1];   // the elbow points away from the body unless asked otherwise
+      return [A, elbow, add(A, mul(nrm(d0), d))];
+    };
+    return { H, N, Hc, r, eyes, legL: [add(H, [-12, 0]), add(H, add([-12, 0], lL.knee)), add(H, add([-12, 0], lL.ankle))],
+      legR: [add(H, [12, 0]), add(H, add([12, 0], lR.knee)), add(H, add([12, 0], lR.ankle))], armL: arm(-1, p.armL), armR: arm(1, p.armR), loc };
+  }
+  // x, y: floor point under the hips (world). Other props as BeanFig; arms={false} leaves the arms out (e.g. behind a door).
+  // Shoes point outward; there is no phone in this view.
+  function BeanFront({ x, y, s = 1, pose = {}, c = PAL.open, T = 0, boil = true, boilAmp = 0.5, eye = true, arms = true, weight = 1, headScale = 1, op = 1, id = 1 }) {
+    const R = frontRig(pose, headScale);
+    const bf = Math.floor(T * 8), amp = boil ? boilAmp : 0;
+    const B = (p, k) => (amp ? [p[0] + (hash(bf * 3.1 + k * 1.7 + id * 13.3) - 0.5) * 1.6 * amp, p[1] + (hash(bf * 7.7 + k * 1.3 + id * 5.1) - 0.5) * 1.6 * amp] : p);
+    const legC = mix(c.head, BG, 0.2), armC = mix(c.body, '#ffffff', 0.1);
+    const st = { fill: 'none', strokeLinecap: 'round', strokeLinejoin: 'round' };
+    const limb = (P, w, col, k) => <path d={pathOf(P.map((p, i) => B(p, k * 10 + i)))} stroke={col} strokeWidth={w * weight} {...st} />;
+    const shoe = (ankle, side, k) => { const q = B(add(ankle, [side * 4, 1]), k); return <ellipse cx={q[0]} cy={q[1]} rx="9" ry="5" fill={legC} />; };
+    const hb = boilFn(bf, id * 31 + 7, amp * 0.8);
+    const headD = polarPath(R.Hc[0], R.Hc[1], (t) => R.r + hb(t));
+    return (
+      <g transform={`translate(${x} ${y}) scale(${s})`} opacity={op}>
+        {limb(R.legL, 9, legC, 1)}
+        {shoe(R.legL[2], -1, 11)}
+        {limb(R.legR, 9, legC, 2)}
+        {shoe(R.legR[2], 1, 12)}
+        <path d={pathOf(FRONT_BODY.map((p, i) => B(R.loc(p[0], p[1]), 200 + i)), true)} fill={c.body} />
+        <path d={headD} fill={c.head} />
+        {eye && R.eyes.map((e, i) => <circle key={i} cx={e[0]} cy={e[1]} r={3.8 * Math.max(0.85, R.r / 26)} fill={BG} />)}
+        {arms && limb(R.armL, 8, armC, 5)}
+        {arms && limb(R.armR, 8, armC, 6)}
+      </g>
+    );
+  }
+
+  window.FU_BEAN = { BeanFig, BeanFront, frontRig, POSES, blendPose, rig, LEN, PAL };
 })();

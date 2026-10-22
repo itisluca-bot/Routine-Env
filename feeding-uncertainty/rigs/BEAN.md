@@ -48,3 +48,10 @@ const { BeanFig, POSES, PAL } = window.FU_BEAN;
   - `op`: opacity
   - `id`: unique per figure on screen
 - **Rules:** the standing rules in `CLAUDE.md` apply. Design at 1920 × 1080 on the `#0e0e0e` background, with no grey people.
+
+## Front view (`BeanFront`)
+The same Bean seen from the front, added for the Vulnerability shot (people peeking from behind their front doors).
+- **Look:** the same egg body (symmetric, no belly shift), the round head and the leg strokes with outward-pointing shoes. Two dot eyes, at ±0.34 r.
+- **Pose fields:** `hx`, `lean` (torso roll about the hip), `tilt` (head roll about the neck), both in degrees with + toward screen right; `look: [x, y]` moves both eyes (-1..1, + is right / down); `legL`, `legR`: [angle, knee]; `armL`, `armR`: [angle, bend], where + is away from the body, or `{ to: [x, y] }`, a point in the figure's own frame (origin at the floor under the hips, unscaled) for the hand, with `elbow: 'in'` to bend the elbow toward the body.
+- **Props:** as `BeanFig` (no `dir`, no phone), plus `arms={false}` to leave the arms out.
+- **Use:** `const { BeanFront } = window.FU_BEAN; <BeanFront x={960} y={820} s={0.55} pose={{ lean: 10, tilt: 8, look: [1, 0] }} c={PAL.cur} T={T} id={4} />`
