@@ -1,12 +1,15 @@
-// Feeding Uncertainty — "We find that open engagers…" (22s12f). Round 2: the Elbow Room opening, then one lamp carries the rest.
+// Feeding Uncertainty — "We find that open engagers…" (22s12f). Round 4: two lamps open it, then the teal lamp carries the rest.
+// Opening: teal and orange each stand under a lamp; red posts flutter in the beams like moths. Teal stands straight and picks one now and then;
+// orange ducks and dodges as theirs dive. On the voice line orange's lamp clicks off and teal's tightens into a spotlight.
 // The lamp is the transition device: whatever is outside its beam is dark, so moving or switching the lamp hides one scene and reveals the next.
 //   Variant 1 · Switch: the lamp clicks off and on between scenes. The door is seen from inside: a red lamp outside shines through it onto the curator child.
 //   Variant 2 · Swing: the lamp swings to reveal each scene. Its beam finds the door of a house with the curator child behind it; the teal family stays outside.
 //     On "This comes from…" the lamp pulls up and out and its beam opens over both: it ends on the teal family outside in the light, the child behind the door.
-const { W, H, OUT_W, OUT_H, MOTION, osc, lerp, lerp2, knock, cam, mix, C, boilFn, polarPath, boilCircle, jitter, headAt, reachTo, Fig, Card, DinnerSide } = window.FU_RIG;
+const { W, H, OUT_W, OUT_H, MOTION, osc, lerp, lerp2, knock, cam, mix, C, hash, jitter, headAt, reachTo, Fig, Card, DinnerSide } = window.FU_RIG;
 
-const FL = 670;                      // floor of the lamp world: the hero's feet in the Elbow Room
-const LAMP_X = 680, CORD = 700;      // the lamp hangs over the hero; it swings about a pivot CORD above its shade
+const FL = 670;                      // floor of the lamp world
+const LAMP_X = 680, CORD = 700;      // the teal lamp hangs over the hero; it swings about a pivot CORD above its shade
+const ORA_X = 1430;                  // the curator's lamp, in the opening
 const LIGHT = '#e9f5ef';
 
 // light switching: a click off, and a flickering click on
@@ -32,37 +35,47 @@ function beamGeom({ sy, wP, a, ts = 30, px = LAMP_X }) {
   return { S, P: [px, py], a, poly: `M ${El[0]} ${El[1]} L ${Er[0]} ${Er[1]} L ${Fr[0]} ${Fr[1]} L ${Fl[0]} ${Fl[1]} Z`, pool };
 }
 
-// ── the curator's ring from the Elbow Room ──────────────────────────────────
-const OC = [1520, 600];
-const oraCards = (T) => Array.from({ length: 16 }, (_, i) => { const a = (i / 16) * Math.PI * 2 + 0.2 * osc(T, 4, i * 0.1); const r = 150 + 6 * osc(T, 0.6, i * 0.13); return [OC[0] + r * Math.cos(a), OC[1] + r * Math.sin(a), i * 23]; });
-const PEERS = [[1250, 230], [1700, 220], [1260, 920], [200, 220], [180, 900], [1780, 930]];
+// ── moths: red posts fluttering in a beam. calm = the teal lamp's; otherwise faster and wider ──
+function mothAt(T, i, cx, calm) {
+  const h = (n) => hash(i * 9.1 + n * 3.7 + (calm ? 0 : 50));
+  const sp = calm ? 1 : 1.9, ax = calm ? 100 : 150;
+  const x = cx + ax * Math.sin(T * (0.9 + 0.5 * h(1)) * sp + 6.28 * h(2)) + 34 * Math.sin(T * (2.1 + h(3)) * sp + 6.28 * h(4));
+  const y = 450 + 75 * Math.sin(T * (0.7 + 0.6 * h(5)) * sp + 6.28 * h(6)) + 28 * Math.cos(T * (2.7 + h(7)) * sp + 6.28 * h(8));
+  const flap = 0.25 + 0.75 * Math.abs(Math.cos(T * (9 + 4 * h(9)) + 6.28 * h(10)));
+  return { p: [x, y], rot: 28 * Math.sin(T * 1.3 * sp + 6.28 * h(11)), flap };
+}
+// the curator's moths dive at them, one after another
+const SWOOPS = [0.7, 1.55, 2.35, 3.2, 3.95, 4.75, 5.6, 6.35, 7.1];
 
 function Shot({ k, variant }) {
   const { T, q, w, J, bf, amp } = k;
   const g = (a, b) => MOTION.glide(T, a, b, 0, 1);
   const swing = variant === 2;
 
-  // ── lamp ──────────────────────────────────────────────────────────────────
-  const dark = g(q.V - 0.1, w.confidence - 0.1);                 // the Elbow Room goes dark around the hero
-  const spot = g(q.V + 0.1, w.confidence);                       // …as a spotlight lands on them
-  const dsc = g(w.matters + 0.1, q.Tb + 0.35);                   // the spotlight's source comes down: it is the lamp
+  // ── lamps ─────────────────────────────────────────────────────────────────
   const rise = swing ? 0 : g(w.position - 0.3, w.position + 0.7);  // privilege (variant 1): the lamp hangs higher, its pool grows
   const mo = swing ? g(q.P + 0.1, q.P + 1.3) : 0;                     // privilege (variant 2): the lamp pulls up and out, its beam opens over house and family
-  const sy = lerp(-430, 294, dsc) - 260 * rise;
-  const wP = lerp(210, 304, dsc) + 250 * rise;
-  let a = 2.2 * osc(T, 3.4) * dsc;
+  const spotOn = g(q.V + 0.2, w.confidence) * (1 - g(w.matters, q.Tb + 0.3));  // voice: teal's light tightens into a spotlight
+  const sy = 294 - 260 * rise;
+  const wP = 304 - 60 * spotOn + 250 * rise;
+  let a = 2.2 * osc(T, 3.4);
   let power;
   if (swing) {
     a += -32 * g(q.Tb + 0.4, q.Tb + 1.0) + 32 * g(q.Tb + 1.0, q.Tb + 1.8) + settle(T, q.Tb + 1.8, 5);
     a += 38 * g(q.Tb + 5.45, q.Tb + 6.1) + settle(T, q.Tb + 6.1, 3);
     a = lerp(a, 1.2 * osc(T, 3.4), mo);
-    power = spot;
+    power = 1;
   } else {
-    power = spot * (1 - off(T, q.Tb + 0.55)) + flickOn(T, q.Tb + 1.05) * (1 - off(T, q.Tb + 5.78)) + flickOn(T, q.P + 0.2);
+    power = 1 - off(T, q.Tb + 0.55) + flickOn(T, q.Tb + 1.05) * (1 - off(T, q.Tb + 5.78)) + flickOn(T, q.P + 0.2);
   }
   const flash = swing ? 0.5 * (MOTION.hit(T, w.threat, w.threat + 0.08, 0, 1) - g(w.threat + 0.08, w.threat + 0.4)) + 0.5 * (MOTION.hit(T, w.door, w.door + 0.08, 0, 1) - g(w.door + 0.08, w.door + 0.4)) : 0;
   const B = beamGeom({ sy: lerp(sy, -210, mo), wP: lerp(wP * (1 - 0.3 * clamp(Math.abs(a) / 38, 0, 1)), 780, mo), a, px: lerp(LAMP_X, 1100, mo) });
-  const boost = 1 + 0.3 * g(w.voice - 0.2, w.voice + 0.4) * (1 - dsc) + flash;
+  const boost = 1 + 0.25 * spotOn + 0.2 * g(w.voice - 0.2, w.voice + 0.4) * (1 - g(w.matters, q.Tb + 0.3)) + flash;
+  // the curator's lamp: on through the opening, clicks off on the voice line
+  const oPow = 1 - off(T, q.V + 0.15);
+  const oraGone = g(q.Tb - 0.4, q.Tb + 0.2);
+  const aO = 2 * osc(T, 2.9, 0.4);
+  const BO = beamGeom({ sy: 294, wP: 280, a: aO, px: ORA_X });
 
   // which scene is under the lamp
   const swapA = swing ? q.Tb + 0.95 : q.Tb + 0.8;
@@ -70,8 +83,8 @@ function Shot({ k, variant }) {
   const dinnerVis = g(swapA - 0.08, swapA + 0.08) * (swing ? 1 : 1 - g(q.P - 0.08, q.P + 0.08));
   const privVis = swing ? 0 : g(q.P - 0.08, q.P + 0.08);
 
-  // ── camera ────────────────────────────────────────────────────────────────
-  let cp = [960, 540], z = 1;
+  // ── camera: both lamps, then in on teal for the voice line ───────────────
+  let cp = [1055, 440], z = 1.1 + 0.05 * g(0, q.V);
   let m = g(q.V, w.voice + 0.2); cp = lerp2(cp, [700, 500], m); z = lerp(z, 1.22, m);
   z += 0.05 * g(q.Tb + 1.2, q.D);
   const doorV1 = !swing && T >= q.D && T < q.P + 0.05;
@@ -84,28 +97,39 @@ function Shot({ k, variant }) {
     cp = [1000, 430]; z = 0.9 - 0.03 * g(q.P + 1.25, q.E + 0.24);
   }
 
-  // ── act 1: the Elbow Room (kept from concept D) ──────────────────────────
-  const tc = [680, 560];
-  const R = 150 + 80 * g(w.time - 0.2, w.time + 0.5) + 100 * g(w.mental, w.space + 0.6);
-  const me = { x: tc[0], y: tc[1] + 110, dir: 1, c: C.open, s: 0.8 };
-  me.tilt = 14 * g(w.intellectual, w.curiosity) * (1 - g(w.confidence - 0.4, w.confidence)) - 6 * g(w.voice - 0.2, w.voice + 0.3) + 4 * osc(T, 2.2);
+  // ── opening: teal stands straight and picks a moth now and then ─────────
+  const me = { x: LAMP_X, y: FL, dir: 1, c: C.open, s: 0.8, lean: 1.5 * osc(T, 3.1) };
   const hMe = headAt(me);
-  const dots = Array.from({ length: 5 }, (_, i) => {
-    const ang = i * 1.26 + T * (0.35 - 0.25 * g(w.treat - 0.5, w.treat + 0.6));
-    const rr = lerp(R + 90 + 40 * ((i * 0.37) % 1), R * 0.62, g(w.treat - 1 + i * 0.12, w.treat + 0.2 + i * 0.12));
-    return [tc[0] + rr * Math.cos(ang), tc[1] + rr * Math.sin(ang) * 0.9];
-  });
   const held = lerp2([hMe[0] + 46, hMe[1] + 26], [hMe[0] + 40, hMe[1] + 60], g(w.confidence - 0.4, w.confidence + 0.2));
-  const d0 = lerp2(dots[0], held, g(w.politics, w.intellectual));
-  me.hand = lerp2([10, 80], reachTo(me, d0), g(w.politics - 0.2, w.politics + 0.3));
-  const press = 124 - 4 * Math.max(0, osc(T, 0.7)) * g(0.5, 3);
-  const oc = oraCards(T);
-  // the teal circle flattens into the spotlight's pool
-  const mm = g(q.V - 0.1, w.confidence);
-  const ringC = [tc[0], lerp(tc[1], FL, mm)], rx = lerp(R, 210, mm), ry = lerp(R, 24, mm);
-  const bring = boilFn(bf, 1, amp);
-  const ringD = polarPath(ringC[0], ringC[1], (t) => (rx * ry) / Math.hypot(ry * Math.cos(t), rx * Math.sin(t)) + bring(t), 96);
-  const oraAmb = 0.24 * (1 - g(q.Tb - 0.4, q.Tb + 0.2));
+  const pick1 = g(1.5, 1.85) * (1 - g(3.0, 3.6)), reach1 = g(1.3, 1.6) * (1 - g(3.0, 3.3));
+  const pick2 = g(w.treat - 0.25, w.politics), reach2 = g(w.treat - 0.45, w.treat - 0.2);
+  const tealMoths = Array.from({ length: 5 }, (_, i) => {
+    const mth = mothAt(T, i, LAMP_X, true);
+    const hold = i === 1 ? pick1 : i === 3 ? pick2 : 0;
+    const look = i === 1 ? Math.cos(Math.PI * 2 * g(2.0, 2.9)) : Math.cos(Math.PI * 2 * g(w.intellectual, w.curiosity + 0.6));
+    return { p: lerp2(mth.p, held, hold), rot: lerp(mth.rot, -6, hold), flip: lerp(mth.flap, look, hold) };
+  });
+  me.hand = lerp2([10, 80], reachTo(me, tealMoths[1].p), reach1);
+  me.hand = lerp2(me.hand, reachTo(me, tealMoths[3].p), reach2);
+  me.tilt = 12 * pick1 + 14 * g(w.intellectual, w.curiosity) * (1 - g(w.confidence - 0.4, w.confidence)) - 6 * g(w.voice - 0.2, w.voice + 0.3) + 3 * osc(T, 2.2);
+
+  // ── opening: the curator ducks and dodges as moths dive at them ─────────
+  const bumps = SWOOPS.map((t) => MOTION.hit(T, t, t + 0.22, 0, 1) - g(t + 0.3, t + 0.95));
+  const crouch = clamp(bumps.reduce((s0, b) => s0 + b, 0), 0, 1);
+  const dodge = bumps.reduce((s0, b, k2) => s0 + b * (k2 % 2 ? 42 : -42), 0);
+  const oraO = { x: ORA_X + dodge + 14 * osc(T, 1.3), y: FL, dir: -1, c: C.cur, s: 0.8, sit: 0.6 * crouch };
+  oraO.lean = 26 * crouch + 6 * osc(T, 0.9);
+  oraO.tilt = 22 * crouch + 9 * osc(T, 0.7, 0.2);
+  oraO.hand = lerp2([30, 18], [-2, -46], crouch);
+  oraO.hand2 = lerp2([24, 24], [-14, -42], crouch);
+  const hOO = headAt(oraO);
+  const oraMoths = Array.from({ length: 9 }, (_, i) => {
+    const mth = mothAt(T, i, ORA_X, false);
+    const k2 = SWOOPS.findIndex((t, n) => n % 9 === i && T >= t - 0.1 && T < t + 1.0);
+    const b = k2 < 0 ? 0 : bumps[k2];
+    return { p: lerp2(mth.p, [hOO[0] + (k2 % 2 ? -36 : 36), hOO[1] - 22], b), rot: mth.rot, flip: mth.flap };
+  });
+  const oraAmb = 0.24 * (1 - oraGone);
 
   // ── privilege: the teal family under the lamp; the curator in the dark with a phone ──
   const ora = { x: 1480, y: FL, sit: 1, dir: -1, c: C.cur, s: 0.8, lean: 16, tilt: 18, hand: [40, 0], hand2: [34, 6] };
@@ -135,8 +159,8 @@ function Shot({ k, variant }) {
       <defs>
         <filter id="oeSoft" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="10" /></filter>
         <mask id="oeBeam" maskUnits="userSpaceOnUse" x="-5000" y="-5000" width="12000" height="12000">
-          <rect x="-5000" y="-5000" width="12000" height="12000" fill="#fff" opacity={1 - dark} />
           <path d={B.poly} fill="#fff" opacity={clamp(power, 0, 1)} filter="url(#oeSoft)" />
+          <path d={BO.poly} fill="#fff" opacity={oPow * (1 - oraGone)} filter="url(#oeSoft)" />
         </mask>
         <mask id="oeShaft" maskUnits="userSpaceOnUse" x="-5000" y="-5000" width="12000" height="12000">
           <path d={shaft} fill="#fff" opacity={gapsOn * clamp(open * 4, 0, 1)} filter="url(#oeSoft)" />
@@ -145,33 +169,28 @@ function Shot({ k, variant }) {
           <stop offset="0" stopColor={LIGHT} stopOpacity="0.16" />
           <stop offset="1" stopColor={LIGHT} stopOpacity="0.05" />
         </linearGradient>
+        <linearGradient id="oeHazeO" gradientUnits="userSpaceOnUse" x1={BO.S[0]} y1={BO.S[1]} x2={BO.pool[0]} y2={FL}>
+          <stop offset="0" stopColor={LIGHT} stopOpacity="0.16" />
+          <stop offset="1" stopColor={LIGHT} stopOpacity="0.05" />
+        </linearGradient>
       </defs>
 
       {/* what can still be made out in the dark */}
-      <g opacity={oraAmb}>
-        <path d={boilCircle(OC[0], OC[1], press, bf, 2, amp)} fill="none" stroke={C.cur.body} strokeWidth="4" />
-        <Fig x={OC[0]} y={OC[1] + 95} s={0.7} dir={-1} c={C.cur} tilt={14} hand={[30, 10]} hand2={[20, 20]} j={J(2)} />
-      </g>
-      <g opacity={dark * (1 - g(q.Tb - 0.4, q.Tb + 0.2))}>
-        {oc.map(([x, y, r], i) => <Card key={i} x={x} y={y} s={0.7} rot={r} lit={0} />)}
-        {dots.slice(1).map(([x, y], i) => <Card key={i} x={x} y={y} s={0.7} rot={T * 30 + i * 40} lit={0} />)}
-      </g>
-      <line x1="-2000" y1={FL} x2="4000" y2={FL} stroke={C.line} strokeWidth="3" opacity={0.5 * dark} />
+      <g opacity={oraAmb}><Fig {...oraO} j={J(2)} /></g>
+      <g opacity={0.7 * (1 - oraGone)}>{oraMoths.map((mt, i) => <Card key={i} x={mt.p[0]} y={mt.p[1]} s={0.6} rot={mt.rot} flip={mt.flip} lit={0} />)}</g>
+      <g opacity={0.7 * heroVis}>{tealMoths.map((mt, i) => <Card key={i} x={mt.p[0]} y={mt.p[1]} s={0.6} rot={mt.rot} flip={mt.flip} lit={0} />)}</g>
+      <line x1="-2000" y1={FL} x2="4000" y2={FL} stroke={C.line} strokeWidth="3" opacity="0.5" />
       {swing && <g opacity={0.2 * houseVis * dinnerVis}><DinnerSide k={k} x={LAMP_X} y={FL} s={0.8} /></g>}
 
       {/* everything the lamp reveals */}
       <g mask={st}>
+        <g opacity={1 - oraGone}>
+          <Fig {...oraO} j={J(2)} />
+          {oraMoths.map((mt, i) => <Card key={i} x={mt.p[0]} y={mt.p[1]} s={0.6} rot={mt.rot} flip={mt.flip} />)}
+        </g>
         <g opacity={heroVis}>
-          <g opacity={1 - dark}>
-            <path d={boilCircle(OC[0], OC[1], press, bf, 2, amp)} fill={C.cur.body} fillOpacity="0.08" stroke={C.cur.body} strokeWidth="4" />
-            {oc.map(([x, y, r], i) => <Card key={i} x={x} y={y} s={0.7} rot={r} />)}
-            <Fig x={OC[0]} y={OC[1] + 95} s={0.7} dir={-1} c={C.cur} tilt={14} hand={[30, 10]} hand2={[20, 20]} j={J(2)} />
-            {PEERS.map((p, i) => <g key={i} opacity={0.25}><path d={boilCircle(p[0], p[1], 70, bf, 10 + i, amp)} fill="none" stroke={C.open.body} strokeWidth="3" /><Fig x={p[0]} y={p[1] + 55} s={0.42} dir={p[0] < tc[0] ? 1 : -1} c={C.open} j={J(10 + i)} /></g>)}
-          </g>
-          <path d={ringD} fill={mix(C.open.body, LIGHT, mm)} fillOpacity={0.08 + 0.1 * mm} stroke={mix(C.open.body, LIGHT, mm)} strokeWidth="4" strokeOpacity={1 - 0.7 * mm} />
-          {dots.slice(1).map(([x, y], i) => <Card key={i} x={x} y={y} s={0.7} rot={T * 30 + i * 40} />)}
           <Fig {...me} j={J(1)} />
-          <Card x={d0[0]} y={d0[1]} s={0.75} rot={-6} flip={Math.cos(Math.PI * 2 * g(w.intellectual, w.curiosity + 0.6))} />
+          {tealMoths.map((mt, i) => <Card key={i} x={mt.p[0]} y={mt.p[1]} s={0.6} rot={mt.rot} flip={mt.flip} />)}
         </g>
         <g opacity={dinnerVis}><DinnerSide k={k} x={LAMP_X} y={FL} s={0.8} /></g>
         <g opacity={swing ? houseVis : 0}>
@@ -232,7 +251,16 @@ function Shot({ k, variant }) {
       {/* the lamp and its light */}
       <path d={B.poly} fill="url(#oeHaze)" opacity={clamp(power * boost, 0, 1.5)} />
       <ellipse cx={B.pool[0]} cy={FL} rx={B.pool[1]} ry="24" fill={LIGHT} opacity={0.12 * clamp(power * boost, 0, 1.5)} />
-      <g opacity={dsc}>
+      <g opacity={1 - oraGone}>
+        <path d={BO.poly} fill="url(#oeHazeO)" opacity={oPow} />
+        <ellipse cx={BO.pool[0]} cy={FL} rx={BO.pool[1]} ry="24" fill={LIGHT} opacity={0.12 * oPow} />
+        <line x1={BO.P[0]} y1={BO.P[1] - 2000} x2={BO.S[0]} y2={BO.S[1]} stroke="#444" strokeWidth="3" />
+        <g transform={`translate(${BO.S[0]} ${BO.S[1]}) rotate(${-aO})`}>
+          <path d="M -36 0 L 36 0 L 22 -30 L -22 -30 Z" fill="#555" />
+          <ellipse cx="0" cy="1" rx="22" ry="5" fill={LIGHT} opacity={0.3 + 0.7 * oPow} />
+        </g>
+      </g>
+      <g>
         <line x1={B.P[0]} y1={B.P[1] - 2000} x2={B.P[0]} y2={B.P[1]} stroke="#444" strokeWidth="3" />
         <line x1={B.P[0]} y1={B.P[1]} x2={B.S[0]} y2={B.S[1]} stroke="#444" strokeWidth="3" />
         <g transform={`translate(${B.S[0]} ${B.S[1]}) rotate(${-a})`}>
