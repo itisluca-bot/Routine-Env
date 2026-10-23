@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+<link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@500;600;700&display=swap" rel="stylesheet">
+<style>html,body{margin:0;height:100%;background:#0a0a0a;overflow:hidden} a{color:#5fa69a} a:hover{color:#a8e3d6}</style>
+<script>window.OM_SCENES = '[{"name":"Sheet","dur":2,"desc":"Eight house facades for the door beat, from neutral to Dutch."}]';</script>
+<script>window.OM_PLAYBACK = '{"mode":"loop"}';</script>
+<script>window.TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
+  "variant": 1,
+  "referenceOverlay": true,
+  "lineBoil": true,
+  "boilAmp": 0.5
+}/*EDITMODE-END*/;</script>
+</helmet>
+<div style="position:fixed; inset:0; background:#0a0a0a;">
+  <x-import component-from-global-scope="FUHouseOptions" from="./animations-v3.jsx ./tweaks-panel.jsx ./house-options.jsx" hint-size="100%,100%" style="position:absolute; inset:0;"></x-import>
+</div>
+</x-dc>
+</body>
+</html>
