@@ -8,6 +8,7 @@
 // People use the Bean rig (rigs/bean-rig.jsx); dust hangs in the air everywhere and shows wherever a beam falls.
 const { W, H, OUT_W, OUT_H, MOTION, osc, lerp, lerp2, knock, cam, mix, C, hash, jitter, Card, Ripples, Table, Chair } = window.FU_RIG;
 const { BeanFig, POSES, blendPose, rig, PAL } = window.FU_BEAN;   // people are drawn with the Bean rig (rigs/BEAN.md)
+const { RowHouse } = window.FU_HOUSE;                               // the curator's house (rigs/row-house.jsx)
 
 const FL = 670;                      // floor of the lamp world
 const LAMP_X = 680, CORD = 700;      // the teal lamp hangs over the hero; it swings about a pivot CORD above its shade
@@ -144,42 +145,6 @@ const dust = (T) => Array.from({ length: 600 }, (_, i) => {
   const y = -250 + 920 * h(4) + 10 * osc(T, 5 + 3 * h(5), h(6)) - T * (2 + 4 * h(7));
   return <circle key={i} cx={x} cy={y} r={1.1 + 1.3 * h(8)} fill={LIGHT} opacity={0.22 + 0.3 * h(9)} />;
 });
-
-// ── the curator's house (option 5 from House Options: a brick row house). Local frame: floor at 0, door centred on x = 0 ──
-const HOUSE = { brick: '#3a2c28', mortar: '#2c211e', cornice: '#3c4240', frame: '#5f5954', glass: '#141918', door: '#3a403e' };
-function HouseWin({ x, y, w, h }) {
-  const split = h * 0.38, f = HOUSE.frame;
-  return (
-    <g>
-      <rect x={x - w / 2} y={y} width={w} height={h} fill={HOUSE.glass} stroke={f} strokeWidth="5" />
-      <line x1={x - w / 2} y1={y + split} x2={x + w / 2} y2={y + split} stroke={f} strokeWidth="4" />
-      <line x1={x} y1={y} x2={x} y2={y + h} stroke={f} strokeWidth="4" />
-      {[1, 2].map((i) => <line key={i} x1={x - w / 2 + (i * w) / 3} y1={y} x2={x - w / 2 + (i * w) / 3} y2={y + split} stroke={f} strokeWidth="2.5" />)}
-      <rect x={x - w / 2 - 6} y={y + h} width={w + 12} height="7" fill={mix(f, C.bg, 0.4)} />
-    </g>
-  );
-}
-function RowHouse({ x, y, dark = 0 }) {
-  const c = (col) => mix(col, C.bg, dark);
-  return (
-    <g transform={`translate(${x} ${y})`}>
-      <clipPath id={`oeBrick${dark ? 'd' : 'l'}`}><rect x="-135" y="-600" width="420" height="600" /></clipPath>
-      <rect x="-135" y="-600" width="420" height="600" fill={c(HOUSE.brick)} />
-      <g clipPath={`url(#oeBrick${dark ? 'd' : 'l'})`} stroke={c(HOUSE.mortar)} strokeWidth="2">
-        {Array.from({ length: 43 }, (_, i) => <line key={i} x1="-140" x2="290" y1={-i * 14} y2={-i * 14} />)}
-        {Array.from({ length: 43 }, (_, i) => Array.from({ length: 11 }, (_, j) => { const x = -135 + j * 42 + (i % 2 ? 21 : 0); return <line key={i + '-' + j} x1={x} x2={x} y1={-i * 14} y2={-(i + 1) * 14} />; }))}
-      </g>
-      <rect x="-153" y="-622" width="456" height="26" fill={c(HOUSE.cornice)} />
-      <HouseWin x={-10} y={-540} w={110} h={150} />
-      <HouseWin x={160} y={-540} w={110} h={150} />
-      <HouseWin x={160} y={-300} w={110} h={170} />
-      <rect x="-71" y="-266" width="142" height="266" fill={c(mix(HOUSE.door, C.bg, 0.3))} />
-      <rect x="-65" y="-260" width="130" height="260" fill={c(HOUSE.door)} />
-      <rect x="-53" y="-109" width="106" height="85" fill="none" stroke={c(mix(HOUSE.door, C.bg, 0.35))} strokeWidth="3" />
-      <circle cx="49" cy="-125" r="4.5" fill={c(mix(HOUSE.door, '#ffffff', 0.2))} />
-    </g>
-  );
-}
 
 // now and then one of the curator's moths dives at them
 const SWOOPS = [1.1, 2.9, 4.5, 6.2];

@@ -37,6 +37,7 @@ This is the working guide for a new Claude session. Read it together with `CLAUD
 | `animations-v3.jsx` | Engine: `CompositionStage`, `useComposition()` → `{ T, CUES }`, `Captions`, `Easing`, `clamp` |
 | `tweaks-panel.jsx` | Control panel: `useTweaks`, `TweakSelect`, `TweakToggle`, `TweakSlider` |
 | `rigs/bean-rig.jsx` | **The people rig** (`window.FU_BEAN`). See `rigs/BEAN.md` |
+| `rigs/row-house.jsx` | The curator's house, a brick row house (`window.FU_HOUSE.RowHouse`); door window left for the shot to draw |
 | `open-engagers-concepts.jsx` | Round-1 ideation (concepts A–H). Also exports shared helpers as `window.FU_RIG`: `MOTION`, `osc`, `lerp`, `lerp2`, `cam`, `mix`, `C`, `hash`, `Card` (the red post), `Ripples`, `Table`, `Chair`, … |
 | `open-engagers.jsx` | **The current open engagers shot** (see §8) |
 | `curation-topography.jsx` | The finished Topography shot |
