@@ -145,6 +145,41 @@ const dust = (T) => Array.from({ length: 600 }, (_, i) => {
   return <circle key={i} cx={x} cy={y} r={1.1 + 1.3 * h(8)} fill={LIGHT} opacity={0.22 + 0.3 * h(9)} />;
 });
 
+// ── the curator's house (option 5 from House Options: a brick row house). Local frame: floor at 0, door centred on x = 0 ──
+const HOUSE = { brick: '#3a2c28', mortar: '#2c211e', cornice: '#3c4240', frame: '#5f5954', glass: '#141918', door: '#3a403e' };
+function HouseWin({ x, y, w, h }) {
+  const split = h * 0.38, f = HOUSE.frame;
+  return (
+    <g>
+      <rect x={x - w / 2} y={y} width={w} height={h} fill={HOUSE.glass} stroke={f} strokeWidth="5" />
+      <line x1={x - w / 2} y1={y + split} x2={x + w / 2} y2={y + split} stroke={f} strokeWidth="4" />
+      <line x1={x} y1={y} x2={x} y2={y + h} stroke={f} strokeWidth="4" />
+      {[1, 2].map((i) => <line key={i} x1={x - w / 2 + (i * w) / 3} y1={y} x2={x - w / 2 + (i * w) / 3} y2={y + split} stroke={f} strokeWidth="2.5" />)}
+      <rect x={x - w / 2 - 6} y={y + h} width={w + 12} height="7" fill={mix(f, C.bg, 0.4)} />
+    </g>
+  );
+}
+function RowHouse({ x, y, dark = 0 }) {
+  const c = (col) => mix(col, C.bg, dark);
+  return (
+    <g transform={`translate(${x} ${y})`}>
+      <clipPath id={`oeBrick${dark ? 'd' : 'l'}`}><rect x="-135" y="-600" width="420" height="600" /></clipPath>
+      <rect x="-135" y="-600" width="420" height="600" fill={c(HOUSE.brick)} />
+      <g clipPath={`url(#oeBrick${dark ? 'd' : 'l'})`} stroke={c(HOUSE.mortar)} strokeWidth="2">
+        {Array.from({ length: 43 }, (_, i) => <line key={i} x1="-140" x2="290" y1={-i * 14} y2={-i * 14} />)}
+      </g>
+      <rect x="-153" y="-622" width="456" height="26" fill={c(HOUSE.cornice)} />
+      <HouseWin x={-10} y={-540} w={110} h={150} />
+      <HouseWin x={160} y={-540} w={110} h={150} />
+      <HouseWin x={160} y={-300} w={110} h={170} />
+      <rect x="-71" y="-266" width="142" height="266" fill={c(mix(HOUSE.door, C.bg, 0.3))} />
+      <rect x="-65" y="-260" width="130" height="260" fill={c(HOUSE.door)} />
+      <rect x="-53" y="-109" width="106" height="85" fill="none" stroke={c(mix(HOUSE.door, C.bg, 0.35))} strokeWidth="3" />
+      <circle cx="49" cy="-125" r="4.5" fill={c(mix(HOUSE.door, '#ffffff', 0.2))} />
+    </g>
+  );
+}
+
 // now and then one of the curator's moths dives at them
 const SWOOPS = [1.1, 2.9, 4.5, 6.2];
 
@@ -320,9 +355,7 @@ function Shot({ k, variant }) {
         </g>
         <g opacity={dinnerVis}><DinnerBean k={k} x={LAMP_X} y={FL} s={0.8} idb={30} /></g>
         <g opacity={swing ? houseVis : 0}>
-          <rect x={HX0} y={FL - 430} width={HX1 - HX0} height="430" fill="#2a302e" />
-          <path d={`M ${HX0 - 40} ${FL - 426} L ${(HX0 + HX1) / 2} ${FL - 640} L ${HX1 + 40} ${FL - 426} Z`} fill="#242927" />
-          <rect x={DXo - 65} y={FL - 260} width="130" height="260" fill="#3a403e" />
+          <RowHouse x={DXo} y={FL} />
         </g>
         <g opacity={privVis}>
           <Bean f={{ x: LAMP_X - 135, y: FL, s: 0.68, dir: 1, c: PAL.open, pose: POSES.idle(T + 0.4) }} k={k} id={51} />
@@ -360,8 +393,7 @@ function Shot({ k, variant }) {
       {swing && houseVis > 0 && (
         <g>
           <g opacity={0.3 * houseVis}>
-            <rect x={HX0} y={FL - 430} width={HX1 - HX0} height="430" fill="#1c1f1e" />
-            <rect x={DXo - 65} y={FL - 260} width="130" height="260" fill="#242827" />
+            <RowHouse x={DXo} y={FL} dark={0.35} />
           </g>
           <clipPath id="oeWin"><rect x={DXo - 32} y={FL - 236} width="64" height="52" /></clipPath>
           <rect x={DXo - 32} y={FL - 236} width="64" height="52" fill={mix(C.bg, C.red, 0.85 * inLight)} opacity={houseVis} />
