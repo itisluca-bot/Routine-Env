@@ -1,6 +1,6 @@
 // Feeding Uncertainty — "We find that open engagers…" (22s12f). Round 4: two lamps open it, then the teal lamp carries the rest.
 // Opening: teal and orange each stand under a lamp; red posts flutter in the beams like moths. Teal stands straight and picks one now and then;
-// orange ducks and dodges as theirs dive. On the voice line orange's lamp clicks off and teal's tightens into a spotlight.
+// orange ducks when one of theirs comes at them. At 4 s orange's lamp clicks off and they go still in the dark; on the voice line teal's tightens into a spotlight.
 // The lamp is the transition device: whatever is outside its beam is dark, so moving or switching the lamp hides one scene and reveals the next.
 //   Variant 1 · Switch: the lamp clicks off and on between scenes. The door is seen from inside: a red lamp outside shines through it onto the curator child.
 //   Variant 2 · Swing: the lamp swings to reveal each scene. Its beam finds the door of a house with the curator child behind it; the teal family stays outside.
@@ -147,7 +147,16 @@ const dust = (T) => Array.from({ length: 600 }, (_, i) => {
 });
 
 // now and then one of the curator's moths dives at them
-const SWOOPS = [1.1, 2.9, 4.5, 6.2];
+// Each dive: the post drifts closer (lead), the curator looks up at it, it darts at their head at t and they duck.
+// Depth and recovery differ, so no two ducks look alike. side: which way they dodge.
+const SWOOPS = [
+  { t: 0.95, lead: 0.7, depth: 0.45, rec: 0.7, side: -1 },   // a small flinch
+  { t: 2.2, lead: 1.0, depth: 1.0, rec: 1.15, side: 1 },     // a full duck, slow to come back up
+  { t: 3.35, lead: 0.55, depth: 0.7, rec: 0.6, side: -1 },   // quicker, half-expected
+];
+const ORA_OFF = 4.0;                                          // the curator's lamp clicks off; after that they stay still in the dark
+const quietPose = (T) => ({ hx: 3 * osc(T, 4.7), lean: 3 + osc(T, 5.3), tilt: 6 * osc(T, 3.8) + 4 * osc(T, 2.3, 0.3),
+  legN: [3, 4], legF: [-3, 3], armN: [36, 84], armF: [28, 88], phone: 0 });
 
 function Shot({ k, variant }) {
   const { T, q, w, J, bf, amp } = k;
@@ -178,7 +187,7 @@ function Shot({ k, variant }) {
   const B = beamGeom({ sy: lerp(sy, -210, mo), wP: lerp(wP * (1 - 0.3 * clamp(Math.abs(a) / 38, 0, 1)), 780, mo), a, rot: headRot(aAt, T), aMid: aAt(T - 0.14), px: lerp(LAMP_X, 1100, mo) });
   const boost = 1 + 0.25 * spotOn + 0.2 * g(w.voice - 0.2, w.voice + 0.4) * (1 - g(w.matters, q.Tb + 0.3));
   // the curator's lamp: on through the opening, clicks off on the voice line
-  const oPow = 1 - off(T, q.V + 0.15);
+  const oPow = 1 - off(T, ORA_OFF);
   const oraGone = g(q.Tb - 0.4, q.Tb + 0.2);
   const aOAt = (t) => 2 * osc(t, 2.9, 0.4);
   const BO = beamGeom({ sy: 294, wP: 280, a: aOAt(T), rot: headRot(aOAt, T), aMid: aOAt(T - 0.14), px: ORA_X });
@@ -229,17 +238,28 @@ function Shot({ k, variant }) {
   });
 
   // ── opening: the curator shies away when one of their posts dives at them ──
-  const bumps = SWOOPS.map((t) => MOTION.glide(T, t, t + 0.4, 0, 1) - g(t + 0.6, t + 1.6));
-  const crouch = clamp(bumps.reduce((s0, b) => s0 + b, 0), 0, 1);
-  const dodge = bumps.reduce((s0, b, k2) => s0 + b * (k2 % 2 ? 22 : -22), 0);
-  const oraO = { x: ORA_X + dodge + 6 * osc(T, 2.6), y: FL, dir: -1, c: PAL.cur, s: 0.8, pose: cower(T, crouch) };
+  const duck = SWOOPS.map((sw) => MOTION.hit(T, sw.t + 0.06, sw.t + 0.32, 0, sw.depth) - MOTION.glide(T, sw.t + 0.45, sw.t + 0.45 + sw.rec, 0, sw.depth));
+  const watch = SWOOPS.map((sw) => g(sw.t - sw.lead, sw.t - 0.15) * (1 - g(sw.t, sw.t + 0.25)));
+  const crouch = clamp(duck.reduce((s0, b) => s0 + b, 0), 0, 1);
+  const looking = clamp(watch.reduce((s0, b) => s0 + b, 0), 0, 1);
+  const dodge = duck.reduce((s0, b, k2) => s0 + b * 24 * SWOOPS[k2].side, 0);
+  const quiet = g(ORA_OFF, ORA_OFF + 0.8);
+  let oraPose = cower(T, crouch);
+  oraPose = { ...oraPose, tilt: oraPose.tilt - 16 * looking, lean: oraPose.lean - 5 * looking };   // looks up at the post coming closer
+  oraPose = blendPose(oraPose, quietPose(T), quiet);
+  const oraO = { x: ORA_X + dodge + 6 * osc(T, 2.6) * (1 - quiet), y: FL, dir: -1, c: PAL.cur, s: 0.8, pose: oraPose };
   const hOO = headW(oraO);
   const oraMoths = Array.from({ length: 9 }, (_, i) => {
     const mth = mothAt(T, i, ORA_X, false);
-    const b = i < SWOOPS.length ? bumps[i] : 0;
-    return { p: lerp2(mth.p, [hOO[0] + (i % 2 ? -36 : 36), hOO[1] - 22], b), rot: mth.rot, flip: mth.flap };
+    const sw = SWOOPS[i];
+    if (!sw) return { p: mth.p, rot: mth.rot, flip: mth.flap };
+    const back = g(sw.t + 0.3, sw.t + 1.1);
+    const a1 = g(sw.t - sw.lead, sw.t - 0.1) * (1 - back), a2 = MOTION.hit(T, sw.t - 0.1, sw.t + 0.15, 0, 1) * (1 - back);
+    const near = [hOO[0] - 75, hOO[1] - 70], close = [hOO[0] + 30 * sw.side, hOO[1] - 20];
+    return { p: lerp2(lerp2(mth.p, near, a1), close, a2), rot: mth.rot, flip: mth.flap };
   });
-  const oraAmb = 0.24 * (1 - oraGone);
+  const oraAmb = (0.24 + 0.08 * quiet) * (1 - oraGone);
+  const mothsLeave = g(ORA_OFF, ORA_OFF + 1.4);                // in the dark their posts fade off
 
   // ── privilege: the teal family under the lamp; the curator in the dark with a phone ──
   const ora = { x: 1480, y: FL, dir: -1, c: PAL.cur, s: 0.8, pose: { ...POSES.phone(T), legN: [86, 88], legF: [80, 84] } };
@@ -303,7 +323,7 @@ function Shot({ k, variant }) {
 
       {/* what can still be made out in the dark */}
       <g opacity={oraAmb}><Bean f={oraO} k={k} id={2} /></g>
-      <g opacity={0.7 * (1 - oraGone)}>{oraMoths.map((mt, i) => <Card key={i} x={mt.p[0]} y={mt.p[1]} s={0.6} rot={mt.rot} flip={mt.flip} lit={0} />)}</g>
+      <g opacity={0.7 * (1 - oraGone) * (1 - mothsLeave)}>{oraMoths.map((mt, i) => <Card key={i} x={mt.p[0]} y={mt.p[1]} s={0.6} rot={mt.rot} flip={mt.flip} lit={0} />)}</g>
       <g opacity={0.7 * heroVis}>{tealMoths.map((mt, i) => <Card key={i} x={mt.p[0]} y={mt.p[1]} s={0.6} rot={mt.rot} flip={mt.flip} lit={0} />)}</g>
       <line x1="-2000" y1={FL} x2="4000" y2={FL} stroke={C.line} strokeWidth="3" opacity={0.5 * (1 - bgOn)} />
       {swing && <g opacity={0.2 * houseVis * dinnerVis}><DinnerBean k={k} x={LAMP_X} y={FL} s={0.8} idb={40} /></g>}
