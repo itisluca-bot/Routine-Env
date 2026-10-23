@@ -37,7 +37,7 @@ This is the working guide for a new Claude session. Read it together with `CLAUD
 | `animations-v3.jsx` | Engine: `CompositionStage`, `useComposition()` → `{ T, CUES }`, `Captions`, `Easing`, `clamp` |
 | `tweaks-panel.jsx` | Control panel: `useTweaks`, `TweakSelect`, `TweakToggle`, `TweakSlider` |
 | `rigs/bean-rig.jsx` | **The people rig** (`window.FU_BEAN`). See `rigs/BEAN.md` |
-| `rigs/row-house.jsx` | The curator's house, a brick row house (`window.FU_HOUSE.RowHouse`); door window left for the shot to draw |
+| `rigs/row-house.jsx` | Houses (`window.FU_HOUSE`): `RowHouse`, the curator's brick row house, with its door window left for the shot to draw; and `TerraceHouse`, the same style with parameters (width, storeys, roof: flat / pitched / gable / step, brick colour, door side), whose windows a shot fills through a `fill(win, i)` callback |
 | `open-engagers-concepts.jsx` | Round-1 ideation (concepts A–H). Also exports shared helpers as `window.FU_RIG`: `MOTION`, `osc`, `lerp`, `lerp2`, `cam`, `mix`, `C`, `hash`, `Card` (the red post), `Ripples`, `Table`, `Chair`, … |
 | `open-engagers.jsx` | **The current open engagers shot** (see §8) |
 | `curation-topography.jsx` | The finished Topography shot |
@@ -90,7 +90,7 @@ node tools/render.mjs "<page>" --frames 0,120,300 --half --guide                
 
 1. **Curation / Topography** (`curation-topography.jsx`, `timing_1.srt`, 8.24 s). Finished. See `HANDOFF.md`.
 2. **Open engagers** (`open-engagers.jsx`, `timing_2.srt`, 22.48 s). In refinement. The user chose **variant 2**.
-3. **Vulnerability** (`vulnerability.jsx`, 5.00 s, no SRT yet). In refinement. The user chose **variant 1**.
+3. **Vulnerability** (5.00 s, no SRT yet). Round 1, the city of apartment blocks (`vulnerability.jsx`, variant 1), was exported at 4K; the user then found it too busy. Round 2 is the alley (`vulnerability-alley.jsx`, §10).
 
 ## 8. Open engagers shot: what is approved
 
@@ -117,3 +117,14 @@ The user chose **variant 1 (Search)**: one searchlight from above sweeps the fac
 - **Searchlight:** only the pool is lit (one mask over all rows, so near blocks still hide far ones). Outside it the blocks are dark shapes, people are faint, and posts are red outlines. The pool makes two long glides between three waypoints (left, middle, right), lingering a moment on each; the user halved the number of moves.
 
 Rejected, so do not bring back: side-view people standing in the doorway (the user found them odd), too few swarms of one size.
+
+## 10. Vulnerability, round 2: the alley
+
+The user liked the concept but found the city too busy. The same line and timing, now in one alley (`Vulnerability Alley.dc.html`).
+
+- **Set:** one row of eight terrace houses seen from the front (`TerraceHouse`, scale 0.8, pavement line at y 900), in the style of `rigs/row-house.jsx`: dark brick, stone cornices, muted frames. Roofs vary (flat, pitched with a dormer, front gable, a low step gable), a bit Dutch but not very. Behind them, the next street's rooftops, dark, with a few dim windows, at 0.55 parallax.
+- **Light:** a streetlight in front of each curator's house. Only their pools are lit (a facade pool, a pavement pool and a halo round the lantern, all in one mask whose gradients fade to clear so the pools add up); the rest of the street is the dark copy (`DARK` 0.8). A faint cone with dust runs from each lantern to the pavement.
+- **Blue and teal houses** glow quietly behind closed louvred shutters, in some windows, with a slight spill on the brick. They are fine: nothing reacts there.
+- **Curators** (BeanFront) peek past the edge of a curtain in a few windows, fingers on the curtain's edge, eyes on the nearest swarm. When a swarm comes close they pull back and duck below the sill.
+- **Moths:** six red posts circle every lantern; six swarms of 4 to 26 posts fly down the alley and are pulled toward each light as they pass; a 30-post swarm comes through on "crises". Lit in the pools, red outlines in the dark.
+- **Camera:** a slow truck along the alley with a 3% push.
