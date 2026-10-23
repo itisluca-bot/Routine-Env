@@ -8,10 +8,11 @@
 // People use the Bean rig (rigs/bean-rig.jsx); dust hangs in the air everywhere and shows wherever a beam falls.
 const { W, H, OUT_W, OUT_H, MOTION, osc, lerp, lerp2, knock, cam, mix, C, hash, jitter, Card, Ripples, Table, Chair } = window.FU_RIG;
 const { BeanFig, POSES, blendPose, rig, PAL } = window.FU_BEAN;   // people are drawn with the Bean rig (rigs/BEAN.md)
-const { RowHouse } = window.FU_HOUSE;                               // the curator's house (rigs/row-house.jsx)
+const { RowHouse, TerraceHouse, HOUSE } = window.FU_HOUSE;           // the curator's house and the street (rigs/row-house.jsx)
 
 const FL = 670;                      // floor of the lamp world
-const LAMP_X = 680, CORD = 700;      // the teal lamp hangs over the hero; it swings about a pivot CORD above its shade
+const CEIL = 140;                    // the ceiling of the teal family's room (it forms from the dinner table on); both lamps hang from this height
+const LAMP_X = 680, CORD = 294 - CEIL; // the teal lamp hangs over the hero; it swings about a pivot CORD above its shade
 const ORA_X = 1430;                  // the curator's lamp, in the opening
 const LIGHT = '#e9f5ef';
 
@@ -43,11 +44,11 @@ function beamGeom({ sy, wP, a, rot = a, aMid = a, px = LAMP_X }) {
 }
 // the head of a hanging lamp follows its cable late, and swings a little past it
 const headRot = (aAt, T) => aAt(T - 0.1) + 0.6 * (aAt(T - 0.1) - aAt(T - 0.32));
-function Lamp({ L, pow = 1, op = 1, id }) {
+function Lamp({ L, pow = 1, op = 1, id, up = 1 }) {
   const ctrl = [2 * L.mid[0] - (L.P[0] + L.cap[0]) / 2, 2 * L.mid[1] - (L.P[1] + L.cap[1]) / 2];
   return (
     <g opacity={op}>
-      <line x1={L.P[0]} y1={L.P[1] - 3000} x2={L.P[0]} y2={L.P[1]} stroke="#4a4a4a" strokeWidth="3" />
+      <line x1={L.P[0]} y1={L.P[1] - 3000} x2={L.P[0]} y2={L.P[1]} stroke="#4a4a4a" strokeWidth="3" opacity={up} />
       <path d={`M ${L.P[0]} ${L.P[1]} Q ${ctrl[0]} ${ctrl[1]} ${L.cap[0]} ${L.cap[1]}`} fill="none" stroke="#4a4a4a" strokeWidth="3" />
       <g transform={`translate(${L.S[0]} ${L.S[1]}) rotate(${-L.rot})`}>
         <clipPath id={id}><ellipse cx="0" cy="0" rx={MOUTH - 3} ry="6" /></clipPath>
@@ -146,6 +147,74 @@ const dust = (T) => Array.from({ length: 600 }, (_, i) => {
   return <circle key={i} cx={x} cy={y} r={1.1 + 1.3 * h(8)} fill={LIGHT} opacity={0.22 + 0.3 * h(9)} />;
 });
 
+// ── the set (variant 2). From the dinner table on, a room forms round the family; at 16.5 s it turns out to be the ground floor
+//    of a house drawn in section (front cut away), in a street of terrace houses like the Vulnerability alley, only dimmer. ──
+const SEC = { x0: 250, x1: 1130, t: 30, upper: -230, apex: -440, win: [250, 600] };   // the room's inside edges, wall thickness, upper floor, roof apex, side window
+const SETC = { wall: '#1e2322', upper: '#161a19', cut: '#343a38', skirt: '#272c2b', glass: '#121a20', frame: '#3a403e', board: '#1a1d1c', pic: '#3a3330', picIn: '#262b2a' };
+// the room: back wall with a night window and a picture, skirting, floorboards, ceiling (op), then the section of the house round it (sec)
+function HouseSection({ dark = 0, op = 1, sec = 1 }) {
+  const c = (col) => mix(col, C.bg, dark), { x0, x1, t, upper, apex, win } = SEC;
+  const mid = (x0 + x1) / 2;
+  return (
+    <g>
+      <g opacity={sec}>
+        <path d={`M ${x0} ${upper} L ${x0} ${upper - 20} L ${mid} ${apex + 40} L ${x1} ${upper - 20} L ${x1} ${upper} Z`} fill={c('#141716')} />
+        <rect x={x0} y={upper} width={x1 - x0} height={CEIL - t - upper} fill={c(SETC.upper)} />
+        <rect x={x0 + 520} y={upper + 70} width="130" height="150" fill={c(SETC.glass)} stroke={c(SETC.frame)} strokeWidth="5" />
+        <rect x={x0 - t} y={upper - 20} width={t} height={CEIL - upper + 20} fill={c(SETC.cut)} />
+        <rect x={x1} y={upper - 20} width={t} height={CEIL - upper + 20} fill={c(SETC.cut)} />
+        <path d={`M ${x0 - t - 30} ${upper + 6} L ${mid} ${apex} L ${x1 + t + 30} ${upper + 6}`} fill="none" stroke={c(SETC.cut)} strokeWidth="30" strokeLinejoin="miter" />
+      </g>
+      <g opacity={op}>
+        <rect x={x0} y={CEIL} width={x1 - x0} height={FL - CEIL} fill={c(SETC.wall)} />
+        <rect x="330" y="300" width="130" height="200" fill={c(SETC.glass)} stroke={c(SETC.frame)} strokeWidth="6" />
+        <line x1="395" y1="300" x2="395" y2="500" stroke={c(SETC.frame)} strokeWidth="5" />
+        <line x1="330" y1="376" x2="460" y2="376" stroke={c(SETC.frame)} strokeWidth="5" />
+        <rect x="324" y="500" width="142" height="9" fill={c(SETC.frame)} />
+        <rect x="935" y="330" width="105" height="80" fill={c(SETC.picIn)} stroke={c(SETC.pic)} strokeWidth="8" />
+        <rect x={x0} y={FL - 16} width={x1 - x0} height="16" fill={c(SETC.skirt)} />
+        <rect x={x0 - t} y={FL} width={x1 - x0 + 2 * t} height="56" fill={c(SETC.board)} />
+        {[14, 30, 48].map((dy) => <line key={dy} x1={x0 - t} x2={x1 + t} y1={FL + dy} y2={FL + dy} stroke={c(SETC.wall)} strokeWidth="2" />)}
+        <rect x={x0 - t} y={CEIL - t} width={x1 - x0 + 2 * t} height={t} fill={c(SETC.cut)} />
+        <ellipse cx={LAMP_X} cy={CEIL} rx="16" ry="5" fill={c(SETC.frame)} />
+        <rect x={x0 - t} y={CEIL - t} width={t} height={FL - CEIL + t} fill={c(SETC.cut)} />
+        <rect x={x1} y={CEIL - t} width={t} height={win[0] - CEIL + t} fill={c(SETC.cut)} />
+        <rect x={x1} y={win[1]} width={t} height={FL - win[1]} fill={c(SETC.cut)} />
+        {[8, 22].map((dx) => <line key={dx} x1={x1 + dx} x2={x1 + dx} y1={win[0]} y2={win[1]} stroke={c(SETC.frame)} strokeWidth="2" />)}
+      </g>
+    </g>
+  );
+}
+// the street round it: neighbours either side, the next street's rooftops behind, a pavement and kerb. Only ever dim.
+const STREET_L = [{ w: 380, floors: 2, roof: 'gable', door: 'left', brick: '#33282a' }, { w: 400, floors: 3, roof: 'flat', door: 'right', brick: '#2f2a28' }];
+const STREET_R = [{ w: 400, floors: 2, roof: 'pitched', door: 'left', brick: '#352a27' }, { w: 380, floors: 3, roof: 'step', door: 'right', brick: '#3a2e2a' }, { w: 420, floors: 2, roof: 'flat', door: 'left' }];
+const STREET_B = Array.from({ length: 9 }, (_, i) => { const h = (n) => hash(i * 3.3 + n * 1.7 + 17); return { w: 380 + 80 * h(1), floors: 3, roof: ['flat', 'pitched', 'gable', 'step'][Math.floor(h(2) * 4)], door: 'left', brick: '#2e2624' }; });
+function Street({ op, curRight }) {
+  if (op <= 0) return null;
+  let xl = SEC.x0 - SEC.t, xr = curRight, xb = -900;
+  return (
+    <g opacity={op}>
+      {STREET_B.map((h, i) => { const x = xb; xb += h.w * 0.55 + 4; return <g key={'b' + i} transform={`translate(${x} 300) scale(0.55)`}><TerraceHouse x={0} y={0} spec={h} dark={0.86} pid={`oeSb${i}`} /></g>; })}
+      <rect x="-2000" y={FL} width="6000" height="40" fill="#141615" />
+      <line x1="-2000" x2="4000" y1={FL + 40} y2={FL + 40} stroke="#202322" strokeWidth="4" />
+      {STREET_L.map((h, i) => { xl -= h.w; return <TerraceHouse key={'l' + i} x={xl} y={FL} spec={h} dark={0.72} pid={`oeSl${i}`} />; })}
+      {STREET_R.map((h, i) => { const x = xr; xr += h.w; return <TerraceHouse key={'r' + i} x={x} y={FL} spec={h} dark={0.72} pid={`oeSr${i}`} />; })}
+    </g>
+  );
+}
+// a streetlight on the pavement in front of the curator's house (as in the alley); it comes on as the teal lamp swings home
+const SL = { x: 1235, y: 262, wP: 250 };
+const slPoly = `M ${SL.x - 14} ${SL.y} L ${SL.x + 14} ${SL.y} L ${SL.x + SL.wP} ${FL} A ${SL.wP} ${0.08 * SL.wP} 0 0 1 ${SL.x - SL.wP} ${FL} Z`;
+function StreetLight({ pow, op }) {
+  return (
+    <g opacity={op}>
+      <rect x={SL.x - 5} y={SL.y - 10} width="10" height={FL + 30 - SL.y} fill="#2c302f" />
+      <path d={`M ${SL.x - 18} ${SL.y} L ${SL.x + 18} ${SL.y} L ${SL.x + 12} ${SL.y - 30} L ${SL.x - 12} ${SL.y - 30} Z`} fill="#3a3f3e" />
+      <rect x={SL.x - 13} y={SL.y - 6} width="26" height="8" rx="3" fill={LIGHT} opacity={0.2 + 0.8 * pow} />
+    </g>
+  );
+}
+
 // now and then one of the curator's moths dives at them
 // Each dive: the post drifts closer (lead), the curator looks up at it, it darts at their head at t and they duck.
 // Depth and recovery differ, so no two ducks look alike. side: which way they dodge.
@@ -165,7 +234,7 @@ function Shot({ k, variant }) {
 
   // ── lamps ─────────────────────────────────────────────────────────────────
   const rise = swing ? 0 : g(w.position - 0.3, w.position + 0.7);  // privilege (variant 1): the lamp hangs higher, its pool grows
-  const mo = swing ? g(q.P + 0.1, q.P + 1.3) : 0;                     // privilege (variant 2): the lamp pulls up and out, its beam opens over house and family
+  const mo = swing ? g(q.P + 0.1, q.P + 1.3) : 0;                     // privilege (variant 2): the lamp swings home over the family, its pool opening a little
   const spotOn = g(q.V + 0.2, w.confidence) * (1 - g(w.matters, q.Tb + 0.3));  // voice: teal's light tightens into a spotlight
   const sy = 294 - 260 * rise;
   const wP = 304 - 60 * spotOn + 250 * rise;
@@ -173,9 +242,9 @@ function Shot({ k, variant }) {
   const aAt = (t) => {
     let v = 2.2 * osc(t, 3.4);
     if (!swing) return v;
-    v += -32 * gt(t, q.Tb + 0.4, q.Tb + 1.0) + 32 * gt(t, q.Tb + 1.0, q.Tb + 1.8) + settle(t, q.Tb + 1.8, 5);
-    v += 38 * gt(t, q.Tb + 5.45, q.Tb + 6.1) + settle(t, q.Tb + 6.1, 3);
-    return lerp(v, 1.2 * osc(t, 3.4), gt(t, q.P + 0.1, q.P + 1.3));
+    v += -50 * gt(t, q.Tb + 0.4, q.Tb + 1.0) + 50 * gt(t, q.Tb + 1.0, q.Tb + 1.8) + settle(t, q.Tb + 1.8, 6);
+    v += 55 * gt(t, q.Tb + 5.45, q.Tb + 6.1) + settle(t, q.Tb + 6.1, 4);
+    return lerp(v, 6 + 1.5 * osc(t, 3.4), gt(t, q.P + 0.1, q.P + 1.3)) + settle(t, q.P + 1.3, -3);
   };
   const a = aAt(T);
   let power;
@@ -184,7 +253,7 @@ function Shot({ k, variant }) {
   } else {
     power = 1 - off(T, q.Tb + 0.55) + flickOn(T, q.Tb + 1.05) * (1 - off(T, q.Tb + 5.78)) + flickOn(T, q.P + 0.2);
   }
-  const B = beamGeom({ sy: lerp(sy, -210, mo), wP: lerp(wP * (1 - 0.3 * clamp(Math.abs(a) / 38, 0, 1)), 780, mo), a, rot: headRot(aAt, T), aMid: aAt(T - 0.14), px: lerp(LAMP_X, 1100, mo) });
+  const B = beamGeom({ sy, wP: lerp(wP * (1 - 0.3 * clamp(-a / 38, 0, 1)), 380, mo), a, rot: headRot(aAt, T), aMid: aAt(T - 0.14) });
   const boost = 1 + 0.25 * spotOn + 0.2 * g(w.voice - 0.2, w.voice + 0.4) * (1 - g(w.matters, q.Tb + 0.3));
   // the curator's lamp: on through the opening, clicks off on the voice line
   const oPow = 1 - off(T, ORA_OFF);
@@ -209,8 +278,8 @@ function Shot({ k, variant }) {
   z += 0.05 * g(q.Tb + 1.2, q.D);
   const doorV1 = !swing && T >= q.D && T < q.P + 0.05;
   if (swing) {
-    m = g(q.Tb + 5.4, q.D + 0.2); cp = lerp2(cp, [1480, 470], m); z = lerp(z, 1.15, m);
-    m = g(q.P + 0.1, q.P + 1.3); cp = lerp2(cp, [1200, 420], m); z = lerp(z, 0.95, m) - 0.025 * g(q.P + 1.3, q.E + 0.24);
+    m = g(q.Tb + 5.4, q.D + 0.4); cp = lerp2(cp, [1120, 300], m); z = lerp(z, 0.86, m);
+    m = g(q.P + 0.1, q.P + 1.6); cp = lerp2(cp, [1060, 260], m); z = lerp(z, 0.76, m) - 0.02 * g(q.P + 1.6, q.E + 0.24);
   } else if (doorV1) {
     cp = [2600, 470]; z = 1.2 + 0.06 * g(q.D, q.P);
   } else if (T >= q.P + 0.05) {
@@ -277,7 +346,11 @@ function Shot({ k, variant }) {
   const kidIn = { x: DX - 160, y: FL, s: 0.56, headScale: KID_HEAD, dir: -1, c: PAL.cur, pose: cower(T, clamp(0.75 + 0.25 * flinch, 0, 1)) };
 
   // ── door, variant 2: outside, the teal lamp's beam finds the door ────────
-  const HX0 = 1320, HX1 = 1900, DXo = 1590;
+  const DXo = SEC.x1 + SEC.t + 147;                               // the curator's house stands right next to the section
+  const roomOp = swing ? g(q.Tb + 0.9, q.Tb + 2.0) : 0;          // ~12 s: a room forms round the dinner table
+  const secOp = swing ? g(q.Tb + 5.4, q.D + 0.4) : 0;            // ~16.5 s: it is the ground floor of a house, in a street
+  const slPow = swing ? flickOn(T, q.P - 0.15) : 0;              // the streetlight takes over the curator's door as the lamp swings home
+  const slMoths = Array.from({ length: 5 }, (_, i) => { const mt = mothAt(T, 30 + i, SL.x, true); return { p: [mt.p[0], mt.p[1] - 190], rot: mt.rot, flip: mt.flap }; });
   const houseVis = g(q.Tb + 5.3, q.D);
   const inLight = g(q.Tb + 5.8, q.D + 0.1);
   const peek = 46 * (1 - g(q.Tb + 5.7, q.D + 0.3)) + 5 * osc(T, 1.7);   // the child rises into the window, then just hovers
@@ -307,6 +380,7 @@ function Shot({ k, variant }) {
         <mask id="oeBeam" maskUnits="userSpaceOnUse" x="-5000" y="-5000" width="12000" height="12000">
           <path d={B.poly} fill="#fff" opacity={clamp(power, 0, 1)} filter="url(#oeSoft)" />
           <path d={BO.poly} fill="#fff" opacity={oPow * (1 - oraGone)} filter="url(#oeSoft)" />
+          {slPow > 0 && <path d={slPoly} fill="#fff" opacity={clamp(slPow, 0, 1)} filter="url(#oeSoft)" />}
         </mask>
         <mask id="oeShaft" maskUnits="userSpaceOnUse" x="-5000" y="-5000" width="12000" height="12000">
           <path d={shaft} fill="#fff" opacity={gapsOn * clamp(open * 4, 0, 1)} filter="url(#oeSoft)" />
@@ -321,6 +395,10 @@ function Shot({ k, variant }) {
         </linearGradient>
       </defs>
 
+      {/* the street and the house section, dim */}
+      {swing && <Street op={0.9 * secOp} curRight={DXo + 285 + 18} />}
+      {swing && roomOp > 0 && <HouseSection dark={0.7} op={roomOp} sec={secOp} />}
+
       {/* what can still be made out in the dark */}
       <g opacity={oraAmb}><Bean f={oraO} k={k} id={2} /></g>
       <g opacity={0.7 * (1 - oraGone) * (1 - mothsLeave)}>{oraMoths.map((mt, i) => <Card key={i} x={mt.p[0]} y={mt.p[1]} s={0.6} rot={mt.rot} flip={mt.flip} lit={0} />)}</g>
@@ -330,6 +408,7 @@ function Shot({ k, variant }) {
 
       {/* everything the lamp reveals */}
       <g mask={st}>
+        {swing && roomOp > 0 && <HouseSection op={roomOp} sec={secOp} />}
         {dust(T)}
         <g opacity={1 - oraGone}>
           <Bean f={oraO} k={k} id={3} />
@@ -343,6 +422,7 @@ function Shot({ k, variant }) {
         <g opacity={swing ? houseVis : 0}>
           <RowHouse x={DXo} y={FL} />
         </g>
+        {slPow > 0 && slMoths.map((mt, i) => <Card key={'sl' + i} x={mt.p[0]} y={mt.p[1]} s={0.5} rot={mt.rot} flip={mt.flip} />)}
         <g opacity={privVis}>
           <Bean f={{ x: LAMP_X - 135, y: FL, s: 0.68, dir: 1, c: PAL.open, pose: POSES.idle(T + 0.4) }} k={k} id={51} />
           <Bean f={{ x: LAMP_X, y: FL, s: 0.8, dir: 1, c: PAL.open, pose: POSES.idle(T) }} k={k} id={52} />
@@ -398,9 +478,25 @@ function Shot({ k, variant }) {
         <ellipse cx={BO.pool[0]} cy={FL} rx={BO.pool[1]} ry={BO.pool[2]} fill={LIGHT} opacity={0.12 * oPow} />
       </g>
       <Lamp L={BO} pow={oPow} op={1 - oraGone} id="oeLampO" />
+      {swing && secOp > 0 && <StreetLight pow={clamp(slPow, 0, 1)} op={secOp} />}
+      {slPow > 0 && (
+        <g opacity={clamp(slPow, 0, 1)}>
+          <path d={slPoly} fill={LIGHT} opacity="0.09" />
+          <ellipse cx={SL.x} cy={FL} rx={SL.wP} ry={0.08 * SL.wP} fill={LIGHT} opacity="0.1" />
+          {slMoths.map((mt, i) => <Card key={i} x={mt.p[0]} y={mt.p[1]} s={0.5} rot={mt.rot} flip={mt.flip} lit={0} />)}
+        </g>
+      )}
       <path d={B.poly} fill="url(#oeHaze)" opacity={clamp(power * boost, 0, 1.5)} />
       <ellipse cx={B.pool[0]} cy={FL} rx={B.pool[1]} ry={B.pool[2]} fill={LIGHT} opacity={0.12 * clamp(power * boost, 0, 1.5)} />
-      <Lamp L={B} pow={power} id="oeLampT" />
+      {swing && roomOp > 0 && (
+        <g opacity={roomOp} fill={mix(SETC.cut, C.bg, 0.7)}>
+          {/* the side wall stops the light; it only gets out through the window */}
+          <rect x={SEC.x1} y={CEIL - SEC.t} width={SEC.t} height={SEC.win[0] - CEIL + SEC.t} />
+          <rect x={SEC.x1} y={SEC.win[1]} width={SEC.t} height={FL - SEC.win[1]} />
+          <rect x={SEC.x0 - SEC.t} y={CEIL - SEC.t} width={SEC.x1 - SEC.x0 + 2 * SEC.t} height={SEC.t} />
+        </g>
+      )}
+      <Lamp L={B} pow={power} id="oeLampT" up={1 - roomOp} />
     </g>
     </g>
   );
