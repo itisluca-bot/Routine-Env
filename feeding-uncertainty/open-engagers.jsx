@@ -167,6 +167,7 @@ function RowHouse({ x, y, dark = 0 }) {
       <rect x="-135" y="-600" width="420" height="600" fill={c(HOUSE.brick)} />
       <g clipPath={`url(#oeBrick${dark ? 'd' : 'l'})`} stroke={c(HOUSE.mortar)} strokeWidth="2">
         {Array.from({ length: 43 }, (_, i) => <line key={i} x1="-140" x2="290" y1={-i * 14} y2={-i * 14} />)}
+        {Array.from({ length: 43 }, (_, i) => Array.from({ length: 11 }, (_, j) => { const x = -135 + j * 42 + (i % 2 ? 21 : 0); return <line key={i + '-' + j} x1={x} x2={x} y1={-i * 14} y2={-(i + 1) * 14} />; }))}
       </g>
       <rect x="-153" y="-622" width="456" height="26" fill={c(HOUSE.cornice)} />
       <HouseWin x={-10} y={-540} w={110} h={150} />
