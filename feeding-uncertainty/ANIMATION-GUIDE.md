@@ -128,3 +128,4 @@ The user liked the concept but found the city too busy. The same line and timing
 - **Curators** (BeanFront) peek past the edge of a curtain in a few windows, fingers on the curtain's edge, eyes on the nearest swarm. When a swarm comes close they pull back and duck below the sill.
 - **Moths:** six red posts circle every lantern; six swarms of 4 to 26 posts fly down the alley and are pulled toward each light as they pass; a 30-post swarm comes through on "crises". Lit in the pools, red outlines in the dark.
 - **Camera:** a slow truck along the alley with a 3% push.
+- **Length:** the user asked for 2 s more, so the alley runs 7.00 s: Weight 0–2.28, Crises 2.28–6.76 (the line ends about 4.3 s in; the rest is the street carrying on), Hold to 7.00. Two extra swarms enter from off screen after "crises" so the tail never empties. Exported at 4K.
