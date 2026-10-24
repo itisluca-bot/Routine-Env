@@ -366,7 +366,7 @@
 
   // ── PostValue: the red post (crisis content) in value, for the red ramp's posterized grade ──
   // Always the same 32 × 42 card with rounded corners; kind sets what is on it. In the dark (outline) only the card's edge shows.
-  // flip < 0 shows the card's plain back (a card turning over never shows its face mirrored).
+  // Double-sided: flip < 0 shows the back, which carries the same face, counter-mirrored so it reads the right way round.
   // Values: card 0.56 (the film's red once graded), details 0.78–0.95 (the hot and pale reds), cut-outs 0.3 (dark red).
   const POST_KINDS = ['text', 'image', 'headline', 'avatar', 'video', 'chart', 'alert', 'feed', 'reactions'];
   function PostFace({ kind }) {
@@ -396,8 +396,9 @@
     const f = Math.abs(flip) < 0.04 ? 0.04 : flip;
     return (
       <g transform={`translate(${x} ${y}) rotate(${rot}) scale(${s * f} ${s})`} opacity={op}>
-        <rect x="-16" y="-21" width="32" height="42" rx="5" fill={outline ? 'none' : v(f > 0 ? 0.56 : 0.46)} stroke={v(0.8)} strokeWidth={outline ? 2.5 : 0} />
+        <rect x="-16" y="-21" width="32" height="42" rx="5" fill={outline ? 'none' : v(0.56)} stroke={v(0.8)} strokeWidth={outline ? 2.5 : 0} />
         {!outline && f > 0.25 && <PostFace kind={kind} />}
+        {!outline && f < -0.25 && <g transform="scale(-1 1)"><PostFace kind={kind} /></g>}
       </g>
     );
   }
