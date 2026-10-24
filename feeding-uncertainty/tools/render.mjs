@@ -10,6 +10,7 @@
 // Options: --fps 25, --out <dir>, --boilAmp <px>, --noBoil, --guide (narration caption; never for final renders),
 //          --set key=value[,key=value] (any tweak, e.g. --set concept=C), --half (1920x1080 frames for quick review)
 //          --settle <ms> for heavy shots: wait after each seek, then re-capture until two captures match, so no tile is caught half-drawn
+//          --minSize <ratio> (with --settle): a capture under ratio × the recent frames' median PNG size is blank or missing tiles; seek again and recapture
 //          --look <ramp>[:map|poster|lift] regrades the whole frame onto one group's portrait ramp (rigs/fu-look.jsx), for
 //          trying the testimony-portrait look on a finished shot without touching its scene code (see LOOK.md)
 import fs from 'node:fs';
@@ -126,6 +127,7 @@ const seek = (t) => tab.evaluate(({ sel, t }) => new Promise((res) => {
 }), { sel: SEL, t });
 
 const settle = Number(opt('settle', 0)) || 0;
+const minSize = Number(opt('minSize', 0)) || 0, sizes = [];   // with --settle: reject captures under minSize × the recent median PNG size
 const clip = { x: 0, y: 0, width: OUT_W, height: OUT_H };
 const t0 = Date.now();
 for (const [n, f] of frames.entries()) {
@@ -133,15 +135,32 @@ for (const [n, f] of frames.entries()) {
   const file = path.join(outDir, `${slug}_${String(f).padStart(4, '0')}.png`);
   if (!settle) await tab.screenshot({ path: file, clip });
   else {
-    await tab.waitForTimeout(settle);
-    let prev = await tab.screenshot({ clip });
-    for (let tries = 0; tries < 6; tries++) {
+    const capture = async () => {
       await tab.waitForTimeout(settle);
-      const cur = await tab.screenshot({ clip });
-      if (cur.equals(prev)) break;
-      prev = cur;
+      let prev = await tab.screenshot({ clip });
+      for (let tries = 0; tries < 6; tries++) {
+        await tab.waitForTimeout(settle);
+        const cur = await tab.screenshot({ clip });
+        if (cur.equals(prev)) break;
+        prev = cur;
+      }
+      return prev;
+    };
+    let shot = await capture();
+    // --minSize: a capture much smaller than the recent good frames is blank or missing tiles (two blank captures
+    // match, so the settle check alone lets them through); seek away and back, and capture again
+    if (minSize && sizes.length) {
+      const ref = [...sizes].sort((a, b) => a - b)[Math.floor(sizes.length / 2)];
+      for (let tries = 0; tries < 10 && shot.length < minSize * ref; tries++) {
+        console.log(`\n  frame ${f}: ${shot.length} bytes, under ${minSize} × ${ref}; capturing again`);
+        await seek(((f + 1) % total) / fps);
+        await tab.waitForTimeout(settle);
+        await seek(f / fps);
+        shot = await capture();
+      }
     }
-    fs.writeFileSync(file, prev);
+    if (shot.length >= minSize * (sizes.length ? [...sizes].sort((a, b) => a - b)[Math.floor(sizes.length / 2)] : 0)) { sizes.push(shot.length); if (sizes.length > 9) sizes.shift(); }
+    fs.writeFileSync(file, shot);
   }
   if (n % 10 === 0 || n === frames.length - 1) process.stdout.write(`\r  frame ${n + 1}/${frames.length}`);
 }
