@@ -49,6 +49,7 @@ This is the working guide for a new Claude session. Read it together with `CLAUD
 | `curator-phone-kit.jsx` | The curator's phone in first person (`window.FU_PHONE`): phone, screen UI drawn in value (feed, "…" menu, keyboard, chat, icons), `WarmPost` (comfort faces: cat, sun, cup, friends, plant, bowl, heart), feed layout, and hands (`Mitt`, `Stumps`). Load after `rigs/fu-look.jsx` and `open-engagers-concepts.jsx` |
 | `Curator Phone Concepts.dc.html` + `curator-phone-concepts.jsx` | Round-1 ideation for the phone shot (§11) |
 | `Curator Phone.dc.html` + `curator-phone.jsx` | **The current phone shot** (concept A, §12). `--set variant=two` (default) or `one` |
+| `Resistance.dc.html` + `resistance.jsx` | **The resistance shot** (§13). `--set camera=track` (chosen), `look=toned` (default) or `old` |
 | `tools/render.mjs` | Headless renderer (§6) |
 
 Load order in a page: `./animations-v3.jsx ./tweaks-panel.jsx ./rigs/bean-rig.jsx ./open-engagers-concepts.jsx ./your-shot.jsx`.
@@ -103,6 +104,7 @@ node tools/render.mjs "<page>" --frames 0,120,300 --half --guide                
 2. **Open engagers** (`open-engagers.jsx`, `timing_2.srt`, 22.48 s). The user chose **variant 2**. Moved to the toned look in October 2026 (§8, "Look").
 3. **The toned look** (October 2026, `LOOK.md`). The rig and mockups are done. Open engagers and Vulnerability Alley are moved to it (the alley as a preview only); Topography is next.
 5. **Curators on the phone** (`timing_0.srt`, 9s4f = 9.16 s). Round-1 concepts (§11); the user chose **A · Long press** (§12). Exported at 4K (variant `two`).
+6. **Resistance** (`resistance.jsx`, `timing_4.srt`, not in the repo; 10.00 s). Built in another session; moved to the toned look in October 2026 (§13).
 4. **Vulnerability** (5.00 s, no SRT yet). Round 1, the city of apartment blocks (`vulnerability.jsx`, variant 1), was exported at 4K; the user then found it too busy. Round 2 is the alley (`vulnerability-alley.jsx`, §10).
 
 ## 8. Open engagers shot: what is approved
@@ -180,3 +182,13 @@ The user chose concept A, the hands from the `X` sheet (mitt and thumb) and A's 
 - **Hands against the phone:** hands are lifted out of the ramp's darkest tones (`phTone` from tone 2 up behind the phone, `phToneF` from tone 3 up in front), so the thumb's edge band never merges with the phone's dark body.
 - **The cat post:** the cat's body sits on the photo's bottom edge, cropped by it (it used to hang over the frame). The friends photo the same way (and without the hairline strip that ran along its top). The double-tap heart pops where the thumb tapped, beside the cat's face, in a dark tone with a light rim (cream on the cream photo vanished), rides on the card and fades before the feed scrolls on.
 - **Room glow:** the bedroom's glow follows the screen's brightness (`screenLight`: red area on screen and the menu's dim lower it), softer than concept B. The room and hands drift a little toward red (at most 0.2) while a red post fills the screen.
+
+## 13. Resistance
+
+Line: "Coping is a form of resistance. The question is, what do people have to resist with?" (`timing_4.srt`, which is not in the repo; the word times are in `Piece`). 10.00 s: Resistance 0–3.04, Question 3.04–4.52, With 4.52–7.76, Orange 7.76–9.76 (two seconds staying with orange), Hold to 10.00. Built in another session and brought in as delivered (commit "Resistance: add the shot as delivered"); everything below except the look comes from that version.
+
+- **Set:** a terrace street at night at ground level, close, in the style of the Vulnerability alley: brick fronts, stone lintels and sills, streetlights whose pools are the only light on the brick. Three front doors: blue, teal, orange.
+- **Beat:** one swarm of red posts, circling the streetlight left of blue from the start, moves along the doors on "what do people have to resist with" and flies on out of frame. Blue shuts the door early, then a roller shutter comes down over the window. A second teal person inside puts a hand on teal's shoulder; two teal children rise into teal's lit window. Orange pulls back behind the door and the window behind their curtain flickers; after the push-in they open up a little again.
+- **Camera (chosen: 2 · Track):** the houses further apart; an even drift from blue and teal, a gentle lift as the swarm moves along the doors, then a long ease to a stop at orange with a slow push-in to the last frame. Camera 1 · Push is kept in the file.
+- **Look (toned, October 2026, `look` tweak, default `toned`):** the alley's AE (see `LOOK.md` §8). Hair: blue none, teal beanie (the teal hero of Open Engagers), teal's companion long, orange none, the teal children long and none.
+- **Render:** `node tools/render.mjs "Resistance.dc.html" --set camera=track,referenceOverlay=false --settle 150` (add `--prores` for a ProRes 4444 .mov).

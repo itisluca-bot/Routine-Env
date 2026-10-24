@@ -10,8 +10,22 @@
 //     with it, slowly, then eases to a stop at orange and stays there for the last two seconds (section Orange).
 // People use the Bean front view (rigs/bean-rig.jsx); helpers from open-engagers-concepts.jsx (window.FU_RIG).
 // The previous round (open gallery) is kept in archive/resistance-gallery.jsx.
+// The toned look (LOOK.md, `look` tweak, default `toned`; `old` is the shot before the look), as the Vulnerability alley's AE:
+// no world ramp. A neutral night (#1a1d1c); the street outside the light in its own muted brick (TDARK); inside the
+// streetlights' pools the brick keeps its own colours; the streetlight stays neutral white. Each group's colour comes from its
+// own light: the glow in each window (and the room light in each doorway) is in its group's ramp and washes its own facade.
+// People are front-view ToneBeans lit by the streetlights and their own room light; posts are PostValue (mixed kinds) in the
+// red ramp, outlines outside the pools, filled inside.
 const { W, H, OUT_W, OUT_H, MOTION, osc, lerp, lerp2, cam, mix, C, hash, jitter, Card } = window.FU_RIG;
 const { BeanFront, PAL } = window.FU_BEAN;
+const { RAMPS, LookDefs, ToneBean, PostValue, POST_KINDS } = window.FU_LOOK;
+const RK = ['wd', 'open', 'cur'];
+const NEUTRAL = '#1a1d1c';                          // the night outside the light (the alley's, untinted)
+const TDARK = 0.6;                                  // toned: the unlit copy, muted brick, sharp enough for the bricks to read
+const GLOW_K = 1.5;                                 // toned: the glows' strength (the alley's AE); above 1 they wash their facade
+const GCOL = RK.map((r, i) => mix([PAL.wd, PAL.open, PAL.cur][i].body, RAMPS[r][5], 0.35));   // each glow, toward its ramp
+// hair per character (toned): the teal resident as the teal hero of Open Engagers (beanie)
+const HAIR = { 1: 'none', 2: 'beanie', 3: 'none', 5: 'long', 11: 'long', 12: 'none' };
 const LIGHT = '#e9f5ef';
 const GRP = [PAL.wd, PAL.open, PAL.cur];
 const GLOW = [PAL.wd.body, PAL.open.body, PAL.cur.body];
@@ -23,7 +37,27 @@ const STONE = '#4a4642', FRAME = '#2b2e2d', GLASS = '#111413', CURTAIN = '#4a3c3
 const WIN = { dx: 110, w: 150, h: 170, y: FLR - 260 };   // ground-floor window, relative to the door centre
 const UP = { y: 220, h: 200 };                           // first-floor windows
 
-function Front({ k, id, ...p }) { return <BeanFront {...p} T={k.T} boil={k.amp > 0} boilAmp={k.amp} id={k.uid * 1000 + id} />; }
+function Front({ k, id, ...p }) {
+  if (!k.toned) return <BeanFront {...p} T={k.T} boil={k.amp > 0} boilAmp={k.amp} id={k.uid * 1000 + id} />;
+  // toned: the same figure and pose as a front-view ToneBean in its group's ramp; arms={false} hides both arms
+  const { c, arms = true, pose, lights, amb, ...q } = p;
+  const ramp = RK[[PAL.wd, PAL.open, PAL.cur].indexOf(c)];
+  return <ToneBean {...q} view="front" pose={arms ? pose : { ...pose, armL: null, armR: null }} ramp={ramp} hair={HAIR[id] || 'none'}
+    lights={lights} amb={amb ?? 0.28} bf={k.bf} amp={k.amp} id={k.uid * 1000 + id} />;
+}
+// a grade from a set's own colours into a ramp (luminance × gain), as in vulnerability-alley.jsx. The region is the element's
+// own box, so it works inside the camera transform (LookDefs' grades cover a fixed 1920 × 1080 region; this street is wider)
+function Grade({ id, R, poster = false, gain = 1 }) {
+  const ch = (i) => R.map((c) => (parseInt(c.slice(1 + 2 * i, 3 + 2 * i), 16) / 255).toFixed(4)).join(' ');
+  const row = `${(0.2126 * gain).toFixed(4)} ${(0.7152 * gain).toFixed(4)} ${(0.0722 * gain).toFixed(4)} 0 0`;
+  return (
+    <filter id={id} x="-4%" y="-4%" width="108%" height="108%" colorInterpolationFilters="sRGB">
+      <feColorMatrix in="SourceGraphic" type="matrix" values={`${row}  ${row}  ${row}  0 0 0 1 0`} result="l" />
+      <feComponentTransfer in="l">{['R', 'G', 'B'].map((c, i) => React.createElement('feFunc' + c, { key: c, type: poster ? 'discrete' : 'table', tableValues: ch(i) }))}</feComponentTransfer>
+      {poster && <feGaussianBlur stdDeviation="0.45" />}
+    </filter>
+  );
+}
 function swarmAt(T, id, c, n, sp, s = 0.6) {
   return Array.from({ length: n }, (_, i) => {
     const h = (m) => hash(i * 9.1 + m * 3.7 + id * 17.3);
@@ -69,8 +103,8 @@ function street(SP) {
 const lightAt = (S, x, y) => Math.max(0, ...S.lamps.map((lx) => Math.exp(-(((x - lx) / 260) ** 2) - (((y - 560) / 420) ** 2))));
 
 // one brick front, drawn lit or in the dark
-function HouseFront({ hs, lit, J }) {
-  const c = (col) => mix(col, C.bg, lit ? 0 : DARK);
+function HouseFront({ hs, lit, J, dk = DARK }) {
+  const c = (col) => mix(col, C.bg, lit ? 0 : dk);
   const { x0, x1, dx, brick } = hs, top = -700;
   const mortar = c(mix(brick, '#000000', 0.3));
   let courses = '', joints = '';
@@ -105,8 +139,8 @@ function HouseFront({ hs, lit, J }) {
     </g>
   );
 }
-function Pavement({ lit, S }) {
-  const c = (col) => mix(col, C.bg, lit ? 0 : DARK);
+function Pavement({ lit, S, dk = DARK }) {
+  const c = (col) => mix(col, C.bg, lit ? 0 : dk);
   let joints = '';
   for (let x = -1400; x < 3400; x += 130) joints += `M ${x} ${FLR + 12} L ${x - 18} ${KERB - 6} `;
   return (
@@ -158,9 +192,12 @@ function Street({ k, camMode }) {
   const flick = T < tO - 0.1 ? 1 : clamp(0.62 + 0.3 * Math.sin(T * 31) * Math.sin(T * 13.7) - 2 * Math.max(0, Math.sin(T * 5.3 + 1) - 0.75), 0.12, 1);
   const glow = [1 - shutter, 1, flick];
   const room = [0.08 + 0.4 * g(w.have, w.have + 0.4), 0.6, T > w.resist ? 0.04 + 0.05 * Math.abs(Math.sin(T * 29)) : 0.08];
-  const roomFill = (r) => mix('#171310', '#c9d6d0', 0.55 * r);
   const breathe = 0.96 + 0.04 * osc(T, 3.7);
   const watch = 1;
+  // toned: muted dark copy, glows in each group's ramp; the room light in a doorway is the group's own light too
+  const toned = k.toned, dk = toned ? TDARK : DARK, gcol = toned ? GCOL : GLOW, gk = toned ? GLOW_K : 1;
+  const roomFill = (r, i) => (toned ? mix(mix(RAMPS[RK[i]][0], C.bg, 0.55), RAMPS[RK[i]][5], 0.55 * r) : mix('#171310', '#c9d6d0', 0.55 * r));
+  const lamps = S.lamps.map((lx) => ({ x: lx, y: LAMP_Y, i: 0.9 * breathe, reach: 520 }));
 
   // camera
   let cx, cy, z;
@@ -189,39 +226,41 @@ function Street({ k, camMode }) {
       { lean: -10 + 6 * pull + 3 * reopen, tilt: -8 + 4 * pull + 3 * reopen, look: [lookX, 0.1 + 0.2 * pull - 0.15 * reopen] },   // eyes keep following the swarm
     ][i];
     const fx = i === 1 ? dx + 18 : mir ? gx0 + DW - Math.min(gap * 0.5 + 4, DW / 2) : gx0 + Math.min(gap * 0.5 + 4, DW / 2);
+    // toned: lit by the streetlights and, from behind and above, by their own room light
+    const lights = [...lamps, { x: gx0 + DW / 2, y: top + 30, i: 0.5 * room[i], reach: 160 }];
     let mate = null;
     if (i === 1) {   // teal's companion, just inside: right hand reaches up to teal's left shoulder
       const ms = 1.08, mx = dx - 38, sh = [(fx - 13 - mx) / ms, -174 / ms];
-      mate = <Front k={k} id={5} x={mx} y={FLR} s={ms} c={PAL.open} pose={{ lean: 5 * hand + 1.5 * osc(T, 3.4, 0.4), tilt: 6 * hand + 2 * osc(T, 2.9), look: [0.7 * hand, 0.2], armR: { to: lerp2([26, -92], sh, hand) }, armL: [8, 6] }} />;
+      mate = <Front k={k} id={5} x={mx} y={FLR} s={ms} c={PAL.open} lights={lights} amb={0.24} pose={{ lean: 5 * hand + 1.5 * osc(T, 3.4, 0.4), tilt: 6 * hand + 2 * osc(T, 2.9), look: [0.7 * hand, 0.2], armR: { to: lerp2([26, -92], sh, hand) }, armL: [8, 6] }} />;
     }
     const wx = hs.wins[0], wy = WIN.y, ww = WIN.w, wh = WIN.h, gl = glow[i];
     const leafL = lightAt(S, dx, FLR - DH / 2);
     const cur = (x0, x1, key) => {
-      const col = mix(mix(CURTAIN, C.bg, 0.45), GLOW[2], 0.35 * gl);
+      const col = mix(mix(toned ? '#3d3129' : CURTAIN, C.bg, 0.45), gcol[2], 0.35 * gl * (toned ? 1.3 : 1));
       return <g key={key}><rect x={Math.min(x0, x1)} y={wy} width={Math.abs(x1 - x0)} height={wh} fill={col} />{[0.33, 0.66].map((f) => <line key={f} x1={lerp(x0, x1, f)} x2={lerp(x0, x1, f) + 2} y1={wy} y2={wy + wh} stroke={mix(col, '#000000', 0.25)} strokeWidth="3" />)}</g>;
     };
     return (
       <g key={i}>
         {/* doorway: room light, the people inside, the door leaf */}
-        <rect x={gx0} y={top} width={DW} height={DH} fill={roomFill(room[i])} />
+        <rect x={gx0} y={top} width={DW} height={DH} fill={roomFill(room[i], i)} />
         <clipPath id={`rsDoor${k.uid}${i}`}><rect x={gx0} y={top} width={DW} height={DH} /></clipPath>
         <g clipPath={`url(#rsDoor${k.uid}${i})`}>
           {mate}
-          <Front k={k} id={i + 1} x={fx} y={FLR} s={1} pose={pose} c={GRP[i]} arms={i === 1} />
+          <Front k={k} id={i + 1} x={fx} y={FLR} s={1} pose={pose} c={GRP[i]} arms={i === 1} lights={lights} />
         </g>
-        <rect x={leafX} y={top} width={DW - gap} height={DH} fill={mix(hs.door, C.bg, DARK * (1 - leafL))} />
-        {[0, 1].map((r) => <rect key={r} x={leafX + 18} y={top + 26 + r * 128} width={Math.max(0, DW - gap - 36)} height="100" fill="none" stroke={mix(mix(hs.door, '#000000', 0.3), C.bg, DARK * (1 - leafL))} strokeWidth="3" />)}
+        <rect x={leafX} y={top} width={DW - gap} height={DH} fill={mix(hs.door, C.bg, dk * (1 - leafL))} />
+        {[0, 1].map((r) => <rect key={r} x={leafX + 18} y={top + 26 + r * 128} width={Math.max(0, DW - gap - 36)} height="100" fill="none" stroke={mix(mix(hs.door, '#000000', 0.3), C.bg, dk * (1 - leafL))} strokeWidth="3" />)}
         <circle cx={mir ? leafX + DW - gap - 14 : leafX + 14} cy={top + DH * 0.52} r="5" fill="#555" />
         {/* fanlight and window, glowing in the group colour */}
-        <rect x={gx0} y={top - 48} width={DW} height="36" fill={mix(GLASS, GLOW[i], 0.4 * gl)} />
-        {[44, 38, 32, 26, 20, 14, 8].map((e, j) => <rect key={j} x={wx - e} y={wy - e} width={ww + 2 * e} height={wh + 2 * e} rx={e} fill={GLOW[i]} opacity={0.022 * gl} />)}
-        <rect x={wx} y={wy} width={ww} height={wh} fill={mix(mix(GLASS, GLOW[i], 0.32 * gl), '#c9d6d0', 0.3 * room[i] * gl)} />
+        <rect x={gx0} y={top - 48} width={DW} height="36" fill={mix(GLASS, gcol[i], 0.4 * gl)} />
+        {[44, 38, 32, 26, 20, 14, 8].map((e, j) => <rect key={j} x={wx - e} y={wy - e} width={ww + 2 * e} height={wh + 2 * e} rx={e} fill={gcol[i]} opacity={0.022 * gl * gk} />)}
+        <rect x={wx} y={wy} width={ww} height={wh} fill={mix(mix(GLASS, gcol[i], 0.32 * gl * (toned ? 1.4 : 1)), toned ? RAMPS[RK[i]][6] : '#c9d6d0', 0.3 * room[i] * gl)} />
         {i === 1 && (
           <g>
             <clipPath id={`rsWin${k.uid}`}><rect x={wx} y={wy} width={ww} height={wh} /></clipPath>
             <g clipPath={`url(#rsWin${k.uid})`}><g transform={`translate(0 ${(150 * (1 - g(w.people + 0.1, w.have + 0.3))).toFixed(1)})`}>
-              <Front k={k} id={11} x={wx + 45} y={wy + wh + 95} s={0.6} c={PAL.open} pose={{ tilt: 8, look: [1, 0] }} />
-              <Front k={k} id={12} x={wx + 105} y={wy + wh + 105} s={0.5} c={PAL.open} pose={{ tilt: -6, look: [-1, 0.2] }} headScale={1.3} />
+              <Front k={k} id={11} x={wx + 45} y={wy + wh + 95} s={0.6} c={PAL.open} pose={{ tilt: 8, look: [1, 0] }} lights={[{ x: wx + ww / 2, y: wy - 20, i: 0.6, reach: 120 }]} amb={0.26} />
+              <Front k={k} id={12} x={wx + 105} y={wy + wh + 105} s={0.5} c={PAL.open} pose={{ tilt: -6, look: [-1, 0.2] }} headScale={1.3} lights={[{ x: wx + ww / 2, y: wy - 20, i: 0.6, reach: 120 }]} amb={0.26} />
             </g></g>
           </g>
         )}
@@ -229,12 +268,12 @@ function Street({ k, camMode }) {
         <rect x={wx + ww / 2 - 2} y={wy} width="4" height={wh} fill={FRAME} />
         {i === 0 && (
           <g>
-            <rect x={wx} y={wy} width={ww} height={wh * shutter} fill={mix('#2b2f2d', C.bg, DARK * (1 - lightAt(S, wx, wy)))} />
+            <rect x={wx} y={wy} width={ww} height={wh * shutter} fill={mix('#2b2f2d', C.bg, dk * (1 - lightAt(S, wx, wy)))} />
             {Array.from({ length: Math.ceil(13 * shutter) }, (_, j) => <line key={j} x1={wx} x2={wx + ww} y1={wy + wh * shutter - j * 13} y2={wy + wh * shutter - j * 13} stroke="#1e2120" strokeWidth="2" />)}
             <rect x={wx - 6} y={wy - 12} width={ww + 12} height="14" fill="#333836" />
           </g>
         )}
-        <path d={`M ${gapX} ${FLR + 12} L ${gapX + gap} ${FLR + 12} L ${gapX + gap + 50} ${KERB - 8} L ${gapX - 50} ${KERB - 8} Z`} fill={LIGHT} opacity={0.16 * room[i] * clamp(open * 4, 0, 1)} />
+        <path d={`M ${gapX} ${FLR + 12} L ${gapX + gap} ${FLR + 12} L ${gapX + gap + 50} ${KERB - 8} L ${gapX - 50} ${KERB - 8} Z`} fill={toned ? RAMPS[RK[i]][5] : LIGHT} opacity={(toned ? 0.2 : 0.16) * room[i] * clamp(open * 4, 0, 1)} />
       </g>
     );
   });
@@ -243,11 +282,11 @@ function Street({ k, camMode }) {
     const L = lightAt(S, hs.dx, FLR - DH / 2);
     return (
       <g key={hs.j}>
-        <rect x={hs.dx - DW / 2} y={FLR - DH} width={DW} height={DH} fill={mix(hs.door, C.bg, DARK * (1 - L))} />
+        <rect x={hs.dx - DW / 2} y={FLR - DH} width={DW} height={DH} fill={mix(hs.door, C.bg, dk * (1 - L))} />
         {hs.nGlow >= 0 && hs.wins.slice(0, 1).map((wx) => (
           <g key={wx}>
-            <rect x={wx} y={WIN.y} width={WIN.w} height={WIN.h} fill={mix(C.bg, GLOW[hs.nGlow], 0.5 + 0.06 * osc(T, 4.3, hs.j * 0.2))} />
-            {Array.from({ length: 13 }, (_, r) => <rect key={r} x={wx} y={WIN.y + 3 + r * 13} width={WIN.w} height="9" fill={mix('#2c312f', C.bg, DARK * (1 - L))} />)}
+            <rect x={wx} y={WIN.y} width={WIN.w} height={WIN.h} fill={mix(C.bg, gcol[hs.nGlow], Math.min(1, (0.5 + 0.06 * osc(T, 4.3, hs.j * 0.2)) * (toned ? 1.2 : 1)))} />
+            {Array.from({ length: 13 }, (_, r) => <rect key={r} x={wx} y={WIN.y + 3 + r * 13} width={WIN.w} height="9" fill={mix('#2c312f', C.bg, dk * (1 - L))} />)}
           </g>
         ))}
       </g>
@@ -257,7 +296,20 @@ function Street({ k, camMode }) {
   const x0 = S.houses[0].x0, x1 = S.houses[S.houses.length - 1].x1;
   const cone = (lx) => `M ${lx - 13} ${LAMP_Y + 16} L ${lx + 13} ${LAMP_Y + 16} L ${lx + 300} ${KERB - 8} A 300 46 0 0 1 ${lx - 300} ${KERB - 8} Z`;
   const card = (lit) => posts.map((p, i) => <Card key={i} x={p.x} y={p.y} s={p.s} rot={p.rot} flip={p.flip} lit={lit} />);
+  const post = (outline) => posts.map((p, i) => <PostValue key={i} x={p.x} y={p.y} s={p.s} rot={p.rot} flip={p.flip} outline={outline} kind={POST_KINDS[i % POST_KINDS.length]} />);
   const J = (n) => k.J(n);
+  // toned: the light in each window washes its own facade in its ramp (a soft pool round the window, at GLOW_K - 1 of full)
+  const glowWins = toned ? [
+    ...S.houses.filter((hs) => hs.who >= 0).map((hs) => ({ hs, ramp: RK[hs.who], a: glow[hs.who] })),
+    ...S.houses.filter((hs) => hs.who < 0 && hs.nGlow >= 0).map((hs) => ({ hs, ramp: RK[hs.nGlow], a: 0.8 + 0.1 * osc(T, 4.3, hs.j * 0.2) })),
+  ] : [];
+  const pools = (fill) => S.lamps.map((lx, i) => (
+    <g key={i}>
+      <ellipse cx={lx} cy="560" rx="300" ry="420" fill={fill} />
+      <ellipse cx={lx} cy="935" rx="330" ry="80" fill={fill} />
+      <circle cx={lx} cy={LAMP_Y} r="150" fill={fill} />
+    </g>
+  ));
   return (
     <g transform={cam(cx, cy, z)}>
       <defs>
@@ -265,38 +317,63 @@ function Street({ k, camMode }) {
         <radialGradient id="rsHalo"><stop offset="0" stopColor={LIGHT} stopOpacity="0.55" /><stop offset="0.3" stopColor={LIGHT} stopOpacity="0.16" /><stop offset="1" stopColor={LIGHT} stopOpacity="0" /></radialGradient>
         <linearGradient id="rsCone" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor={LIGHT} stopOpacity="0.1" /><stop offset="1" stopColor={LIGHT} stopOpacity="0.03" /></linearGradient>
         <mask id={`rsLit${k.uid}`} maskUnits="userSpaceOnUse" x="-1400" y="-800" width="4800" height="2400">
-          <g opacity={breathe}>
-            {S.lamps.map((lx, i) => (
-              <g key={i}>
-                <ellipse cx={lx} cy="560" rx="300" ry="420" fill="url(#rsPool)" />
-                <ellipse cx={lx} cy="935" rx="330" ry="80" fill="url(#rsPool)" />
-                <circle cx={lx} cy={LAMP_Y} r="150" fill="url(#rsPool)" />
-              </g>
-            ))}
-          </g>
+          <g opacity={breathe}>{pools('url(#rsPool)')}</g>
         </mask>
         <mask id={`rsAir${k.uid}`} maskUnits="userSpaceOnUse" x="-1400" y="-800" width="4800" height="2400">
           {S.lamps.map((lx, i) => <path key={i} d={cone(lx)} fill="#fff" />)}
         </mask>
+        {toned && (
+          <React.Fragment>
+            <radialGradient id="rsPoolK"><stop offset="0.3" stopColor="#000" /><stop offset="1" stopColor="#000" stopOpacity="0" /></radialGradient>
+            <radialGradient id="rsGlowPool"><stop offset="0.25" stopColor="#fff" /><stop offset="1" stopColor="#fff" stopOpacity="0" /></radialGradient>
+            <mask id={`rsDark${k.uid}`} maskUnits="userSpaceOnUse" x="-1400" y="-800" width="4800" height="2400">
+              <rect x="-1400" y="-800" width="4800" height="2400" fill="#fff" /><g opacity={breathe}>{pools('url(#rsPoolK)')}</g>
+            </mask>
+            {RK.map((r) => <Grade key={r} id={`rsGlowG-${r}`} R={RAMPS[r]} gain={2.2} />)}
+            <Grade id="rsRed" R={RAMPS.red} poster />
+            {glowWins.map(({ hs, a }) => (
+              <mask key={hs.j} id={`rsGlowM${k.uid}.${hs.j}`} maskUnits="userSpaceOnUse" x={hs.x0 - 200} y="-800" width={hs.x1 - hs.x0 + 400} height="2400">
+                <g opacity={clamp(GLOW_K - 1, 0, 1) * a}>
+                  <ellipse cx={hs.wins[0] + WIN.w / 2} cy={WIN.y + WIN.h / 2} rx={WIN.w * 1.6} ry={WIN.h * 1.3} fill="url(#rsGlowPool)" opacity="0.65" />
+                  <ellipse cx={(hs.x0 + hs.x1) / 2} cy={WIN.y + WIN.h / 2} rx={(hs.x1 - hs.x0) * 0.6} ry="300" fill="url(#rsGlowPool)" opacity="0.4" />
+                </g>
+              </mask>
+            ))}
+          </React.Fragment>
+        )}
       </defs>
-      <Pavement lit={false} S={S} />
-      {S.houses.map((hs) => <HouseFront key={hs.j} hs={hs} lit={false} J={J(hs.j + 10)} />)}
+      <Pavement lit={false} S={S} dk={dk} />
+      {S.houses.map((hs) => <HouseFront key={hs.j} hs={hs} lit={false} J={J(hs.j + 10)} dk={dk} />)}
       <g mask={`url(#rsLit${k.uid})`}>
         <Pavement lit S={S} />
         {S.houses.map((hs) => <HouseFront key={hs.j} hs={hs} lit J={J(hs.j + 10)} />)}
       </g>
+      {/* toned: each window's light on its own facade, in its ramp */}
+      {glowWins.map(({ hs, ramp }) => (
+        <g key={hs.j} mask={`url(#rsGlowM${k.uid}.${hs.j})`}><g filter={`url(#rsGlowG-${ramp})`}><HouseFront hs={hs} lit J={J(hs.j + 10)} /></g></g>
+      ))}
       {neighbours}
       {residents}
       {S.lamps.map((lx, i) => <path key={i} d={cone(lx)} fill="url(#rsCone)" opacity={breathe} />)}
       <g mask={`url(#rsAir${k.uid})`}>{dust(T, x0, x1)}</g>
       {S.lamps.map((lx, i) => <Lamp key={i} x={lx} breathe={breathe} />)}
-      <g opacity="0.75">{card(0)}</g>
-      <g mask={`url(#rsLit${k.uid})`}>{card(1)}</g>
+      {toned ? (
+        <React.Fragment>
+          {/* posts: red outlines in the dark, filled where the light falls on them */}
+          <g mask={`url(#rsDark${k.uid})`} opacity="0.75"><g filter="url(#rsRed)">{post(true)}</g></g>
+          <g mask={`url(#rsLit${k.uid})`}><g filter="url(#rsRed)">{post(false)}</g></g>
+        </React.Fragment>
+      ) : (
+        <React.Fragment>
+          <g opacity="0.75">{card(0)}</g>
+          <g mask={`url(#rsLit${k.uid})`}>{card(1)}</g>
+        </React.Fragment>
+      )}
     </g>
   );
 }
 
-function Piece({ guide, boil, boilAmp, camMode }) {
+function Piece({ guide, boil, boilAmp, camMode, look = 'toned' }) {
   const { T, CUES } = useComposition();
   const q = { R: CUES.Resistance, Q: CUES.Question, X: CUES.With, O: CUES.Orange, E: CUES.Hold };
   // word timings from timing_4.srt, anchored to the section they fall in
@@ -313,11 +390,13 @@ function Piece({ guide, boil, boilAmp, camMode }) {
     { at: w.what, until: q.O, text: 'what do people have to resist with?' },
   ];
   const amp = boil ? boilAmp : 0, bf = Math.floor(T * 8);
-  const k = { T, q, w, bf, amp, J: jitter(bf, amp), uid: 0 };
+  const toned = look !== 'old', ground = toned ? NEUTRAL : C.bg;
+  const k = { T, q, w, bf, amp, J: jitter(bf, amp), uid: 0, toned };
   return (
-    <div data-screen-label={`Resistance · ${T.toFixed(1)}s`} style={{ position: 'absolute', left: 0, top: 0, width: W, height: H, overflow: 'hidden', background: C.bg, transform: `scale(${OUT_W / W})`, transformOrigin: '0 0' }}>
+    <div data-screen-label={`Resistance · ${T.toFixed(1)}s`} style={{ position: 'absolute', left: 0, top: 0, width: W, height: H, overflow: 'hidden', background: ground, transform: `scale(${OUT_W / W})`, transformOrigin: '0 0' }}>
       <svg width={W} height={H} style={{ position: 'absolute', left: 0, top: 0 }}>
-        <rect width={W} height={H} fill={C.bg} />
+        <rect width={W} height={H} fill={ground} />
+        {toned && <LookDefs ramps={RK} bf={bf} amp={amp} />}
         <Street k={k} camMode={camMode} />
       </svg>
       {guide && (
@@ -335,11 +414,13 @@ function FUResistance() {
   return (
     <React.Fragment>
       <CompositionStage width={OUT_W} height={OUT_H} scenes={window.OM_SCENES} playback={window.OM_PLAYBACK} bg={C.bg}>
-        <Piece guide={t.referenceOverlay} boil={t.lineBoil} boilAmp={t.boilAmp ?? 0.5} camMode={t.camera || 'push'} />
+        <Piece guide={t.referenceOverlay} boil={t.lineBoil} boilAmp={t.boilAmp ?? 0.5} camMode={t.camera || 'push'} look={t.look || 'toned'} />
       </CompositionStage>
       <TweaksPanel>
         <TweakSection label="Camera" />
         <TweakSelect label="Camera" value={t.camera || 'push'} options={[{ value: 'push', label: '1 · Push in on orange' }, { value: 'track', label: '2 · Wider apart, tracking' }]} onChange={(v) => setTweak('camera', v)} />
+        <TweakSection label="Look" />
+        <TweakSelect label="Look" value={t.look || 'toned'} options={[{ value: 'toned', label: 'Toned (LOOK.md)' }, { value: 'old', label: 'Before the look' }]} onChange={(v) => setTweak('look', v)} />
         <TweakSection label="Preview" />
         <TweakToggle label="Motion editor" value={t.motionEditor ?? true} onChange={(v) => setTweak('motionEditor', v)} />
         <TweakToggle label="Label + narration guide" value={t.referenceOverlay} onChange={(v) => setTweak('referenceOverlay', v)} />
