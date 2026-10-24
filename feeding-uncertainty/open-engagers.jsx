@@ -587,8 +587,15 @@ function Shot({ k, variant }) {
       {swing && ceilOp > 0 && (
         <g>
           {/* the room outside the lamp's light is untinted too (its own colours, faded toward the dark); only the light is teal */}
-          <HouseSection dark={DARK} op={roomOp} sec={secOp} ceil={ceilOp} part="back" />
-          <HouseSection dark={DARK} op={roomOp} sec={secOp} ceil={ceilOp} part="cut" />
+          {secOp > 0 && <HouseSection dark={DARK} op={roomOp} sec={secOp} ceil={ceilOp} part="back" />}
+          {secOp > 0 && <HouseSection dark={DARK} op={roomOp} sec={secOp} ceil={ceilOp} part="cut" />}
+          {/* on the teal backdrop the room is still slightly teal; it turns grey as the street comes in (crossfade) */}
+          {secOp < 1 && (
+            <g opacity={1 - secOp}>
+              <g filter="url(#oeBackDark-open)"><HouseSection dark={0.7} op={roomOp} sec={0} ceil={ceilOp} part="back" /></g>
+              <g filter="url(#oeDark-open)"><HouseSection dark={0.7} op={roomOp} sec={0} ceil={ceilOp} part="cut" /></g>
+            </g>
+          )}
           <HouseSection dark={DARK} sec={secOp} part="ext" />
         </g>
       )}
@@ -689,7 +696,7 @@ function Shot({ k, variant }) {
         {clipOn && <g clipPath="url(#oeOut)"><path d={B.poly} fill="url(#oeHazeW)" opacity={clamp(power * boost, 0, 1.5)} /></g>}
       </g>
       {swing && roomOp > 0 && (
-        <g opacity={roomOp} fill={mix(SETC.cut, C.bg, DARK)}>
+        <g opacity={roomOp} fill={mix(mix(SETC.cut, C.bg, DARK), mix(RO[0], RO[1], 0.5), 1 - secOp)}>
           {/* the side wall stops the light; it only gets out through the window */}
           <rect x={SEC.x1} y={CEIL - SEC.t} width={SEC.t} height={SEC.win[0] - CEIL + SEC.t} />
           <rect x={SEC.x1} y={SEC.win[1]} width={SEC.t} height={FL - SEC.win[1]} />
