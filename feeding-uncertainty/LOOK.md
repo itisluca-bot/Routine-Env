@@ -100,7 +100,7 @@ node tools/render.mjs "Curation Topography.dc.html" --look cur:map
 
 ## 7. Next
 
-1. The finished shots are re-rendered in the toned look, one shot per session, following §8. Done: Open Engagers, Vulnerability Alley (preview; 4K not yet exported), Resistance (exported at 4K).
+1. The finished shots are re-rendered in the toned look, one shot per session, following §8. Done: Open Engagers, Vulnerability Alley (exported at 4K), Resistance (exported at 4K).
 2. Lighting choices for mixed beats (several groups in one frame): decide with the user, per shot.
 
 ## 8. Moving a finished shot to the toned look (checklist for a new session)
