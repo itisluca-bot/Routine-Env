@@ -1,6 +1,6 @@
 # The toned look: bringing the animations closer to the testimony portraits
 
-Status: **direction agreed, October 2026.** Feedback on the first animations (Open Engagers, Vulnerability, Topography) was that they feel too different from the rest of the film, which is built around re-animated testimony portraits. The old rule against imitating the portraits is outdated. The rig (`rigs/fu-look.jsx`) and the mockups (`Look Concepts.dc.html`) follow the decisions below. The finished shots have not been rebuilt yet.
+Status: **direction agreed, October 2026.** Feedback on the first animations (Open Engagers, Vulnerability, Topography) was that they feel too different from the rest of the film, which is built around re-animated testimony portraits. The old rule against imitating the portraits is outdated. The rig (`rigs/fu-look.jsx`) and the mockups (`Look Concepts.dc.html`) follow the decisions below. Open Engagers has been rebuilt in the look; Vulnerability Alley and Topography have not yet.
 
 ## 1. Decisions
 
@@ -16,7 +16,7 @@ Status: **direction agreed, October 2026.** Feedback on the first animations (Op
 | Scenes | The mockups' approach is liked: a ramp world, out-of-focus backgrounds (depth of field), light pools posterized into bands |
 | Red | Comes in **through the posts** (the red crisis content), and possibly through some story beats (for example a ramp sliding toward red, as in the `door` mockup) |
 | Transitions | No ring match-cut into the portraits. Not needed |
-| Mixed beats | Beats with several groups need creative lighting choices. **Open: next session** |
+| Mixed beats | Beats with several groups need creative lighting choices, decided per shot. Open Engagers: **light that belongs to a group is in its ramp** (the curator's lamp beam is orange in a teal world, and the teal lamp's light turns orange where it falls on the curator's house). See ANIMATION-GUIDE §8 |
 
 ## 2. What makes the portraits look the way they do
 
@@ -100,7 +100,7 @@ node tools/render.mjs "Curation Topography.dc.html" --look cur:map
 
 ## 7. Next
 
-1. The finished shots are re-rendered in the toned look, one shot per session, following §8.
+1. The finished shots are re-rendered in the toned look, one shot per session, following §8. Done: Open Engagers.
 2. Lighting choices for mixed beats (several groups in one frame): decide with the user, per shot.
 
 ## 8. Moving a finished shot to the toned look (checklist for a new session)
@@ -118,6 +118,6 @@ node tools/render.mjs "Curation Topography.dc.html" --look cur:map
 9. Review at half resolution with `--guide`, run the pop check (ANIMATION-GUIDE §6), send a 1080p preview, then render the final 4K sequence without `--guide`.
 
 Per shot:
-- **Open Engagers** (`open-engagers.jsx`, variant 2): `BeanFig`, `Card`, `RowHouse`, `TerraceHouse`, hanging lamps with beam masks. Mixed beats: the two lamps (teal and orange) at the start, and the teal family with the orange child at the door.
+- **Open Engagers** (`open-engagers.jsx`, variant 2): **done** (October 2026). How it was done, useful for the next shots: sets kept their own colours and go through a small local `Grade` filter whose region is the element's own box (so it works inside the camera transform, unlike `GradeFilter`'s fixed 1920 × 1080 region); lit copies posterized with `gain` 2.6, dark copies smooth with gain about 0.9 (posterizing a dark copy collapses it into the darkest tone); to make one light read as another group's, its inside is redrawn in that ramp (a second ground or set copy masked by the beam). Simple props (lamp, table, chairs, dust, haze) are drawn straight in ramp colours, no filter.
 - **Vulnerability Alley** (`vulnerability-alley.jsx`): `BeanFront` curators peeking behind curtains, `TerraceHouse` rows, streetlights, blue and teal glows behind shutters. Mixed beat; the `alley` mockup shows one option (a blue world with a warm curator window). The earlier city version (`vulnerability.jsx`) was found too busy and replaced by the alley.
 - **Curation Topography** (`curation-topography.jsx`): uses its own top-down figure (`TopPerson`), which has no toned version yet; build one the same way (value art + `ToneFilter` + crisp details). Its rings are the shot's metaphor (the curator's buffer), not portrait rings: confirm with the user that they stay.
