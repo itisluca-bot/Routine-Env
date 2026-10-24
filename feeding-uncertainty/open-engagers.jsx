@@ -678,7 +678,6 @@ function Shot({ k, variant }) {
               hair={HAIR.oraKid} lights={kidLights} bf={k.bf} amp={k.amp} id={80} />
           </g>
           <rect x={DXo - 32} y={FL - 236} width="64" height="52" fill="none" stroke={mix(RC[0], C.bg, 0.3)} strokeWidth="5" opacity={houseVis} />
-          <rect x={DXo - 65} y={FL - 5} width="130" height="5" fill={RR[4]} opacity={houseVis * inLight * 0.6 * (1 - mo)} />
         </g>
       )}
 
