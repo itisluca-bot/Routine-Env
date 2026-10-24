@@ -95,7 +95,7 @@ const KID_HEAD = 1.3;                                    // children: smaller, w
 // a toned Bean. f.ramp: the person's group; lights: the scene's lights in f's coordinates (none = in the dark); amb: unlit value
 function Bean({ f, k, id, op = 1, lights = [], amb = 0.34 }) {
   if (op <= 0.003) return null;
-  return <ToneBean x={f.x} y={f.y} dir={f.dir || 1} s={f.s} pose={f.pose} ramp={f.ramp} hair={f.hair || 'none'} lights={lights} amb={amb} phone={f.phone || 0}
+  return <ToneBean x={f.x} y={f.y} dir={f.dir ?? 1} s={f.s} pose={f.pose} ramp={f.ramp} hair={f.hair || 'none'} lights={lights} amb={amb} phone={f.phone || 0}
     headScale={f.headScale || 1} op={op} id={id} bf={k.bf} amp={k.amp} />;
 }
 // lights from world space into a group drawn at translate(x, y) scale(s)
@@ -124,7 +124,7 @@ function ShotGrades({ ramps }) {
       {Object.entries(ramps).map(([key, R]) => (
         <React.Fragment key={key}>
           <Grade id={`oeLit-${key}`} R={R} poster gain={2.6} />
-          <Grade id={`oeBackLit-${key}`} R={R} gain={2.6} blur={3} />
+          <Grade id={`oeBackLit-${key}`} R={R} gain={1.6} blur={3} />
           <Grade id={`oeDark-${key}`} R={R} gain={0.95} />
           <Grade id={`oeBackDark-${key}`} R={R} gain={0.95} blur={3} />
           <Grade id={`oeStreet-${key}`} R={R} gain={0.85} blur={2} />
@@ -146,7 +146,9 @@ function DinnerBean({ k, x = 960, y = 820, s = 1, idb = 30, lights = [] }) {
   const kid = { x: -215, y: -50, s: 0.7, dir: 1, ramp: 'open', hair: HAIR.kid, headScale: KID_HEAD, pose: SIT(T, 0.2) };
   const mom = { x: 215, y: 0, s: 1, dir: -1, ramp: 'open', hair: HAIR.mom, pose: SIT(T, 0.6) };
   // the standing parent faces the mother and holds the post; on "conversation" they hand it to her
-  const dad = { x: 55, y: 0, s: 1, dir: 1, ramp: 'open', hair: HAIR.dad, pose: POSES.idle(T + 0.7) };
+  // once the mother has it, on "around" they turn round (a quick flip through edge-on) to look at their son
+  const turnD = g(w.around - 0.05, w.around + 0.3);
+  const dad = { x: 55, y: 0, s: 1, dir: Math.cos(Math.PI * turnD), ramp: 'open', hair: HAIR.dad, pose: POSES.idle(T + 0.7) };
   const P0 = [0, -132], Pd = [96 + 3 * osc(T, 2.6), -150 + 3 * osc(T, 1.9, 0.3)], Pup = [102, -172], Pm = [140, -168], Pk = [-160, -160];
   const a0 = g(w.politics2 - 0.1, w.politics2 + 0.4), a1 = g(w.conversation - 0.3, w.conversation + 0.2);
   const a2 = g(w.around, w.around + 0.6), a3 = g(w.dinner, w.table + 0.3);
@@ -160,12 +162,12 @@ function DinnerBean({ k, x = 960, y = 820, s = 1, idb = 30, lights = [] }) {
   const gest = (f, t) => { const tk = POSES.talk(T + f.x * 0.01).armN; f.pose = { ...f.pose, armF: [lerp(f.pose.armF[0], tk[0], t), lerp(f.pose.armF[1], tk[1], t)] }; };
   mom.pose = { ...mom.pose, lean: mom.pose.lean + 2 + 0.6 * leanIn, tilt: -4 * g(w.around, w.around + 0.4) };
   kid.pose = { ...kid.pose, lean: kid.pose.lean + leanIn, tilt: -10 - 6 * talkM + 4 * osc(T, 1.7) };
-  dad.pose = { ...dad.pose, lean: dad.pose.lean + 4 + 0.5 * leanIn, tilt: 4 + 6 * osc(T, 2.1, 0.3) };
+  dad.pose = { ...dad.pose, lean: dad.pose.lean + 4 + 0.5 * leanIn, tilt: 4 + 6 * osc(T, 2.1, 0.3) + 10 * turnD };
   gest(mom, talkM); gest(kid, talkK); gest(dad, talkD);
   armTo(dad, cp, holdD);
   armTo(mom, cp, holdM);
   armTo(kid, cp, a2 * (1 - a3));
-  const hM = headW(mom), hK = headW(kid), hD = headW(dad);   // dad now faces right: his speech leaves toward the mother
+  const hM = headW(mom), hK = headW(kid), hD = headW(dad);   // by "dinner" dad faces the son again: his speech leaves toward him
   return (
     <g transform={`translate(${x} ${y}) scale(${s})`}>
       <line x1="-520" y1="0" x2="520" y2="0" stroke={RO[2]} strokeWidth="4" />
@@ -178,7 +180,7 @@ function DinnerBean({ k, x = 960, y = 820, s = 1, idb = 30, lights = [] }) {
       <g filter="url(#oeProp-red)"><PostValue x={cp[0]} y={cp[1]} s={0.85} rot={-6 + 6 * osc(T, 2.3)} flip={Math.cos(Math.PI * 2 * g(w.around + 0.6, w.dinner))} kind="headline" /></g>
       <Ripples T={T} x={hM[0] - 30} y={hM[1]} dir={-1} t0={w.conversation - 0.1} t1={w.conversation + 0.9} R={150} col={RO[6]} />
       <Ripples T={T} x={hK[0] + 26} y={hK[1]} dir={1} t0={w.around + 0.4} t1={w.around + 1.1} R={130} col={RO[6]} />
-      <Ripples T={T} x={hD[0] + 30} y={hD[1]} dir={1} t0={w.dinner - 0.2} t1={w.table + 0.4} R={150} col={RO[6]} />
+      <Ripples T={T} x={hD[0] - 30} y={hD[1]} dir={-1} t0={w.dinner - 0.2} t1={w.table + 0.4} R={150} col={RO[6]} />
     </g>
   );
 }
@@ -208,14 +210,33 @@ const SETC = { wall: '#1e2322', upper: '#161a19', cut: '#343a38', skirt: '#272c2
 // part: 'back' (the walls behind the family, graded out of focus) or 'cut' (the section's cut walls, floors and roof, sharp)
 function HouseSection({ dark = 0, op = 1, sec = 1, ceil = 1, part }) {
   const c = (col) => mix(col, C.bg, dark), { x0, x1, t, upper, apex, win } = SEC;
+  const brickId = 'oeSecBrick' + Math.round(dark * 100);
   const mid = (x0 + x1) / 2;
   const back = part !== 'cut', cut = part !== 'back';
   return (
     <g>
       <g opacity={sec}>
-        {back && <path d={`M ${x0} ${upper} L ${x0 - t - 30} ${upper + 6} L ${mid} ${apex} L ${x1 + t + 30} ${upper + 6} L ${x1} ${upper} Z`} fill={c('#141716')} />}
-        {back && <rect x={x0} y={upper} width={x1 - x0} height={CEIL - t - upper} fill={c(SETC.upper)} />}
-        {back && <rect x={x0 + 520} y={upper + 70} width="130" height="150" fill={c(SETC.glass)} stroke={c(SETC.frame)} strokeWidth="5" />}
+        {/* upstairs the house is not cut away: its brick front with two windows, and a small window in the gable */}
+        {cut && (
+          <g>
+            <defs>
+              <pattern id={brickId} patternUnits="userSpaceOnUse" width="42" height="28">
+                <rect width="42" height="28" fill={c(HOUSE.brick)} />
+                <path d="M 0 1 H 42 M 0 15 H 42 M 1 0 V 14 M 22 14 V 28" stroke={c(HOUSE.mortar)} strokeWidth="2" />
+              </pattern>
+            </defs>
+            <path d={`M ${x0} ${CEIL - t} L ${x0} ${upper} L ${x0 - t - 30} ${upper + 6} L ${mid} ${apex} L ${x1 + t + 30} ${upper + 6} L ${x1} ${upper} L ${x1} ${CEIL - t} Z`} fill={`url(#${brickId})`} />
+            <rect x={x0} y={upper - 8} width={x1 - x0} height="16" fill={c(HOUSE.cornice)} />
+            {[[x0 + (x1 - x0) * 0.28, upper + 70, 120, 160], [x0 + (x1 - x0) * 0.72, upper + 70, 120, 160], [mid, upper - 150, 68, 86]].map(([wx, wy, ww, wh], i) => (
+              <g key={i}>
+                <rect x={wx - ww / 2} y={wy} width={ww} height={wh} fill={c(HOUSE.glass)} stroke={c(HOUSE.frame)} strokeWidth="5" />
+                {i < 2 && <line x1={wx - ww / 2} y1={wy + wh * 0.38} x2={wx + ww / 2} y2={wy + wh * 0.38} stroke={c(HOUSE.frame)} strokeWidth="4" />}
+                <line x1={wx} y1={wy} x2={wx} y2={wy + wh} stroke={c(HOUSE.frame)} strokeWidth="4" />
+                <rect x={wx - ww / 2 - 6} y={wy + wh} width={ww + 12} height="7" fill={c(mix(HOUSE.frame, C.bg, 0.4))} />
+              </g>
+            ))}
+          </g>
+        )}
         {cut && <rect x={x0 - t} y={upper - 20} width={t} height={CEIL - upper + 20} fill={c(SETC.cut)} />}
         {cut && <rect x={x1} y={upper - 20} width={t} height={CEIL - upper + 20} fill={c(SETC.cut)} />}
         {cut && <path d={`M ${x0 - t - 30} ${upper + 6} L ${mid} ${apex} L ${x1 + t + 30} ${upper + 6}`} fill="none" stroke={c(SETC.cut)} strokeWidth="30" strokeLinejoin="miter" />}
@@ -259,7 +280,7 @@ const STREET_L = [{ w: 380, floors: 2, roof: 'gable', door: 'left', brick: '#332
 const STREET_R = [{ w: 400, floors: 2, roof: 'pitched', door: 'left', brick: '#352a27' }, { w: 380, floors: 3, roof: 'step', door: 'right', brick: '#3a2e2a' }, { w: 420, floors: 2, roof: 'flat', door: 'left' }];
 const STREET_B = Array.from({ length: 9 }, (_, i) => { const h = (n) => hash(i * 3.3 + n * 1.7 + 17); return { w: 380 + 80 * h(1), floors: 3, roof: ['flat', 'pitched', 'gable', 'step'][Math.floor(h(2) * 4)], door: 'left', brick: '#2e2624' }; });
 // faint clouds in the night sky behind the next street, drifting slowly right
-const CLOUDS = Array.from({ length: 7 }, (_, i) => { const h = (n) => hash(i * 5.3 + n * 2.1 + 31); return { x: -1100 + 620 * i + 200 * h(1), y: -560 + 200 * h(2), w: 380 + 260 * h(3), sp: 6 + 6 * h(4), k: h(5) }; });
+const CLOUDS = Array.from({ length: 7 }, (_, i) => { const h = (n) => hash(i * 5.3 + n * 2.1 + 31); return { x: -1100 + 620 * i + 200 * h(1), y: -400 + 120 * h(2), w: 380 + 260 * h(3), sp: 6 + 6 * h(4), k: h(5) }; });
 function Clouds({ T }) {
   return (
     <g filter="url(#oeCloud)" opacity="0.55">
@@ -535,13 +556,18 @@ function Shot({ k, variant }) {
           <rect x="-5000" y={FL - 100} width="12000" height="200" fill="url(#oeBoardG)" />
           <rect x="-5000" y="-5000" width="12000" height={5000 + FL - 100} fill="#fff" />
         </mask>
+ <linearGradient id="oeFootFade" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stopColor={mix(RO[0], RO[1], 0.45)} stopOpacity="0" /><stop offset="1" stopColor={mix(RO[0], RO[1], 0.45)} stopOpacity="0.9" />
+        </linearGradient>
         <filter id="oeCloud" x="-30%" y="-60%" width="160%" height="220%"><feGaussianBlur stdDeviation="22" /></filter>
       </defs>
 
       {/* the street and the house section, dim */}
-      {swing && <Street op={secOp} curRight={DXo + 285 + 18} T={T} sky />}
+      {swing && <Street op={secOp} curRight={DXo + 285} T={T} sky />}
       {/* the curator's house outside the light: opaque, so the street behind does not show through it */}
       {swing && houseVis > 0 && <g opacity={houseVis} filter="url(#oeDark-curDim)"><RowHouse x={DXo} y={FL} dark={0.72} /></g>}
+      {/* out of the light, the curator's side of the street sinks into the ground at its foot */}
+      {swing && secOp > 0 && <rect x={DXo - 135} y={FL - 170} width="3000" height="172" fill="url(#oeFootFade)" opacity={secOp} />}
       {swing && ceilOp > 0 && (
         <g>
           <g filter="url(#oeBackDark-open)"><HouseSection dark={0.7} op={roomOp} sec={secOp} ceil={ceilOp} part="back" /></g>
@@ -559,7 +585,7 @@ function Shot({ k, variant }) {
 
       {/* everything the lamp reveals */}
       <g mask={st}>
-        {clipOn && secOp > 0 && <g clipPath="url(#oeOut)"><Street op={secOp} curRight={DXo + 285 + 18} rk="cur" /></g>}
+        {clipOn && secOp > 0 && <g clipPath="url(#oeOut)"><Street op={secOp} curRight={DXo + 285} rk="cur" /></g>}
         {swing && ceilOp > 0 && (
           <g>
             <g filter="url(#oeBackLit-open)"><HouseSection op={roomOp} sec={secOp} ceil={ceilOp} part="back" /></g>
