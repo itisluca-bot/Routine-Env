@@ -212,12 +212,13 @@ function HouseSection({ dark = 0, op = 1, sec = 1, ceil = 1, part }) {
   const c = (col) => mix(col, C.bg, dark), { x0, x1, t, upper, apex, win } = SEC;
   const brickId = 'oeSecBrick' + Math.round(dark * 100);
   const mid = (x0 + x1) / 2;
-  const back = part !== 'cut' && part !== 'ext', cut = part !== 'back', ext = !part || part === 'ext';
+  const back = part !== 'cut' && part !== 'ext', cut = part !== 'back' && part !== 'ext', ext = !part || part === 'ext';
+  const extCut = ext;   // the upstairs front and roof belong to the outside layer
   return (
     <g>
       {ext && <g opacity={sec}>
         {/* upstairs the house is not cut away: its brick front with two windows, and a small window in the gable */}
-        {cut && (
+        {extCut && (
           <g>
             <defs>
               <pattern id={brickId} patternUnits="userSpaceOnUse" width="42" height="28">
@@ -237,9 +238,9 @@ function HouseSection({ dark = 0, op = 1, sec = 1, ceil = 1, part }) {
             ))}
           </g>
         )}
-        {cut && <rect x={x0 - t} y={upper - 20} width={t} height={CEIL - upper + 20} fill={c(SETC.cut)} />}
-        {cut && <rect x={x1} y={upper - 20} width={t} height={CEIL - upper + 20} fill={c(SETC.cut)} />}
-        {cut && <path d={`M ${x0 - t - 30} ${upper + 6} L ${mid} ${apex} L ${x1 + t + 30} ${upper + 6}`} fill="none" stroke={c(SETC.cut)} strokeWidth="30" strokeLinejoin="miter" />}
+        {extCut && <rect x={x0 - t} y={upper - 20} width={t} height={CEIL - upper + 20} fill={c(SETC.cut)} />}
+        {extCut && <rect x={x1} y={upper - 20} width={t} height={CEIL - upper + 20} fill={c(SETC.cut)} />}
+        {extCut && <path d={`M ${x0 - t - 30} ${upper + 6} L ${mid} ${apex} L ${x1 + t + 30} ${upper + 6}`} fill="none" stroke={c(SETC.cut)} strokeWidth="30" strokeLinejoin="miter" />}
       </g>}
       <g opacity={op}>
         {back && (
