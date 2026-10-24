@@ -1,3 +1,4 @@
 node_modules/
+renders/
 # reference stills show real people; kept local only
 reference/*.jpg
