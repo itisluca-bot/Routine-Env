@@ -7,3 +7,4 @@
 - Timing comes from the user's SRT files; assume 25 fps.
 - Render with `node tools/render.mjs "<shot>.dc.html"` (see README.md); it writes 4K PNG sequences to renders/.
 - New session? Read ANIMATION-GUIDE.md: workflow, techniques, rendering checks, and what is approved in each shot.
+- Look exploration (October 2026): the animations should move closer to the film's posterized testimony portraits. The old rule against imitating them is outdated. See LOOK.md and `rigs/fu-look.jsx`.

@@ -10,6 +10,8 @@
 // Options: --fps 25, --out <dir>, --boilAmp <px>, --noBoil, --guide (narration caption; never for final renders),
 //          --set key=value[,key=value] (any tweak, e.g. --set concept=C), --half (1920x1080 frames for quick review)
 //          --settle <ms> for heavy shots: wait after each seek, then re-capture until two captures match, so no tile is caught half-drawn
+//          --look <ramp>[:map|poster|lift] regrades the whole frame onto one group's portrait ramp (rigs/fu-look.jsx), for
+//          trying the testimony-portrait look on a finished shot without touching its scene code (see LOOK.md)
 import fs from 'node:fs';
 import path from 'node:path';
 import { execFileSync } from 'node:child_process';
@@ -32,7 +34,8 @@ const opt = (name, def) => { const i = argv.indexOf('--' + name); return i < 0 ?
 const fps = Number(opt('fps', 25));
 const sets = opt('set', null) ? Object.fromEntries(String(opt('set')).split(',').map((kv) => kv.split('='))) : {};
 const half = !!opt('half', false);
-const slug = [path.basename(page).replace(/\.dc\.html$|\.html$/, ''), ...Object.values(sets), half ? 'half' : '']
+const look = opt('look', null);
+const slug = [path.basename(page).replace(/\.dc\.html$|\.html$/, ''), ...Object.values(sets), look ? 'look-' + look : '', half ? 'half' : '']
   .filter(Boolean).join('-').toLowerCase().replace(/[^a-z0-9]+/g, '-');
 const outDir = path.resolve(ROOT, opt('out', path.join('renders', slug)));
 fs.mkdirSync(outDir, { recursive: true });
@@ -44,7 +47,13 @@ const base = 'http://fu.local/';
 
 // ── browser ─────────────────────────────────────────────────────────────────
 const proxy = process.env.HTTPS_PROXY ? { server: process.env.HTTPS_PROXY } : undefined;
-const browser = await chromium.launch({ proxy });
+// the pinned Playwright may expect a browser build this machine does not have; fall back to the pre-installed Chromium
+let browser;
+try { browser = await chromium.launch({ proxy }); }
+catch (e) {
+  if (!fs.existsSync('/opt/pw-browsers/chromium')) throw e;
+  browser = await chromium.launch({ proxy, executablePath: '/opt/pw-browsers/chromium' });
+}
 const ctx = await browser.newContext({ viewport: { width: OUT_W, height: OUT_H }, deviceScaleFactor: half ? 0.5 : 1 });
 const tab = await ctx.newPage();
 tab.on('pageerror', (e) => console.error('[page error]', e.message));
@@ -81,6 +90,18 @@ await tab.addStyleTag({ content: `
   ${SEL}{position:fixed!important;left:0!important;top:0!important;transform:none!important;box-shadow:none!important;z-index:2147483647}
   [data-omelette-chrome]{display:none!important}` });
 await tab.evaluate(() => document.fonts && document.fonts.ready);
+if (look) {
+  // the look kit is plain JSX; load it into the page with the runtime's own Babel if the shot does not import it already
+  const [ramp, mode = 'map'] = String(look).split(':');
+  await tab.evaluate(async ({ ramp, mode }) => {
+    if (!window.FU_LOOK) {
+      const src = await (await fetch('./rigs/fu-look.jsx')).text();
+      (0, eval)(window.Babel.transform(src, { presets: ['react'] }).code);
+    }
+    document.body.insertAdjacentHTML('beforeend', window.FU_LOOK.lookFilterMarkup(ramp, mode));
+  }, { ramp, mode });
+  await tab.addStyleTag({ content: `${SEL}{filter:url(#fu-look)!important}` });
+}
 
 const info = await tab.evaluate((sel) => {
   const svg = document.querySelector(sel);

@@ -51,7 +51,7 @@ Read this first. It covers the film, the rules the user has set, what was built 
   - kinetic typography
   - overly literal visual metaphors
   - grey or neutral people (only blue, teal and orange)
-  - imitating the existing posterized-portrait look in new animation; the film already has that
+  - ~~imitating the existing posterized-portrait look in new animation~~ **Outdated (October 2026).** Feedback on the finished animations was that they feel too different from the rest of the film, so the user now wants to explore bringing them closer to the portraits. See `LOOK.md`.
 - **Narration guide:** an on-screen caption of the line is fine as a toggle for timing review. It must be off for renders.
 - **Keep to what's asked:** when given feedback, change only what was asked.
 
@@ -64,7 +64,7 @@ The brief was to animate the people so they act, while staying consistent with t
 > "Curation soothes for a bit, but it does not resolve. When crisis content breaks through, it lands harder, and starts to feel inescapable."
 
 ### Round 1: four concepts (`Curation Segment Concepts.dc.html`, archive)
-- **A · Halo:** a close-up posterized curator whose rings are the buffer. **Rejected:** it imitates what the user already has.
+- **A · Halo:** a close-up posterized curator whose rings are the buffer. **Rejected** at the time because it imitated what the user already has (that rule is now outdated; see `LOOK.md`).
 - **B · The Room:** a stock-footage-style crowd lit by phones; her phone turns red, and the red spreads phone to phone. **Liked**, but the phone-holding figure was too basic.
 - **C · Blinds:** at home, red light through window blinds. **Rejected** for the same reason as A.
 - **D · Topography:** a top-down view where her rings become terrain and the red is a rising tide. **Liked**, but the red was too sudden and fast. The user wanted to see orange being soothed first, then the red gradually breaking through.

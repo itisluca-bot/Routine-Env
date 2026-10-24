@@ -17,7 +17,7 @@ This is the working guide for a new Claude session. Read it together with `CLAUD
 - People are only blue, teal or orange. Never grey.
 - No grain. **Line boil at 8 fps**, subtle, with an amplitude slider (default 0.5 px, 0–3) and an on/off toggle.
 - End every shot with **6 frames (0.24 s) of idle** (a `Hold` section) where only boil and small sways move.
-- Not wanted: kinetic typography, overly literal metaphors, imitating the film's posterized portraits.
+- Not wanted: kinetic typography, overly literal metaphors. (The old rule against imitating the film's posterized portraits is outdated: the animations were found too different from the rest of the film, and bringing them closer is now being explored. See `LOOK.md`.)
 - The narration caption is a review toggle only. It is **off** in final renders.
 - **Change only what the user asked for.** Keep everything they approved.
 
