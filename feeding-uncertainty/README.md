@@ -12,12 +12,13 @@ Read `HANDOFF.md` first. It covers the film, the standing rules, every concept, 
 | `Open Engagers.dc.html` + `open-engagers.jsx` | The developing version of the segment: two lamps open it (red posts fluttering like moths; teal picks some, orange ducks), then the teal lamp carries the rest. Variant 1 (Switch) and 2 (Swing), picked with the Variant tweak or `--set variant=2`. People use the Bean rig (`rigs/bean-rig.jsx`); lamps, cards and other helpers come from `open-engagers-concepts.jsx` (`window.FU_RIG`) |
 | `Vulnerability.dc.html` + `vulnerability.jsx` | "They bear the weight of vulnerability, produced by the ongoing crises." (5 s): curators, seen from the front, peeking from behind their front doors in a night-time city of apartment blocks; swarms of red posts of every size flying past; a searchlight scanning the facades. Variant 1 (Search) is the chosen one; 2 Crossing and 3 Opens are kept (`--set variant=3`). Render with `--settle 60` |
 | `Look Concepts.dc.html` + `look-concepts.jsx` | The toned look: asset sheets (tone, hair, moving lights, busts, red post variations) and scene mockups, picked with `--set concept=lamp` etc. See `LOOK.md` |
+| `Curator Phone Concepts.dc.html` + `curator-phone-concepts.jsx` | "Unfollowing what hurts…" (9s4f, `timing_0.srt`): first person on the curator's phone, round-1 roughs A–H, a hands sheet (X) and a Script card, picked with `--set concept=C`. The phone, screen UI and hands are in `curator-phone-kit.jsx` (`window.FU_PHONE`) |
 | `rigs/fu-look.jsx` | The toned look (`window.FU_LOOK`): ramps measured from the portraits, grade filters, `ToneBean` (the Bean toned and lit by scene lights), `BeanBust`, `PostValue` |
 | `rigs/row-house.jsx` | Houses: the curator's brick row house in the open engagers door beat (`window.FU_HOUSE.RowHouse`), and `TerraceHouse`, the same style with parameters (width, 2 or 3 storeys, flat, pitched, gable or step-gable roof, brick colour) for rows of houses |
 | `Vulnerability Alley.dc.html` + `vulnerability-alley.jsx` | Round 2 of the vulnerability line: one alley of terrace houses at night under streetlights. Blue and teal glow behind shutters; orange curators peek from behind curtains and duck as swarms of red posts pass, drawn to each light. Render with `--settle 60` |
 | `animations-v3.jsx`, `tweaks-panel.jsx`, `support.js` | Engine, tweak panel, Design Component runtime |
 | `archive/` | Round 1 and round 2 concepts, with their own copy of the runtime |
-| `reference/` | `timing_1.srt`, `timing_2.srt`. The reference stills live here locally but are not committed |
+| `reference/` | `timing_0.srt`, `timing_1.srt`, `timing_2.srt`. The reference stills live here locally but are not committed |
 | `tools/render.mjs` | Headless 4K PNG-sequence renderer |
 
 ## Preview in a browser

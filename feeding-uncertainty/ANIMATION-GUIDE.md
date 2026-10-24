@@ -46,6 +46,8 @@ This is the working guide for a new Claude session. Read it together with `CLAUD
 | `open-engagers.jsx` | **The current open engagers shot** (see §8) |
 | `curation-topography.jsx` | The finished Topography shot |
 | `vulnerability.jsx` | **The vulnerability shot** (see §9) |
+| `curator-phone-kit.jsx` | The curator's phone in first person (`window.FU_PHONE`): phone, screen UI drawn in value (feed, "…" menu, keyboard, chat, icons), `WarmPost` (comfort faces: cat, sun, cup, friends, plant, bowl, heart), feed layout, and hands (`Mitt`, `Stumps`). Load after `rigs/fu-look.jsx` and `open-engagers-concepts.jsx` |
+| `Curator Phone Concepts.dc.html` + `curator-phone-concepts.jsx` | Round-1 ideation for the phone shot (§11) |
 | `tools/render.mjs` | Headless renderer (§6) |
 
 Load order in a page: `./animations-v3.jsx ./tweaks-panel.jsx ./rigs/bean-rig.jsx ./open-engagers-concepts.jsx ./your-shot.jsx`.
@@ -99,6 +101,7 @@ node tools/render.mjs "<page>" --frames 0,120,300 --half --guide                
 1. **Curation / Topography** (`curation-topography.jsx`, `timing_1.srt`, 8.24 s). Finished. See `HANDOFF.md`.
 2. **Open engagers** (`open-engagers.jsx`, `timing_2.srt`, 22.48 s). The user chose **variant 2**. Moved to the toned look in October 2026 (§8, "Look").
 3. **The toned look** (October 2026, `LOOK.md`). The rig and mockups are done. Open engagers is the first shot moved to it; Vulnerability Alley and Topography are next.
+5. **Curators on the phone** (`timing_0.srt`, 9s4f = 9.16 s). Round-1 concepts (§11).
 4. **Vulnerability** (5.00 s, no SRT yet). Round 1, the city of apartment blocks (`vulnerability.jsx`, variant 1), was exported at 4K; the user then found it too busy. Round 2 is the alley (`vulnerability-alley.jsx`, §10).
 
 ## 8. Open engagers shot: what is approved
@@ -141,3 +144,26 @@ The user liked the concept but found the city too busy. The same line and timing
 - **Moths:** six red posts circle every lantern; three swarms of different sizes fly down the alley (the user found six too many) and are pulled toward each light as they pass; a 30-post swarm comes through on "crises". Lit in the pools, red outlines in the dark.
 - **Camera:** a slow truck along the alley with a 3% push.
 - **Length:** the user asked for 2 s more, so the alley runs 7.00 s: Weight 0–2.28, Crises 2.28–6.76 (the line ends about 4.3 s in; the rest is the street carrying on), Hold to 7.00. One extra swarm enters from off screen after "crises" so the tail never empties. Exported at 4K.
+
+## 11. Curators on the phone: round 1 (concepts)
+
+Line (`reference/timing_0.srt`): "Unfollowing what hurts, venting when it gets too much. For them, comfort is a way of coping. A feed calibrated not to distress," The shot is 9s4f (9.16 s); the SRT runs on into "but a space that feels safe enough to keep browsing", which belongs to the next shot.
+
+Brief: in the style of the film, but no full character. A first-person view of a phone and the curation actions on it, mixing social media as information source and as mood regulator, so the viewer understands what curators do.
+
+Sections: Unfollow 0–1.80, Vent 1.80–3.80, Comfort 3.80–6.40, Feed 6.40–8.92, Hold to 9.16. Every concept runs on these beats (`--set concept=A` … `H`, `X` hands sheet, `S` script card):
+
+| | Concept | Unfollow | Vent | Comfort | Feed |
+|---|---|---|---|---|---|
+| A | Long press | "…" menu, unfollow, the post folds away | types in a chat, scribbled bubble sent | a cat, double-tap heart | warm scroll; a red post slipping in is veiled into a hidden-post outline |
+| B | Nightlight | in bed; red video lights hands and room red; unfollow turns the light warm | pecking a post, the light flickers per key | slow reel of warm clips, camera sinks | a red post flicked past flashes the room red once |
+| C | Following | no hands, night bus; three red accounts unfollowed from the following list | bursts of scribbled messages in the group chat | friends answer: hearts, a photo, a sticker | home feed, camera pulls out to the bus |
+| D | Swipe | red posts swiped out of the phone, they become outline moths in the room | held voice note, jagged waveform | warm posts swiped into a tray | the tray opens into the feed; moths stay outside |
+| E | Glow | the phone's light is a posterized pool; red posts hang round it as outlines; the unfollowed one is thrown out | the vent floats off as a bubble | the pool widens and pushes the posts back | posts held at the pool's edge, one dives in and is pushed out |
+| F | Controls | crisis topics switched off | a scribble on a story | a calm clip played | a sensitivity slider; a live preview of the feed flips red posts to warm |
+| G | Pull-out | A's screen, starting inside the unfollow menu | camera pulls back through the hands | wider, the bed | wide: a warm island in the dark room, red posts flutter outside the window |
+| H | Rhythm | two thumbs, compact news feed; swipe a red row, unfollow | angry reply in the comments under a red post | linger, a like | calm news and comfort at an even pace, a red post flicked past fast |
+
+Hands: the Bean has no hands. The `X` sheet shows four options: a mitt with a thumb (Bean arm grown a palm, fingertips over the far edge), two thumbs, plain Bean stumps (round-capped forearms holding the sides, one lifts to tap), and no hands (taps only). Hands are value art filled with the screen's light gradient and toned through a `ToneFilter`, so the screen lights them.
+
+Screen content is value art in three graded layers (`Layers`): the curator ramp, then red posts in the red ramp, then menus. No readable words: text is bars (no kinetic typography).
