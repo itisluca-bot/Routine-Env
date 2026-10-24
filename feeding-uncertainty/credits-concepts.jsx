@@ -553,3 +553,5 @@ function FUCreditsConcepts() {
 }
 
 window.FUCreditsConcepts = FUCreditsConcepts;
+// shared with the credits shot (credits.jsx)
+window.FU_CREDITS = { TYPES, Txt, Logo, ROWS, NOTE, beats, ap, brect, OPEN_BG, OPEN_TXT, OPEN_DOT, LOGO_C };

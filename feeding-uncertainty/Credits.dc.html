@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+html,body{margin:0;height:100%;background:#0a0a0a;overflow:hidden}
+</style>
+<script>window.OM_SCENES = '[{"name":"Open","dur":1.2,"desc":"From the last shot into the card: the ground arrives, something starts to move."},{"name":"Title","dur":2.4,"desc":"FEEDING UNCERTAINTY with the red dot over the Y, as in the opening."},{"name":"Names","dur":4,"desc":"A film by Luca Lange · Researcher Dr. Qinfeng Zhu · Research assistant Anastasija Zareckyte, 1.25 s apart."},{"name":"Logo","dur":1.6,"desc":"University of Groningen."},{"name":"Note","dur":2.56,"desc":"All imagery in this film is illustrative. No person shown is a participant in the study."},{"name":"Hold","dur":0.24,"desc":"Six frames (25 fps) of idle: everything settled, only the boil on the rule and the dot keeps moving."}]';</script>
+<script>window.OM_PLAYBACK = '{"mode":"loop"}';</script>
+<script>window.TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
+  "logo": "white",
+  "referenceOverlay": false,
+  "lineBoil": true,
+  "boilAmp": 0.5
+}/*EDITMODE-END*/;</script>
+</helmet>
+<div style="position:fixed; inset:0; background:#0a0a0a;">
+  <x-import component-from-global-scope="FUCredits" from="./animations-v3.jsx ./tweaks-panel.jsx ./rigs/bean-rig.jsx ./open-engagers-concepts.jsx ./rigs/fu-look.jsx ./credits-concepts.jsx ./credits.jsx" hint-size="100%,100%" style="position:absolute; inset:0;"></x-import>
+</div>
+</x-dc>
+</body>
+</html>

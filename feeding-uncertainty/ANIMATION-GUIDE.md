@@ -105,7 +105,7 @@ node tools/render.mjs "<page>" --frames 0,120,300 --half --guide                
 3. **The toned look** (October 2026, `LOOK.md`). The rig and mockups are done. Open engagers and Vulnerability Alley are moved to it; Topography is next.
 5. **Curators on the phone** (`timing_0.srt`, 9s4f = 9.16 s). Round-1 concepts (§11); the user chose **A · Long press** (§12). Exported at 4K (variant `two`).
 6. **Resistance** (`resistance.jsx`, `timing_4.srt`, not in the repo; 10.00 s). Built in another session; moved to the toned look in October 2026 (§13).
-7. **End credits** (12.00 s, silent for now). Round-1 concepts A–H (§14).
+7. **End credits** (12.00 s, silent for now). Round-1 concepts A–H (§14); the user chose H's look, made simple and clean (§15).
 4. **Vulnerability** (5.00 s, no SRT yet). Round 1, the city of apartment blocks (`vulnerability.jsx`, variant 1), was exported at 4K; the user then found it too busy. Round 2 is the alley (`vulnerability-alley.jsx`, §10).
 
 ## 8. Open engagers shot: what is approved
@@ -213,4 +213,15 @@ Line: "Coping is a form of resistance. The question is, what do people have to r
 | F | Focus | `columns`: the whole card is there from frame 0, far out of focus over out-of-focus bokeh in the ramps; focus pulls line by line; slow pull-back |
 | G | Ramps | the frame's dark is a ramp's dark: blue, teal on the second name, orange on the third, then the card's grey; a banded pool drifts behind the newest line |
 | H | Dot | `title` type, the opening's near-black and faint grid: the red dot over the Y is a pen; it draws each row's bar, climbs the logo's slash, draws the rule and ends as the note's full stop |
+
+## 15. End credits: round 2 (clean, from H)
+
+`Credits.dc.html` + `credits.jsx` (helpers from `credits-concepts.jsx`, `window.FU_CREDITS`). The user: "H is the best, but too weird with the notification. Just do something simple and clean for now. Also using all the colours from the palette seems forced."
+
+- **Look:** H's world: the opening title's near-black `#141414`, its faint 32 px grid, Inter in widely spaced caps (title weight 400, as in the opening; names Light). No Futura needed.
+- **The dot** sits still just right of the Y's right arm, level with the cap height, as in the opening (`DOT`; `textLength` includes the 0.5 em spacing after the last letter, so the Y ends 25 px before `X + len`). It fades in just after the title and does nothing else (no pulse, no travel: that read as a notification).
+- **No palette colours:** no four-colour bar, no coloured side bars; labels in grey `#8a8a88`, names off-white. The logo is off-white (`logo` tweak `red` gives the RUG red), so the dot is the only colour.
+- **Layout:** one left column at x 180 under the title (labels and names aligned with it), the logo (380 wide) on the right, centred on the names, rule and disclaimer at the bottom left.
+- **Motion:** every line fades in on its beat with a small rise (title, then the three names 1.25 s apart, the logo, the rule, the disclaimer). No camera move: a 2% push made the type step from pixel to pixel; the rule and the dot boil at 8 fps instead.
+- **Render:** `node tools/render.mjs "Credits.dc.html"` (4K PNG sequence; add `--set logo=red` for the red logo).
 
