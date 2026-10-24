@@ -310,8 +310,8 @@ function Street({ op, curRight, rk = 'open', T, sky = false, lit = false }) {
       {sky && <Clouds T={T} />}
       <g filter={lit ? `url(#oeStreetFar-${rk})` : undefined}>{STREET_B.map((h, i) => { const x = xb; xb += h.w * 0.55 + 4; return <g key={'b' + i} transform={`translate(${x} 300) scale(0.55)`}><TerraceHouse x={0} y={0} spec={h} dark={0.86} pid={`oeSb${i}`} /></g>; })}</g>
       <g filter={lit ? `url(#oeDark-${rk})` : undefined}>
-        <rect x="-2000" y={FL} width="6000" height="40" fill={lit ? '#141615' : mix('#1f2321', C.bg, 0.5)} />
-        <line x1="-2000" x2="4000" y1={FL + 40} y2={FL + 40} stroke={lit ? '#202322' : mix('#2c3130', C.bg, 0.5)} strokeWidth="4" />
+        <rect x="-2000" y={FL} width="6000" height="40" fill={lit ? '#141615' : '#1d201f'} />
+        <line x1="-2000" x2="4000" y1={FL + 40} y2={FL + 40} stroke={lit ? '#202322' : '#262a29'} strokeWidth="4" />
       </g>
       <g filter={lit ? `url(#oeStreet-${rk})` : undefined}>
         {STREET_L.map((h, i) => { xl -= h.w; return <TerraceHouse key={'l' + i} x={xl} y={FL} spec={h} dark={lit ? 0.72 : DARK} pid={`oeSl${i}`} />; })}
@@ -514,7 +514,13 @@ function Shot({ k, variant }) {
         <ToneFilter id="oeHairKid" ramp={kidRamp} edge={5} grain={0} soft={1.2} bf={k.bf} amp={k.amp} />
       </defs>
       {ground('open')}
-      {swing && secOp > 0 && <rect x="0" y="0" width={W} height={H} fill={NEUTRAL} opacity={secOp} />}
+      {/* once the street is there: a neutral night, the sky lighter toward the top */}
+      <defs>
+        <linearGradient id="oeSky" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stopColor="#323837" /><stop offset="0.55" stopColor="#222625" /><stop offset="0.8" stopColor={NEUTRAL} />
+        </linearGradient>
+      </defs>
+      {swing && secOp > 0 && <rect x="0" y="0" width={W} height={H} fill="url(#oeSky)" opacity={secOp} />}
       {oPow * (1 - oraGone) > 0 && <g mask="url(#oeBeamO)">{ground('cur')}</g>}
     <g transform={cam(cp[0], cp[1], z)}>
       <defs>
@@ -570,6 +576,12 @@ function Shot({ k, variant }) {
       {swing && <Street op={secOp} curRight={DXo + 285} T={T} sky />}
       {/* the curator's house outside the light: opaque, so the street behind does not show through it */}
       {swing && houseVis > 0 && <g opacity={houseVis}><RowHouse x={DXo} y={FL} dark={DARK} /></g>}
+      {/* the side wall's shadow on the pavement next door: kept at the floor's own tone, never darker */}
+      {clipOn && secOp > 0 && (() => {
+        const w0 = [SEC.x1 + SEC.t, SEC.win[1]], yb = FL + 60, k = (yb - B.S[1]) / (w0[1] - B.S[1]);
+        const xh = B.S[0] + (w0[0] - B.S[0]) * k;
+        return xh > w0[0] ? <path d={`M ${w0[0]} ${w0[1]} L ${xh} ${yb} L ${w0[0]} ${yb} Z`} fill="#1f2322" opacity={secOp} /> : null;
+      })()}
       {/* out of the light, the curator's side of the street sinks into the ground at its foot */}
       {swing && secOp > 0 && <rect x={DXo - 135} y={FL - 170} width="3000" height="172" fill="url(#oeFootFade)" opacity={secOp} />}
       {swing && ceilOp > 0 && (
