@@ -15,7 +15,7 @@ const { POSES, blendPose, rig, frontRig } = window.FU_BEAN;          // people: 
 const { RowHouse, TerraceHouse, HOUSE } = window.FU_HOUSE;           // the curator's house and the street (rigs/row-house.jsx)
 const { RAMPS, mixRamp, v, LookDefs, ToneFilter, ToneBean, PostValue, POST_KINDS } = window.FU_LOOK;
 const RO = RAMPS.open, RC = RAMPS.cur, RR = RAMPS.red;
-const NEUTRAL = '#111312';          // the dark outside the light once the street appears (the alley's, untinted)
+const NEUTRAL = '#1a1d1c';          // the dark outside the light once the street appears (the alley's, untinted)
 const RCD = mixRamp(RC, RO, 0.45);   // the curator's side of the street outside the light: their ramp, dimmed toward the teal dark
 const HAIR = { me: 'beanie', mom: 'long', dad: 'none', kid: 'beanie', ora: 'none', oraKid: 'long' };   // the hero as a child keeps the beanie
 
@@ -281,7 +281,7 @@ const STREET_L = [{ w: 380, floors: 2, roof: 'gable', door: 'left', brick: '#332
 const STREET_R = [{ w: 400, floors: 2, roof: 'pitched', door: 'left', brick: '#352a27' }, { w: 380, floors: 3, roof: 'step', door: 'right', brick: '#3a2e2a' }, { w: 420, floors: 2, roof: 'flat', door: 'left' }];
 const STREET_B = Array.from({ length: 9 }, (_, i) => { const h = (n) => hash(i * 3.3 + n * 1.7 + 17); return { w: 380 + 80 * h(1), floors: 3, roof: ['flat', 'pitched', 'gable', 'step'][Math.floor(h(2) * 4)], door: 'left', brick: '#2e2624' }; });
 // faint clouds in the night sky behind the next street, drifting slowly right
-const DARK = 0.8;   // how far the street's unlit copy fades toward the background, as in the Vulnerability alley
+const DARK = 0.55;   // how far the street's unlit copy fades toward the background, as in the Vulnerability alley
 const CLOUDS = Array.from({ length: 7 }, (_, i) => { const h = (n) => hash(i * 5.3 + n * 2.1 + 31); return { x: -1100 + 620 * i + 200 * h(1), y: -400 + 120 * h(2), w: 380 + 260 * h(3), sp: 6 + 6 * h(4), k: h(5) }; });
 function Clouds({ T }) {
   return (
