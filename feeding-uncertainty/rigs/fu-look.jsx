@@ -116,6 +116,8 @@
             <GradeFilter id={'fuGradeFg-' + r} ramp={r} poster />
             <ToneFilter id={'fuTone-' + r} ramp={r} bf={bf} amp={amp} />
             <ToneFilter id={'fuBustTone-' + r} ramp={r} edge={40} depth={0.32} grain={0.05} coarse soft={9} bf={bf} amp={amp} region={BUST_REGION} />
+            <ToneFilter id={'fuHair-' + r} ramp={r} edge={5} grain={0} soft={1.2} bf={bf} amp={amp} />
+            <ToneFilter id={'fuBustHair-' + r} ramp={r} edge={30} depth={0.4} grain={0} soft={6} bf={bf} amp={amp} region={BUST_REGION} />
           </React.Fragment>
         ))}
         <radialGradient id="fuPool" cx="0.5" cy="0.5" r="0.5">
@@ -199,7 +201,7 @@
   }
   // ── hair, in the head's own frame: a = along `fwd` (forward, or screen right in the front view), b = along `up` ──
   // beanie: a knitted cap over the top of the head with a folded brim. long: hair over the top and falling behind the
-  // shoulders. Returns { back, front, brim }: back is drawn behind the body, front and brim over the head.
+  // shoulders. Returns { back, front, fold }: back is drawn behind the body, front over the head; fold is the beanie's crease.
   function hairShapes(kind, Hc, r, up, fwd, view, neckDown) {
     if (!kind || kind === 'none') return null;
     const P = (a, b) => addv(Hc, addv(mulv(fwd, a * r), mulv(up, b * r)));
@@ -207,13 +209,23 @@
     if (kind === 'beanie') {
       // the cap sits lower at the back in profile; level in the front view
       const [t0, t1] = view === 'front' ? [0.32, Math.PI - 0.32] : [0.42, Math.PI + 0.08];
-      const crown = arc(1.08, t0, t1, 32, 0.16);   // a knitted cap rises a little above the skull
+      // a knitted cap: it hugs the skull at its lower edge (no ledge sticking out past the head) and swells a little above
+      const sm = (x) => { const u = clamp(x / 0.6, 0, 1); return u * u * (3 - 2 * u); };
+      const crown = Array.from({ length: 41 }, (_, i) => {
+        const t = t0 + ((t1 - t0) * i) / 40, R = 1 + 0.08 * sm(Math.min(t - t0, t1 - t));
+        return P(R * Math.cos(t), R * Math.sin(t) * (1 + 0.16 * Math.max(0, Math.sin(t))));
+      });
       // the folded brim: the strip of the cap within 0.3 head radii of its lower edge
       const a0 = crown[0], a1 = crown[crown.length - 1], e = [a1[0] - a0[0], a1[1] - a0[1]], el = Math.hypot(e[0], e[1]) || 1;
       let n = [-e[1] / el, e[0] / el];
       if (n[0] * up[0] + n[1] * up[1] < 0) n = [-n[0], -n[1]];
+      // the hat is toned as one even surface; the fold is a crisp crease drawn after the toning (an edge in value between
+      // brim and crown made the light bands jog there, which read as steps)
       const brim = clipHalf(crown, a0, n, 0.3 * r);
-      return { front: pathOf(crown, true), brim: pathOf(brim, true) };
+      const fold = brim.filter((q) => Math.abs((q[0] - a0[0]) * n[0] + (q[1] - a0[1]) * n[1] - 0.3 * r) < 1e-6);
+      // the crease stops a little short of the hat's edge
+      const inset = (A, B) => { const d = [B[0] - A[0], B[1] - A[1]], l = Math.hypot(d[0], d[1]) || 1, k = (0.07 * r) / l; return [[A[0] + d[0] * k, A[1] + d[1] * k], [B[0] - d[0] * k, B[1] - d[1] * k]]; };
+      return { front: pathOf(crown, true), fold: fold.length === 2 ? inset(fold[0], fold[1]) : null };
     }
     // long hair
     if (view === 'front') {
@@ -255,7 +267,8 @@
       neckDown: Math.hypot(R.Hc[0] - R.S[0], R.Hc[1] - R.S[1]) / R.r, J,
     };
   }
-  function BeanValue({ G, lights, k, amb, hair, hairTone, uid }) {
+  // part: 'back' (hair behind the body), 'body' (everything but hair) or 'front' (hair over the head)
+  function BeanValue({ G, lights, k, amb, hair, hairTone, uid, part = 'body' }) {
     const limbV = (P, m) => clamp((amb * 1.05 + (1 - amb) * 0.55 * lightSum(lights, P[1], k)) * m, 0, 1);
     const armV = (P, m) => clamp((amb * 1.2 + (1 - amb) * 0.8 * lightSum(lights, P[1], k)) * m, 0, 1);   // the near arm reads over the body
     const jit = G.J || ((p) => p);
@@ -264,9 +277,14 @@
     const H = hairShapes(hair, G.Hc, G.r, G.up, G.fwd, G.view, G.neckDown);
     const hc = addv(G.Hc, mulv(G.up, G.r * 0.5));
     const side = G.view !== 'front';
+    if (part === 'back') return H && H.back ? <LitShape d={H.back} c={hc} rho={G.r * 1.2} base={hairTone} lights={lights} k={k} uid={uid + 'hb'} gain={0.35} /> : null;
+    if (part === 'front') return H ? (
+      <g>
+        {H.front && <LitShape d={H.front} c={hc} rho={G.r} base={hairTone} lights={lights} k={k} uid={uid + 'hf'} gain={0.35} />}
+      </g>
+    ) : null;
     return (
       <g>
-        {H && H.back && <LitShape d={H.back} c={hc} rho={G.r * 1.2} base={hairTone} lights={lights} k={k} uid={uid + 'hb'} gain={0.55} />}
         {side && G.legs.slice(0, 1).map(limb)}
         {side && G.shoes.slice(0, 1).map(shoe)}
         {side && G.armsBack.map(limb)}
@@ -274,8 +292,6 @@
         {side ? G.shoes.slice(1).map(shoe) : G.shoes.map(shoe)}
         <LitShape d={pathOf(G.body, true)} c={centroid(G.body)} rho={46} base={amb} lights={lights} k={k} uid={uid + 'b'} />
         <LitShape d={circlePath(G.Hc, G.r, G.hb)} c={G.Hc} rho={G.r} base={amb * 1.08} lights={lights} k={k} uid={uid + 'h'} />
-        {H && H.front && <LitShape d={H.front} c={hc} rho={G.r} base={hairTone} lights={lights} k={k} uid={uid + 'hf'} gain={0.55} />}
-        {H && H.brim && <LitShape d={H.brim} c={G.Hc} rho={G.r} base={hairTone * 1.3} lights={lights} k={k} uid={uid + 'hr'} gain={0.55} />}
         {G.arms.map((a) => limb(a, true))}
       </g>
     );
@@ -286,7 +302,8 @@
   // amb: the figure's value with no light on it (0.34 sits in the ramp's lower middle). hair: 'none' | 'beanie' | 'long'.
   // phone 0..1: a phone in the near hand, which is also a light on the face. Eyes and phone are drawn after the toning,
   // so they stay sharp. id: unique per figure on screen (boil seed).
-  function ToneBean({ x, y, s = 1, dir = 1, pose, view = 'side', ramp = 'open', lights, amb = 0.34, hair = 'none', hairTone = 0.16, headScale = 1, phone = 0, op = 1, toneId, eyes = true, bf = 0, amp = 0.5, id = 1 }) {
+  // Hair is toned as its own layer (hairId, default fuHair-<ramp>) with no grain, so a hat or a fall of hair keeps clean bands.
+  function ToneBean({ x, y, s = 1, dir = 1, pose, view = 'side', ramp = 'open', lights, amb = 0.34, hair = 'none', hairTone = 0.16, headScale = 1, phone = 0, op = 1, toneId, hairId, eyes = true, bf = 0, amp = 0.5, id = 1 }) {
     const uid = safeId(React.useId());
     const key = typeof ramp === 'string' ? ramp : 'custom';
     const R = rampOf(ramp);
@@ -295,10 +312,15 @@
     const ph = view === 'front' ? 0 : phone;
     if (ph > 0.01 && G.hand) L.push({ p: G.hand, i: 0.75 * ph, reach: 34 * s });   // screen light on the face
     const h = G.hand, er = 3.8 * Math.max(0.85, G.r / 26);
+    const hf = hairId || (typeof ramp === 'string' ? 'fuHair-' + key : toneId || 'fuTone-' + key);
+    const HS = hair === 'beanie' ? hairShapes(hair, G.Hc, G.r, G.up, G.fwd, G.view, G.neckDown) : null, fold = HS && HS.fold;
     return (
       <g transform={`translate(${x} ${y}) scale(${s})`} opacity={op}>
         <g transform={`scale(${dir} 1)`}>
+          {hair !== 'none' && <g filter={`url(#${hf})`}><BeanValue G={G} lights={L} k={s} amb={amb} hair={hair} hairTone={hairTone} uid={uid} part="back" /></g>}
           <g filter={`url(#${toneId || 'fuTone-' + key})`}><BeanValue G={G} lights={L} k={s} amb={amb} hair={hair} hairTone={hairTone} uid={uid} /></g>
+          {hair !== 'none' && <g filter={`url(#${hf})`}><BeanValue G={G} lights={L} k={s} amb={amb} hair={hair} hairTone={hairTone} uid={uid} part="front" /></g>}
+          {fold && <line x1={fold[0][0]} y1={fold[0][1]} x2={fold[1][0]} y2={fold[1][1]} stroke={R[0]} strokeOpacity="0.55" strokeWidth={G.r * 0.05} strokeLinecap="round" />}
           {eyes && G.eyes.map((e, i) => <circle key={i} cx={e[0]} cy={e[1]} r={er} fill={R[0]} />)}
           {ph > 0.01 && h && <rect x={h[0] - 3} y={h[1] - 12} width="6" height="24" rx="2" fill={R[6]} opacity={ph} transform={`rotate(${(-30).toFixed(1)} ${fx(h[0])} ${fx(h[1])})`} />}
         </g>
@@ -312,7 +334,7 @@
   // hair: 'none' | 'beanie' | 'long'. Lights as for ToneBean.
   const BK = 9, HIP = 300;   // bust scale over the rig, and where the (off-frame) hip sits below the frame edge
   const BUST_REGION = [-460, -1060, 920, 1120];
-  function BeanBust({ x, y, s = 1, ramp = 'open', lights, amb = 0.34, hair = 'none', hairTone = 0.16, turn = 0.35, tilt = 0, nod = 0, op = 1, toneId, eyes = true, bf = 0, amp = 0.5, id = 1 }) {
+  function BeanBust({ x, y, s = 1, ramp = 'open', lights, amb = 0.34, hair = 'none', hairTone = 0.16, turn = 0.35, tilt = 0, nod = 0, op = 1, toneId, hairId, eyes = true, bf = 0, amp = 0.5, id = 1 }) {
     const uid = safeId(React.useId());
     const key = typeof ramp === 'string' ? ramp : 'custom';
     const R = rampOf(ramp);
@@ -328,26 +350,54 @@
     const hc = addv(Hc, mulv(up, r * 0.5));
     return (
       <g transform={`translate(${x} ${y}) scale(${s})`} opacity={op}>
+        {H && H.back && <g filter={`url(#${hairId || toneId || 'fuBustHair-' + key})`}><LitShape d={H.back} c={hc} rho={r * 1.2} base={hairTone} lights={L} k={s} uid={uid + 'hb'} gain={0.35} /></g>}
         <g filter={`url(#${toneId || 'fuBustTone-' + key})`}>
-          {H && H.back && <LitShape d={H.back} c={hc} rho={r * 1.2} base={hairTone} lights={L} k={s} uid={uid + 'hb'} gain={0.55} />}
           <LitShape d={pathOf(body, true)} c={centroid(body)} rho={46 * BK} base={amb * 0.92} lights={L} k={s} uid={uid + 'b'} gain={0.8} />
           <LitShape d={circlePath(Hc, r, hb, 72)} c={Hc} rho={r} base={amb * 1.08} lights={L} k={s} uid={uid + 'h'} />
-          {H && H.front && <LitShape d={H.front} c={hc} rho={r} base={hairTone} lights={L} k={s} uid={uid + 'hf'} gain={0.55} />}
-          {H && H.brim && <LitShape d={H.brim} c={Hc} rho={r} base={hairTone * 1.3} lights={L} k={s} uid={uid + 'hr'} gain={0.55} />}
         </g>
+        {H && <g filter={`url(#${hairId || toneId || 'fuBustHair-' + key})`}>
+          {H.front && <LitShape d={H.front} c={hc} rho={r} base={hairTone} lights={L} k={s} uid={uid + 'hf'} gain={0.35} />}
+        </g>}
+        {H && H.fold && <line x1={H.fold[0][0]} y1={H.fold[0][1]} x2={H.fold[1][0]} y2={H.fold[1][1]} stroke={R[0]} strokeOpacity="0.55" strokeWidth={r * 0.035} strokeLinecap="round" />}
         {eyes && [-1, 1].map((sd) => { const e = eye(sd); return <circle key={sd} cx={e[0]} cy={e[1]} r={r * 0.066} fill={R[0]} />; })}
       </g>
     );
   }
 
   // ── PostValue: the red post (crisis content) in value, for the red ramp's posterized grade ──
-  function PostValue({ x, y, rot = 0, s = 1, flip = 1, op = 1, outline = false }) {
+  // Always the same 32 × 42 card with rounded corners; kind sets what is on it. In the dark (outline) only the card's edge shows.
+  // flip < 0 shows the card's plain back (a card turning over never shows its face mirrored).
+  // Values: card 0.56 (the film's red once graded), details 0.78–0.95 (the hot and pale reds), cut-outs 0.3 (dark red).
+  const POST_KINDS = ['text', 'image', 'headline', 'avatar', 'video', 'chart', 'alert', 'feed', 'reactions'];
+  function PostFace({ kind }) {
+    const r = (x, y, w, h, val, rx = 1.5) => <rect x={x} y={y} width={w} height={h} rx={rx} fill={v(val)} />;
+    switch (kind) {
+      case 'image':      // a photo with a caption
+        return <g>{r(-12, -16, 24, 19, 0.82, 2)}<circle cx="5" cy="-10" r="3" fill={v(0.96)} /><path d="M -12 3 L -4 -6 L 1 -1 L 5 -4 L 12 3 Z" fill={v(0.4)} />{r(-12, 7, 18, 3, 0.84)}{r(-12, 12, 12, 3, 0.74)}</g>;
+      case 'headline':   // a heavy headline bar over two lines of text
+        return <g>{r(-12, -16, 24, 9, 0.92, 2)}{r(-12, -3, 24, 3, 0.8)}{r(-12, 3, 20, 3, 0.8)}{r(-12, 9, 14, 3, 0.74)}</g>;
+      case 'avatar':     // a poster's round avatar and name, then text
+        return <g><circle cx="-7" cy="-12" r="5" fill={v(0.92)} />{r(0, -14, 12, 3, 0.86)}{r(0, -9, 8, 2.5, 0.72)}{r(-12, -1, 24, 3, 0.8)}{r(-12, 5, 24, 3, 0.8)}{r(-12, 11, 16, 3, 0.74)}</g>;
+      case 'video':      // a clip with a play button and a progress bar
+        return <g>{r(-12, -15, 24, 20, 0.34, 2)}<path d="M -3 -10 L 5 -5 L -3 0 Z" fill={v(0.95)} />{r(-12, 9, 24, 2.5, 0.4)}{r(-12, 9, 15, 2.5, 0.92)}<circle cx="3" cy="10.25" r="2.6" fill={v(0.95)} /></g>;
+      case 'chart':      // a line that drops: numbers going the wrong way
+        return <g>{r(-12, -16, 24, 22, 0.42, 2)}<path d="M -9 -11 L -4 -7 L 0 -9 L 4 -1 L 9 2" fill="none" stroke={v(0.95)} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />{r(-12, 10, 18, 3, 0.8)}</g>;
+      case 'alert':      // a warning badge over a line of text
+        return <g><circle cx="0" cy="-6" r="9" fill={v(0.92)} />{r(-1.5, -12, 3, 8, 0.3, 1.5)}<circle cx="0" cy="-1" r="1.6" fill={v(0.3)} />{r(-12, 8, 24, 3, 0.8)}{r(-8, 14, 16, 3, 0.74)}</g>;
+      case 'feed':       // a scroll of three short posts
+        return <g>{[-14, -3, 8].map((y, i) => <g key={i}><circle cx="-9" cy={y + 2} r="3" fill={v(0.9)} />{r(-4, y, 16, 2.5, 0.84)}{r(-4, y + 4, 11, 2.5, 0.72)}</g>)}</g>;
+      case 'reactions':  // text with a row of reactions under it
+        return <g>{r(-12, -16, 24, 3.5, 0.86)}{r(-12, -9, 20, 3, 0.78)}{r(-12, -3, 22, 3, 0.78)}{r(-12, 3, 12, 3, 0.72)}{[-8, -1, 6].map((x, i) => <circle key={i} cx={x} cy="13" r="2.8" fill={v(0.94)} />)}</g>;
+      default:           // 'text': the original post, a header and a line
+        return <g>{r(-10, -13, 20, 4, 0.84, 2)}{r(-10, -5, 14, 4, 0.74, 2)}</g>;
+    }
+  }
+  function PostValue({ x, y, rot = 0, s = 1, flip = 1, op = 1, outline = false, kind = 'text' }) {
     const f = Math.abs(flip) < 0.04 ? 0.04 : flip;
     return (
       <g transform={`translate(${x} ${y}) rotate(${rot}) scale(${s * f} ${s})`} opacity={op}>
-        <rect x="-16" y="-21" width="32" height="42" rx="5" fill={outline ? 'none' : v(0.56)} stroke={v(0.8)} strokeWidth={outline ? 2.5 : 0} />
-        {!outline && <rect x="-10" y="-13" width="20" height="4" rx="2" fill={v(0.84)} />}
-        {!outline && <rect x="-10" y="-5" width="14" height="4" rx="2" fill={v(0.74)} />}
+        <rect x="-16" y="-21" width="32" height="42" rx="5" fill={outline ? 'none' : v(f > 0 ? 0.56 : 0.46)} stroke={v(0.8)} strokeWidth={outline ? 2.5 : 0} />
+        {!outline && f > 0.25 && <PostFace kind={kind} />}
       </g>
     );
   }
@@ -368,5 +418,5 @@
     return `<svg xmlns="http://www.w3.org/2000/svg" width="0" height="0" style="position:absolute"><filter id="fu-look" x="0" y="0" width="1" height="1" color-interpolation-filters="sRGB">${body}</filter></svg>`;
   }
 
-  window.FU_LOOK = { RAMPS, DEFAULT_LIGHTS, mix, mixRamp, v, GradeFilter, ToneFilter, GlowFilter, LookDefs, ToneBean, BeanBust, PostValue, lookFilterMarkup };
+  window.FU_LOOK = { RAMPS, DEFAULT_LIGHTS, mix, mixRamp, v, GradeFilter, ToneFilter, GlowFilter, LookDefs, ToneBean, BeanBust, PostValue, POST_KINDS, lookFilterMarkup };
 })();

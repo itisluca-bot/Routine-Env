@@ -89,6 +89,9 @@ node tools/render.mjs "<page>" --frames 0,120,300 --half --guide                
 - unpkg and jsDelivr are blocked by the network policy here; npm works. The renderer serves React, ReactDOM and Babel from `node_modules` and the project files through Playwright request routing. Do not start a local HTTP server: Chromium sends loopback traffic through the proxy.
 - Never `pkill -f` or `pgrep -f` with a pattern that appears in your own command line; it matches your own shell. Wait on log files instead.
 - The branch may get commits from other sessions. Fetch and rebase your own commits before pushing; never force-push.
+- All of the film's work is on branch `claude/festive-ramanujan-0f2ir9`. The repository's default branch does not contain `feeding-uncertainty/`; start new work from that branch (see `LOOK.md` §8).
+- If Playwright reports a missing browser after `npm install`, the renderer falls back to the pre-installed Chromium at `/opt/pw-browsers/chromium` by itself.
+- When several sessions work in parallel (one shot each), change the shared rigs (`rigs/*.jsx`) only when the shot needs it, and say so in the commit; they are shared by every shot.
 - Reference stills show real people. They are kept out of git.
 
 ## 7. The segments so far

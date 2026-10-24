@@ -4,7 +4,7 @@
 // Every frame is a pure function of T; the clock runs 4 s so each concept can also be seen moving.
 const { W, H, OUT_W, OUT_H, MOTION, osc, lerp, hash, cam } = window.FU_RIG;
 const { POSES, BeanFig, PAL } = window.FU_BEAN;
-const { RAMPS, mixRamp, v, ToneFilter, LookDefs, ToneBean, BeanBust, PostValue } = window.FU_LOOK;
+const { RAMPS, mixRamp, v, ToneFilter, LookDefs, ToneBean, BeanBust, PostValue, POST_KINDS } = window.FU_LOOK;
 const { glide } = MOTION;
 
 const CONCEPTS = {
@@ -12,6 +12,7 @@ const CONCEPTS = {
   hair: 'Sheet · hair: none, beanie, long',
   light: 'Sheet · moving lights: a swinging lamp, a walk past a streetlight',
   bust: 'Sheet · BeanBust close-ups',
+  posts: 'Sheet · red post variations',
   lamp: 'Scene · lamp (open engagers), teal world',
   table: 'Scene · dinner table under the lamp',
   door: 'Scene · curator child at the door, red seeping into the ramp',
@@ -183,6 +184,24 @@ function SheetBusts({ k }) {
           </g>
         </g>
       ))}
+    </g>
+  );
+}
+
+// the red post: nine faces on the same card, large, then small and moving the way they appear in shots
+function SheetPosts({ k }) {
+  const { T } = k;
+  return (
+    <g>
+      <rect x="-10" y="-10" width="1940" height="1100" fill={RAMPS.red[0]} />
+      <g filter="url(#fuGradeFg-red)">
+        {POST_KINDS.map((kind, i) => <PostValue key={kind} kind={kind} x={150 + i * 202} y={250} s={4.2} rot={1.5 * osc(T, 3 + i * 0.3, i * 0.2)} />)}
+        {POST_KINDS.map((kind, i) => <PostValue key={'o' + kind} kind={kind} x={150 + i * 202} y={560} s={2.4} outline />)}
+        {Array.from({ length: 36 }, (_, i) => {
+          const h = (n) => hash(i * 7.1 + n * 3.7 + 5), a = T * (0.5 + 0.5 * h(1)) + 6.28 * h(2);
+          return <PostValue key={'m' + i} kind={POST_KINDS[i % POST_KINDS.length]} x={960 + (360 + 420 * h(3)) * Math.cos(a)} y={860 + 120 * h(4) * Math.sin(a) + 20 * osc(T, 1.2 + h(5))} s={1.3 + 0.6 * h(6)} rot={-30 + 60 * h(7)} flip={Math.cos(T * (4 + 3 * h(8)) + 6 * h(9))} />;
+        })}
+      </g>
     </g>
   );
 }
@@ -429,10 +448,10 @@ function ConceptPiece({ concept, guide, boil, boilAmp }) {
   const { T } = useComposition();
   const bf = Math.floor(T * 8), amp = boil ? boilAmp : 0;
   const k = { T, bf, amp, ba: { bf, amp } };
-  const ramps = { tone: GROUPS, hair: ['open'], light: ['open', 'wd'], bust: GROUPS, lamp: ['open'], table: ['open'], door: ['cur'], alley: ['wd', 'cur'], voice: ['open'], mask: ['open'] }[concept] || ['open'];
+  const ramps = { tone: GROUPS, hair: ['open'], posts: ['red'], light: ['open', 'wd'], bust: GROUPS, lamp: ['open'], table: ['open'], door: ['cur'], alley: ['wd', 'cur'], voice: ['open'], mask: ['open'] }[concept] || ['open'];
   const red = glide(T, 0.3, 3.6, 0.15, 0.55);
   const body = {
-    tone: <SheetTone k={k} />, hair: <SheetHair k={k} />, light: <SheetLight k={k} />, bust: <SheetBusts k={k} />,
+    tone: <SheetTone k={k} />, hair: <SheetHair k={k} />, light: <SheetLight k={k} />, bust: <SheetBusts k={k} />, posts: <SheetPosts k={k} />,
     lamp: <SceneLamp k={k} />, table: <SceneTable k={k} />, door: <SceneDoor k={k} red={red} />, alley: <SceneAlley k={k} />, voice: <SceneVoice k={k} />,
     mask: <SceneLamp k={k} look="mask" />,
   }[concept] || <SceneLamp k={k} />;
