@@ -224,4 +224,5 @@ Line: "Coping is a form of resistance. The question is, what do people have to r
 - **Layout:** one left column at x 180 under the title (labels and names aligned with it), the logo (380 wide) on the right, centred on the names, rule and disclaimer at the bottom left.
 - **Motion:** every line fades in on its beat with a small rise (title, then the three names 1.25 s apart, the logo, the rule, the disclaimer). No camera move: a 2% push made the type step from pixel to pixel; the rule and the dot boil at 8 fps instead.
 - **Render:** `node tools/render.mjs "Credits.dc.html"` (4K PNG sequence; add `--set logo=red` for the red logo).
+- **Exported at 4K** (October 2026): white logo, PNG sequence and ProRes 4444, pop check clean (the only flagged step is the faint grid's fade-in moving one 8-bit grey level).
 
