@@ -101,7 +101,7 @@ node tools/render.mjs "<page>" --frames 0,120,300 --half --guide                
 
 1. **Curation / Topography** (`curation-topography.jsx`, `timing_1.srt`, 8.24 s). Finished. See `HANDOFF.md`.
 2. **Open engagers** (`open-engagers.jsx`, `timing_2.srt`, 22.48 s). The user chose **variant 2**. Moved to the toned look in October 2026 (§8, "Look").
-3. **The toned look** (October 2026, `LOOK.md`). The rig and mockups are done. Open engagers is the first shot moved to it; Vulnerability Alley and Topography are next.
+3. **The toned look** (October 2026, `LOOK.md`). The rig and mockups are done. Open engagers and Vulnerability Alley are moved to it (the alley as a preview only); Topography is next.
 5. **Curators on the phone** (`timing_0.srt`, 9s4f = 9.16 s). Round-1 concepts (§11); the user chose **A · Long press** (§12). Exported at 4K (variant `two`).
 4. **Vulnerability** (5.00 s, no SRT yet). Round 1, the city of apartment blocks (`vulnerability.jsx`, variant 1), was exported at 4K; the user then found it too busy. Round 2 is the alley (`vulnerability-alley.jsx`, §10).
 
@@ -145,6 +145,7 @@ The user liked the concept but found the city too busy. The same line and timing
 - **Moths:** six red posts circle every lantern; three swarms of different sizes fly down the alley (the user found six too many) and are pulled toward each light as they pass; a 30-post swarm comes through on "crises". Lit in the pools, red outlines in the dark.
 - **Camera:** a slow truck along the alley with a 3% push.
 - **Length:** the user asked for 2 s more, so the alley runs 7.00 s: Weight 0–2.28, Crises 2.28–6.76 (the line ends about 4.3 s in; the rest is the street carrying on), Hold to 7.00. One extra swarm enters from off screen after "crises" so the tail never empties. Exported at 4K.
+- **Look (toned, October 2026, `env` tweak, default `AE`):** the user chose a neutral streetlight with the window glows halfway between options A and E. Shared by every option: a lighter night sky with the slow clouds from the end of Open Engagers; the next street out of focus (blur 3.5, `dark` 0.8); the row outside the light in its own muted brick (`TDARK` 0.6, sharp); inside the pools the brick keeps its own colours (no ramp tint). Blue and teal glows behind the shutters at `glow` 1.5: above 1 they wash their own facade in their ramp (a soft mask per house plus one per window, graded with `vtGlowG-<ramp>`). Curators are front-view `ToneBean`s (arms hidden, lit by the lanterns), drawn on top of the row with the curtain they hold (`peekLayer`); hair mixed none / long / beanie. Curtains a little darker than before so the curators read. Posts are `PostValue` (mixed kinds) in `fuGradeFg-red`: outlines outside the pools, filled inside. Options kept in the file but not chosen: B (pools warm toward the curator ramp), C (each house toned toward its resident's ramp), D (C with stronger glows), E (A with glow 2); `old` is the shot before the look. Only a 1080p preview was asked for; no 4K export yet.
 
 ## 11. Curators on the phone: round 1 (concepts)
 

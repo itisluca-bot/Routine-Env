@@ -1,6 +1,6 @@
 # The toned look: bringing the animations closer to the testimony portraits
 
-Status: **direction agreed, October 2026.** Feedback on the first animations (Open Engagers, Vulnerability, Topography) was that they feel too different from the rest of the film, which is built around re-animated testimony portraits. The old rule against imitating the portraits is outdated. The rig (`rigs/fu-look.jsx`) and the mockups (`Look Concepts.dc.html`) follow the decisions below. Open Engagers has been rebuilt in the look; Vulnerability Alley and Topography have not yet.
+Status: **direction agreed, October 2026.** Feedback on the first animations (Open Engagers, Vulnerability, Topography) was that they feel too different from the rest of the film, which is built around re-animated testimony portraits. The old rule against imitating the portraits is outdated. The rig (`rigs/fu-look.jsx`) and the mockups (`Look Concepts.dc.html`) follow the decisions below. Open Engagers and Vulnerability Alley have been rebuilt in the look; Topography has not yet.
 
 ## 1. Decisions
 
@@ -100,7 +100,7 @@ node tools/render.mjs "Curation Topography.dc.html" --look cur:map
 
 ## 7. Next
 
-1. The finished shots are re-rendered in the toned look, one shot per session, following §8. Done: Open Engagers.
+1. The finished shots are re-rendered in the toned look, one shot per session, following §8. Done: Open Engagers, Vulnerability Alley (preview; 4K not yet exported).
 2. Lighting choices for mixed beats (several groups in one frame): decide with the user, per shot.
 
 ## 8. Moving a finished shot to the toned look (checklist for a new session)
@@ -119,5 +119,5 @@ node tools/render.mjs "Curation Topography.dc.html" --look cur:map
 
 Per shot:
 - **Open Engagers** (`open-engagers.jsx`, variant 2): **done** (October 2026). How it was done, useful for the next shots: sets kept their own colours and go through a small local `Grade` filter whose region is the element's own box (so it works inside the camera transform, unlike `GradeFilter`'s fixed 1920 × 1080 region); lit copies posterized with `gain` 2.6, dark copies smooth with gain about 0.9 (posterizing a dark copy collapses it into the darkest tone); to make one light read as another group's, its inside is redrawn in that ramp (a second ground or set copy masked by the beam). Simple props (lamp, table, chairs, dust, haze) are drawn straight in ramp colours, no filter.
-- **Vulnerability Alley** (`vulnerability-alley.jsx`): `BeanFront` curators peeking behind curtains, `TerraceHouse` rows, streetlights, blue and teal glows behind shutters. Mixed beat; the `alley` mockup shows one option (a blue world with a warm curator window). The earlier city version (`vulnerability.jsx`) was found too busy and replaced by the alley.
+- **Vulnerability Alley** (`vulnerability-alley.jsx`): `BeanFront` curators peeking behind curtains, `TerraceHouse` rows, streetlights, blue and teal glows behind shutters. Mixed beat; the `alley` mockup shows one option (a blue world with a warm curator window). The earlier city version (`vulnerability.jsx`) was found too busy and replaced by the alley. **Done** (October 2026, `env` = `AE`): no world ramp. A neutral night (Open Engagers' street and sky), muted brick, a neutral white streetlight; each group's colour comes from its own light (blue and teal glows wash their own facades, curators toned orange in the lamp light, red posts). Options A–E are kept behind the `env` tweak; see ANIMATION-GUIDE §10.
 - **Curation Topography** (`curation-topography.jsx`): uses its own top-down figure (`TopPerson`), which has no toned version yet; build one the same way (value art + `ToneFilter` + crisp details). Its rings are the shot's metaphor (the curator's buffer), not portrait rings: confirm with the user that they stay.
