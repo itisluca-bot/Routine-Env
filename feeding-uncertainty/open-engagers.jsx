@@ -171,7 +171,6 @@ function DinnerBean({ k, x = 960, y = 820, s = 1, idb = 30, lights = [] }) {
   const hM = headW(mom), hK = headW(kid), hD = headW(dad);   // by "dinner" dad faces the son again: his speech leaves toward him
   return (
     <g transform={`translate(${x} ${y}) scale(${s})`}>
-      <line x1="-520" y1="0" x2="520" y2="0" stroke={RO[2]} strokeWidth="4" />
       <Bean f={dad} k={k} id={idb + 1} lights={L} />
       <Chair x={-215} y={0} h={88} w={56} dir={1} col={RO[2]} />
       <Chair x={225} y={0} h={50} dir={-1} col={RO[2]} />
