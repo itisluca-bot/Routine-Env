@@ -530,7 +530,7 @@ function Shot({ k, variant }) {
           <path d={BO.poly} fill="#fff" opacity={oPow * (1 - oraGone)} filter="url(#oeSoft)" />
         </mask>
         <clipPath id="oeRoomClip">
-          <rect x="-5000" y="-5000" width={5000 + SEC.x1 + SEC.t} height="12000" />
+          <rect x="-5000" y="-5000" width={5000 + SEC.x1} height="12000" />
           <path d={`M ${B.S[0]} ${B.S[1]} L ${wTop[0]} ${wTop[1]} L ${wSill[0]} ${wSill[1]} Z`} />
         </clipPath>
         <mask id="oeShaft" maskUnits="userSpaceOnUse" x="-5000" y="-5000" width="12000" height="12000">
@@ -549,7 +549,7 @@ function Shot({ k, variant }) {
           <stop offset="1" stopColor={RC[5]} stopOpacity="0.07" />
         </linearGradient>
         {/* the outside face of the side wall: past it, the teal lamp's light falls on the curator's house and turns orange */}
-        <clipPath id="oeIn"><rect x="-5000" y="-5000" width={5000 + SEC.x1 + SEC.t} height="12000" /></clipPath>
+        <clipPath id="oeIn"><rect x="-5000" y="-5000" width={5000 + SEC.x1} height="12000" /></clipPath>
         <clipPath id="oeOut"><rect x={SEC.x1 + SEC.t} y="-5000" width="12000" height="12000" /></clipPath>
         {/* light pools in bands; the bright end sits toward the lamp (the focal point moves with the beam's angle), so the bands
             follow the light's slant instead of standing as plain concentric rings */}
