@@ -15,6 +15,7 @@ const { POSES, blendPose, rig, frontRig } = window.FU_BEAN;          // people: 
 const { RowHouse, TerraceHouse, HOUSE } = window.FU_HOUSE;           // the curator's house and the street (rigs/row-house.jsx)
 const { RAMPS, mixRamp, v, LookDefs, ToneFilter, ToneBean, PostValue, POST_KINDS } = window.FU_LOOK;
 const RO = RAMPS.open, RC = RAMPS.cur, RR = RAMPS.red;
+const NEUTRAL = '#111312';          // the dark outside the light once the street appears (the alley's, untinted)
 const RCD = mixRamp(RC, RO, 0.45);   // the curator's side of the street outside the light: their ramp, dimmed toward the teal dark
 const HAIR = { me: 'beanie', mom: 'long', dad: 'none', kid: 'beanie', ora: 'none', oraKid: 'long' };   // the hero as a child keeps the beanie
 
@@ -212,10 +213,10 @@ function HouseSection({ dark = 0, op = 1, sec = 1, ceil = 1, part }) {
   const c = (col) => mix(col, C.bg, dark), { x0, x1, t, upper, apex, win } = SEC;
   const brickId = 'oeSecBrick' + Math.round(dark * 100);
   const mid = (x0 + x1) / 2;
-  const back = part !== 'cut', cut = part !== 'back';
+  const back = part !== 'cut' && part !== 'ext', cut = part !== 'back', ext = !part || part === 'ext';
   return (
     <g>
-      <g opacity={sec}>
+      {ext && <g opacity={sec}>
         {/* upstairs the house is not cut away: its brick front with two windows, and a small window in the gable */}
         {cut && (
           <g>
@@ -240,7 +241,7 @@ function HouseSection({ dark = 0, op = 1, sec = 1, ceil = 1, part }) {
         {cut && <rect x={x0 - t} y={upper - 20} width={t} height={CEIL - upper + 20} fill={c(SETC.cut)} />}
         {cut && <rect x={x1} y={upper - 20} width={t} height={CEIL - upper + 20} fill={c(SETC.cut)} />}
         {cut && <path d={`M ${x0 - t - 30} ${upper + 6} L ${mid} ${apex} L ${x1 + t + 30} ${upper + 6}`} fill="none" stroke={c(SETC.cut)} strokeWidth="30" strokeLinejoin="miter" />}
-      </g>
+      </g>}
       <g opacity={op}>
         {back && (
           <g>
@@ -280,6 +281,7 @@ const STREET_L = [{ w: 380, floors: 2, roof: 'gable', door: 'left', brick: '#332
 const STREET_R = [{ w: 400, floors: 2, roof: 'pitched', door: 'left', brick: '#352a27' }, { w: 380, floors: 3, roof: 'step', door: 'right', brick: '#3a2e2a' }, { w: 420, floors: 2, roof: 'flat', door: 'left' }];
 const STREET_B = Array.from({ length: 9 }, (_, i) => { const h = (n) => hash(i * 3.3 + n * 1.7 + 17); return { w: 380 + 80 * h(1), floors: 3, roof: ['flat', 'pitched', 'gable', 'step'][Math.floor(h(2) * 4)], door: 'left', brick: '#2e2624' }; });
 // faint clouds in the night sky behind the next street, drifting slowly right
+const DARK = 0.8;   // how far the street's unlit copy fades toward the background, as in the Vulnerability alley
 const CLOUDS = Array.from({ length: 7 }, (_, i) => { const h = (n) => hash(i * 5.3 + n * 2.1 + 31); return { x: -1100 + 620 * i + 200 * h(1), y: -400 + 120 * h(2), w: 380 + 260 * h(3), sp: 6 + 6 * h(4), k: h(5) }; });
 function Clouds({ T }) {
   return (
@@ -287,7 +289,7 @@ function Clouds({ T }) {
       {CLOUDS.map((c, i) => {
         const x = c.x + c.sp * T;
         return (
-          <g key={i} fill={i % 2 ? RO[2] : mix(RO[1], RO[2], 0.5)}>
+          <g key={i} fill={i % 2 ? '#262a29' : '#202423'}>
             <ellipse cx={x} cy={c.y} rx={c.w / 2} ry={c.w * 0.11} />
             <ellipse cx={x - c.w * (0.12 + 0.1 * c.k)} cy={c.y - c.w * 0.07} rx={c.w * 0.22} ry={c.w * 0.1} />
             <ellipse cx={x + c.w * 0.14} cy={c.y - c.w * 0.05} rx={c.w * 0.2} ry={c.w * 0.08} />
@@ -297,24 +299,25 @@ function Clouds({ T }) {
     </g>
   );
 }
-// Graded into the ramp (rk): the next street well out of focus, the neighbours a little, the pavement sharp. The houses right of
-// the curator's are on their side of the street and always in their ramp. sky: draw the clouds (the dark copy only).
-function Street({ op, curRight, rk = 'open', T, sky = false }) {
+// Outside the light the street has no ramp tint: it is the Vulnerability alley's muted brick, faded toward the dark (DARK).
+// Inside the beam it is graded into the ramp (rk). sky: draw the clouds (the dark copy only).
+// lit: the copy inside the lamp's beam (graded into the ramp); otherwise the dark copy in the alley's muted brick
+function Street({ op, curRight, rk = 'open', T, sky = false, lit = false }) {
   if (op <= 0) return null;
   let xl = SEC.x0 - SEC.t, xr = curRight, xb = -900;
   return (
     <g opacity={op}>
       {sky && <Clouds T={T} />}
-      <g filter={`url(#oeStreetFar-${rk})`}>{STREET_B.map((h, i) => { const x = xb; xb += h.w * 0.55 + 4; return <g key={'b' + i} transform={`translate(${x} 300) scale(0.55)`}><TerraceHouse x={0} y={0} spec={h} dark={0.86} pid={`oeSb${i}`} /></g>; })}</g>
-      <g filter={`url(#oeDark-${rk})`}>
-        <rect x="-2000" y={FL} width="6000" height="40" fill="#141615" />
-        <line x1="-2000" x2="4000" y1={FL + 40} y2={FL + 40} stroke="#202322" strokeWidth="4" />
+      <g filter={lit ? `url(#oeStreetFar-${rk})` : undefined}>{STREET_B.map((h, i) => { const x = xb; xb += h.w * 0.55 + 4; return <g key={'b' + i} transform={`translate(${x} 300) scale(0.55)`}><TerraceHouse x={0} y={0} spec={h} dark={0.86} pid={`oeSb${i}`} /></g>; })}</g>
+      <g filter={lit ? `url(#oeDark-${rk})` : undefined}>
+        <rect x="-2000" y={FL} width="6000" height="40" fill={lit ? '#141615' : mix('#1f2321', C.bg, 0.5)} />
+        <line x1="-2000" x2="4000" y1={FL + 40} y2={FL + 40} stroke={lit ? '#202322' : mix('#2c3130', C.bg, 0.5)} strokeWidth="4" />
       </g>
-      <g filter={`url(#oeStreet-${rk})`}>
-        {STREET_L.map((h, i) => { xl -= h.w; return <TerraceHouse key={'l' + i} x={xl} y={FL} spec={h} dark={0.72} pid={`oeSl${i}`} />; })}
+      <g filter={lit ? `url(#oeStreet-${rk})` : undefined}>
+        {STREET_L.map((h, i) => { xl -= h.w; return <TerraceHouse key={'l' + i} x={xl} y={FL} spec={h} dark={lit ? 0.72 : DARK} pid={`oeSl${i}`} />; })}
       </g>
-      <g filter={rk === 'cur' ? 'url(#oeStreet-cur)' : 'url(#oeStreet-curDim)'}>
-        {STREET_R.map((h, i) => { const x = xr; xr += h.w; return <TerraceHouse key={'r' + i} x={x} y={FL} spec={h} dark={0.72} pid={`oeSr${i}`} />; })}
+      <g filter={lit ? 'url(#oeStreet-cur)' : undefined}>
+        {STREET_R.map((h, i) => { const x = xr; xr += h.w; return <TerraceHouse key={'r' + i} x={x} y={FL} spec={h} dark={lit ? 0.72 : DARK} pid={`oeSr${i}`} />; })}
       </g>
     </g>
   );
@@ -511,6 +514,7 @@ function Shot({ k, variant }) {
         <ToneFilter id="oeHairKid" ramp={kidRamp} edge={5} grain={0} soft={1.2} bf={k.bf} amp={k.amp} />
       </defs>
       {ground('open')}
+      {swing && secOp > 0 && <rect x="0" y="0" width={W} height={H} fill={NEUTRAL} opacity={secOp} />}
       {oPow * (1 - oraGone) > 0 && <g mask="url(#oeBeamO)">{ground('cur')}</g>}
     <g transform={cam(cp[0], cp[1], z)}>
       <defs>
@@ -557,7 +561,7 @@ function Shot({ k, variant }) {
           <rect x="-5000" y="-5000" width="12000" height={5000 + FL - 100} fill="#fff" />
         </mask>
  <linearGradient id="oeFootFade" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" stopColor={mix(RO[0], RO[1], 0.45)} stopOpacity="0" /><stop offset="1" stopColor={mix(RO[0], RO[1], 0.45)} stopOpacity="0.9" />
+          <stop offset="0" stopColor={NEUTRAL} stopOpacity="0" /><stop offset="1" stopColor={NEUTRAL} stopOpacity="0.9" />
         </linearGradient>
         <filter id="oeCloud" x="-30%" y="-60%" width="160%" height="220%"><feGaussianBlur stdDeviation="22" /></filter>
       </defs>
@@ -565,13 +569,14 @@ function Shot({ k, variant }) {
       {/* the street and the house section, dim */}
       {swing && <Street op={secOp} curRight={DXo + 285} T={T} sky />}
       {/* the curator's house outside the light: opaque, so the street behind does not show through it */}
-      {swing && houseVis > 0 && <g opacity={houseVis} filter="url(#oeDark-curDim)"><RowHouse x={DXo} y={FL} dark={0.72} /></g>}
+      {swing && houseVis > 0 && <g opacity={houseVis}><RowHouse x={DXo} y={FL} dark={DARK} /></g>}
       {/* out of the light, the curator's side of the street sinks into the ground at its foot */}
       {swing && secOp > 0 && <rect x={DXo - 135} y={FL - 170} width="3000" height="172" fill="url(#oeFootFade)" opacity={secOp} />}
       {swing && ceilOp > 0 && (
         <g>
           <g filter="url(#oeBackDark-open)"><HouseSection dark={0.7} op={roomOp} sec={secOp} ceil={ceilOp} part="back" /></g>
           <g filter="url(#oeDark-open)"><HouseSection dark={0.7} op={roomOp} sec={secOp} ceil={ceilOp} part="cut" /></g>
+          <HouseSection dark={DARK} sec={secOp} part="ext" />
         </g>
       )}
 
@@ -585,7 +590,7 @@ function Shot({ k, variant }) {
 
       {/* everything the lamp reveals */}
       <g mask={st}>
-        {clipOn && secOp > 0 && <g clipPath="url(#oeOut)"><Street op={secOp} curRight={DXo + 285} rk="cur" /></g>}
+        {clipOn && secOp > 0 && <g clipPath="url(#oeOut)"><Street op={secOp} curRight={DXo + 285} rk="cur" lit /></g>}
         {swing && ceilOp > 0 && (
           <g>
             <g filter="url(#oeBackLit-open)"><HouseSection op={roomOp} sec={secOp} ceil={ceilOp} part="back" /></g>
