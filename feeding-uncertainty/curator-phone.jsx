@@ -162,7 +162,8 @@ function Shot({ k, oneThumb }) {
   const hy = cat.cy + (DT[1] - 565) - 20 - 60 * MOTION.glide(T, 4.98, 5.42, 0, 1);
   const over = (
     <g>
-      <g transform={fx}><AppBar /></g>
+      {/* the feed scrolls under the status bar and the app bar, never through them */}
+      <g transform={fx}><rect width={SW} height="48" fill={v(0.95)} /><AppBar /></g>
       <Sheet open={Math.max(0, open)} rows={['mute', 'unfollow', 'hide', 'report']} hl={T > 0.98 ? 1 : -1} press={pressAt(T, [1.08])} />
       <StatusBar /><HomeBar />
       {hold > 0 && <circle cx={LP[0]} cy={LP[1]} r={20 + 36 * hold} fill={v(0.2)} opacity={0.3 * hold} />}
