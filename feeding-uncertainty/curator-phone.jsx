@@ -155,7 +155,11 @@ function Shot({ k, oneThumb }) {
     </g>
   );
   const red = <g transform={fx}>{fc.red}</g>;
-  const hs = 2.6 * pop(T, 4.98, 0.3), hop = 1 - g01(T, 5.4, 5.7), cat = L[2];
+  // the double-tap heart pops where the thumb tapped (beside the cat's face, not on it) and floats up as it fades;
+  // a darker tone with a light rim, so it reads against both the photo and the card
+  // it rides on the cat's card (so it scrolls with it) and is gone before the feed moves on
+  const cat = L[2], hs = 3.2 * pop(T, 4.98, 0.28), hop = 1 - g01(T, 5.18, 5.42);
+  const hy = cat.cy + (DT[1] - 565) - 20 - 60 * MOTION.glide(T, 4.98, 5.42, 0, 1);
   const over = (
     <g>
       <g transform={fx}><AppBar /></g>
@@ -163,7 +167,7 @@ function Shot({ k, oneThumb }) {
       <StatusBar /><HomeBar />
       {hold > 0 && <circle cx={LP[0]} cy={LP[1]} r={20 + 36 * hold} fill={v(0.2)} opacity={0.3 * hold} />}
       <Ripple p={UNF} T={T} t0={1.08} /><Ripple p={SEND} T={T} t0={SEND_T} val={0.9} />
-      {hs > 0.01 && hop > 0 && <Heart x={SCX} y={cat.cy - 20} s={hs} op={hop} />}
+      {hs > 0.01 && hop > 0 && <Heart x={DT[0]} y={hy} s={hs} op={hop} val={0.36} rim={0.97} />}
     </g>
   );
   const tipW = toWorld(P, tip), tipLW = toWorld(P, tipL);

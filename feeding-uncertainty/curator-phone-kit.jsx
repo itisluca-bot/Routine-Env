@@ -111,8 +111,8 @@
     const r = (x, y, w, h, val, rx = 1.5) => <rect x={x} y={y} width={w} height={h} rx={rx} fill={v(val)} />;
     const caption = <g>{r(-12, 7, 18, 3, 0.9)}{r(-12, 12, 11, 3, 0.8)}</g>;
     switch (kind) {
-      case 'cat':
-        return <g>{r(-12, -16, 24, 19, 0.86, 2)}<ellipse cx="0" cy="1.5" rx="7.5" ry="3.4" fill={v(0.42)} /><circle cx="0" cy="-5" r="5.6" fill={v(0.42)} /><path d="M -5.2 -7 L -4.3 -12.6 L -1.4 -9.6 Z M 5.2 -7 L 4.3 -12.6 L 1.4 -9.6 Z" fill={v(0.42)} /><circle cx="-2.1" cy="-5.4" r="0.95" fill={v(0.95)} /><circle cx="2.1" cy="-5.4" r="0.95" fill={v(0.95)} />{caption}</g>;
+      case 'cat':   // the body sits on the photo's bottom edge, cropped by it
+        return <g>{r(-12, -16, 24, 19, 0.86, 2)}<path d="M -7.5 3 A 7.5 4.6 0 0 1 7.5 3 Z" fill={v(0.42)} /><circle cx="0" cy="-5" r="5.6" fill={v(0.42)} /><path d="M -5.2 -7 L -4.3 -12.6 L -1.4 -9.6 Z M 5.2 -7 L 4.3 -12.6 L 1.4 -9.6 Z" fill={v(0.42)} /><circle cx="-2.1" cy="-5.4" r="0.95" fill={v(0.95)} /><circle cx="2.1" cy="-5.4" r="0.95" fill={v(0.95)} />{caption}</g>;
       case 'sun':
         return <g>{r(-12, -16, 24, 19, 0.88, 2)}<circle cx="4" cy="-8.5" r="4.4" fill={v(0.99)} /><path d="M -12 3 L -12 -4 Q -5 -9 1 -3 Q 6 -7 12 -2.5 L 12 3 Z" fill={v(0.5)} />{caption}</g>;
       case 'cup':
@@ -345,8 +345,8 @@
     if (a < 0 || a > 1) return null;
     return <circle cx={p[0]} cy={p[1]} r={10 + R0 * Easing.easeOutCubic(a)} fill={v(val)} opacity={0.4 * (1 - a)} />;
   }
-  function Heart({ x, y, s = 1, op = 1, val = 0.97 }) {
-    return <path d={HEART} transform={`translate(${x} ${y}) scale(${s})`} fill={v(val)} opacity={op} />;
+  function Heart({ x, y, s = 1, op = 1, val = 0.97, rim }) {
+    return <path d={HEART} transform={`translate(${x} ${y}) scale(${s})`} fill={v(val)} opacity={op} stroke={rim === undefined ? 'none' : v(rim)} strokeWidth={rim === undefined ? 0 : 1.6} strokeLinejoin="round" />;
   }
 
   // ── hands: the Bean has no hands, so these are Bean arms (round-capped strokes) grown into a mitt with a thumb.
