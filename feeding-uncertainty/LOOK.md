@@ -11,7 +11,7 @@ Status: **direction agreed, October 2026.** Feedback on the first animations (Op
 | Eyes | **Always sharp**: crisp dots in the ramp's darkest tone, drawn after the toning, never blurred or posterized |
 | Bands follow the light | The bands come from the scene's own lights. Dynamic lights (streetlights, dangling or swinging lamps, a phone screen) move the bands as they move |
 | Hair | Per character: `none`, `beanie` (a knitted cap with a folded brim) or `long` |
-| Red post | Same 32 × 42 card and outline as before; what is on it is being chosen from nine variants (`kind`, see §3) |
+| Red post | Same 32 × 42 card and outline as before, with **mixed faces**: posts use all nine `kind`s mixed, so a swarm reads as varied content (see §3) |
 | Background | **Black is not a rule.** Scenes live in a group's ramp; the ramp's tinted dark replaces `#0e0e0e` |
 | Scenes | The mockups' approach is liked: a ramp world, out-of-focus backgrounds (depth of field), light pools posterized into bands |
 | Red | Comes in **through the posts** (the red crisis content), and possibly through some story beats (for example a ramp sliding toward red, as in the `door` mockup) |
@@ -57,7 +57,7 @@ const { LookDefs, ToneBean, BeanBust, PostValue, v } = window.FU_LOOK;
 The Bean in close-up, head and shoulders, built from the rig's own proportions ×9 (the round head over the narrow top of the egg), for portrait framing. Same `ramp`, `lights`, `hair`, `amb` props, plus `turn`, `tilt`, `nod`. Origin at the bottom centre of the frame edge.
 
 ### Other pieces
-- `PostValue({ x, y, rot, s, flip, outline, kind })`: the red post in value, drawn inside `fuGradeFg-red`. `kind` is one of `POST_KINDS`: `text` (the original: a header and a line), `image` (a photo with a caption), `headline`, `avatar` (a poster's avatar and name, then text), `video` (play button, progress bar), `chart` (a line that drops), `alert` (a warning badge), `feed` (three short posts), `reactions` (text with a row of reactions). A card turned past edge-on (`flip < 0`) shows a plain back, never its face mirrored. `outline` is the card in the dark (edge only). The user has not picked a kind yet; swarms can mix kinds.
+- `PostValue({ x, y, rot, s, flip, outline, kind })`: the red post in value, drawn inside `fuGradeFg-red`. `kind` is one of `POST_KINDS`: `text` (the original: a header and a line), `image` (a photo with a caption), `headline`, `avatar` (a poster's avatar and name, then text), `video` (play button, progress bar), `chart` (a line that drops), `alert` (a warning badge), `feed` (three short posts), `reactions` (text with a row of reactions). A card turned past edge-on (`flip < 0`) shows a plain back, never its face mirrored. `outline` is the card in the dark (edge only). **Decided: mix the kinds** (for example `POST_KINDS[i % POST_KINDS.length]` per post, as in the `posts` sheet).
 - `GradeFilter` (smooth or posterized gradient map, optional blur), `GlowFilter` (the stock-footage colour-mask glow), `lookFilterMarkup` (whole-frame regrade for `tools/render.mjs --look`).
 - Performance: everything renders in about a second per 4K frame. `feTurbulence` was too slow on the CPU, so noise uses textures baked once on a canvas.
 
@@ -102,7 +102,6 @@ node tools/render.mjs "Curation Topography.dc.html" --look cur:map
 
 1. The finished shots are re-rendered in the toned look, one shot per session, following §8.
 2. Lighting choices for mixed beats (several groups in one frame): decide with the user, per shot.
-3. The red post's face: the user picks from the nine kinds.
 
 ## 8. Moving a finished shot to the toned look (checklist for a new session)
 
@@ -114,7 +113,7 @@ node tools/render.mjs "Curation Topography.dc.html" --look cur:map
 4. **World ramp:** the group the beat is about. For a beat with several groups, propose lighting options and ask the user before choosing.
 5. **Background and sets:** replace the `#0e0e0e` / `C.bg` ground with the ramp. Wrap far sets in `fuGradeBg-<ramp>` (out of focus) and near props and light pools in `fuGradeFg-<ramp>` (posterized). Existing coloured sets (`TerraceHouse`, `RowHouse`) can go inside a grade as they are, since the grade maps luminance; use `GradeFilter` with `gain` to lift a dark set into the ramp's middle tones.
 6. **People:** `BeanFig` → `ToneBean` (same `pose`, `x`, `y`, `s`, `dir`, `id`); `BeanFront` → `ToneBean view="front"`. `ramp` is the person's group. Pass the scene's lights, computed from the same functions of `T` that move the lamps (a swinging lamp's bulb, a streetlight's lantern, a phone). Hair per character: ask the user if it is not settled.
-7. **Red posts:** `Card` → `PostValue` inside `fuGradeFg-red`; a `Card` in the dark (`lit` near 0) → `PostValue outline`. Use the `kind` the user picked.
+7. **Red posts:** `Card` → `PostValue` inside `fuGradeFg-red`; a `Card` in the dark (`lit` near 0) → `PostValue outline`. Mix the kinds across the posts (`kind={POST_KINDS[i % POST_KINDS.length]}`).
 8. **Light as the transition device** (beams that reveal and hide): keep the mechanism. The unlit copy outside a beam becomes the same value art, darker.
 9. Review at half resolution with `--guide`, run the pop check (ANIMATION-GUIDE §6), send a 1080p preview, then render the final 4K sequence without `--guide`.
 
