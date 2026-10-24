@@ -52,7 +52,10 @@
       <defs>
         <GradeFilter id="phCur" ramp="cur" poster region={[-60, -60, SW + 120, SH + 120]} />
         <GradeFilter id="phRed" ramp="red" poster region={[-60, -60, SW + 120, SH + 120]} />
-        <ToneFilter id={id + 'Tone'} ramp={handRamp} edge={22} depth={0.45} grain={0.08} coarse soft={3} bf={bf} amp={amp} region={region} />
+        {/* hands are lifted out of the ramp's darkest tones, so a thumb or finger over the phone's dark body stays apart
+            from it: behind the phone (Tone) from tone 2 up, in front of it (ToneF) from tone 3 up */}
+        <ToneFilter id={id + 'Tone'} ramp={handRamp} edge={22} depth={0.45} grain={0.08} coarse soft={3} gain={0.7} lift={0.24} bf={bf} amp={amp} region={region} />
+        <ToneFilter id={id + 'ToneF'} ramp={handRamp} edge={18} depth={0.4} grain={0.06} coarse soft={2.5} gain={0.55} lift={0.44} bf={bf} amp={amp} region={region} />
         <radialGradient id={id + 'L'} gradientUnits="userSpaceOnUse" cx={light[0]} cy={light[1]} r={reach}>
           <stop offset="0" stopColor={v(0.95)} /><stop offset="0.4" stopColor={v(0.66)} /><stop offset="1" stopColor={v(0.2)} />
         </radialGradient>
@@ -311,6 +314,31 @@
     return <g><rect x="14" y={y} width={SW - 76} height="44" rx="22" fill={v(0.98)} />{line}<circle cx={SW - 34} cy={y + 22} r="20" fill={v(0.5)} /><Icon kind="send" x={SW - 33} y={y + 22} val={0.97} s={0.8} /></g>;
   }
 
+  // typed text as scribbled lines: len px of text wrapped into lines of width w. The compose box and the sent bubble
+  // draw the same text with the same seed, so a message keeps its shape when it is sent.
+  function Scribble({ x, y, len, w = 230, lh = 22, seed = 2, jag = 1, val = 0.4 }) {
+    const out = [];
+    for (let i = 0; len - i * w > 1; i++) {
+      const lw = Math.min(w, len - i * w), n = Math.max(2, Math.round(16 * lw / w));
+      let d = `M ${x} ${y + i * lh}`;
+      for (let k = 1; k <= n; k++) d += ` L ${(x + (lw * k) / n).toFixed(1)} ${(y + i * lh + (hash(seed + i * 37 + k * 13) - 0.5) * 12 * jag).toFixed(1)}`;
+      out.push(<path key={i} d={d} fill="none" stroke={v(val)} strokeWidth="3.4" strokeLinecap="round" strokeLinejoin="round" />);
+    }
+    return <g>{out}</g>;
+  }
+  const scribbleLines = (len, w = 230) => Math.max(1, Math.ceil(len / w - 0.001));
+  // compose box sitting on the keyboard; it grows upward a line at a time as the text wraps
+  function ComposeBox({ bottom = KB_TOP - 14, len = 0, w = 230, seed = 2, jag = 1 }) {
+    const lines = scribbleLines(len, w), h = 44 + (lines - 1) * 22, y = bottom - h;
+    return (
+      <g>
+        <rect x="14" y={y} width={SW - 76} height={h} rx="22" fill={v(0.8)} />
+        {len > 1 && <Scribble x={34} y={y + 22} len={len} w={w} seed={seed} jag={jag} val={0.3} />}
+        <circle cx={SW - 34} cy={bottom - 22} r="20" fill={v(0.5)} /><Icon kind="send" x={SW - 33} y={bottom - 22} val={0.97} s={0.8} />
+      </g>
+    );
+  }
+
   // ── feedback ──
   function Ripple({ p, T, t0, val = 0.3, R0 = 46 }) {
     const a = (T - t0) / 0.4;
@@ -334,9 +362,13 @@
     return `M ${root[0].toFixed(1)} ${root[1].toFixed(1)} Q ${k[0].toFixed(1)} ${k[1].toFixed(1)} ${tip[0].toFixed(1)} ${tip[1].toFixed(1)}`;
   }
   // mitt: forearm + palm behind the phone, fingertips over the far edge, thumb over the screen. tip is a world point.
-  function Mitt({ P, tip, side = 1, id = 'ph', layer = 'back', press = 0, arm = [240, 560] }) {
-    const k = P.s, W = (p) => toWorld(P, sm(p, side)), fill = `url(#${id}L)`;
-    const palm = W([SW - 8, SH * 0.8]);
+  // grip is where the thumb's root sits up the phone's side (fraction of the screen height): lower for typing
+  const THUMB_REACH = 230;   // screen units a thumb can reach from its root without stretching
+  const thumbRoot = (grip) => [SW + 26, SH * grip];
+  // fingers (0..1) fades the fingertips over the far edge: with both hands on the phone they stay behind it
+  function Mitt({ P, tip, side = 1, id = 'ph', layer = 'back', press = 0, arm = [240, 560], grip = 0.72, fingers = 1 }) {
+    const k = P.s, W = (p) => toWorld(P, sm(p, side)), fill = `url(#${id}L)`, dg = SH * (grip - 0.72);
+    const palm = W([SW - 8, SH * 0.8 + dg]);
     if (layer === 'back') {
       const a = P.rot || 0;
       return (
@@ -346,10 +378,10 @@
         </g>
       );
     }
-    const root = W([SW + 26, SH * 0.72]);
+    const root = W(thumbRoot(grip));
     return (
       <g>
-        {[0.56, 0.665, 0.77].map((f, i) => { const a = W([-40, SH * f]), b = W([8 + (i === 1 ? 5 : 0), SH * f + 8]); return <path key={i} d={`M ${a[0]} ${a[1]} L ${b[0]} ${b[1]}`} stroke={fill} {...st(44 * k)} />; })}
+        {fingers > 0.01 && [0.56, 0.665, 0.77].map((f, i) => { const a = W([-40, SH * f + dg]), b = W([8 + (i === 1 ? 5 : 0), SH * f + 8 + dg]); return <path key={i} d={`M ${a[0]} ${a[1]} L ${b[0]} ${b[1]}`} stroke={fill} opacity={fingers} {...st(44 * k)} />; })}
         <path d={thumbPath(root, tip, side)} stroke={fill} {...st((50 + 4 * press) * k)} />
       </g>
     );
@@ -374,6 +406,6 @@
     SW, SH, BZ, CS, CARD_H, GAP, PITCH, FEED_TOP, KB_TOP, SHEET_H, COMFORT_KINDS, HEART,
     track, track2, path2, pressAt, g01, pop, toWorld, phoneT, PhoneDefs, Phone, Layers, StatusBar, AppBar, HomeBar, bar,
     ComfortFace, WarmPost, HiddenPost, FeedCard, feedLayout, feedCards, Icon, Sheet, sheetRowY, Keyboard, keyPos, typing,
-    Bubble, bubbleH, msgH, ChatColumn, ChatHeader, Compose, Ripple, Heart, thumbPath, Mitt, Stumps,
+    Bubble, bubbleH, msgH, ChatColumn, ChatHeader, Compose, Scribble, scribbleLines, ComposeBox, THUMB_REACH, thumbRoot, Ripple, Heart, thumbPath, Mitt, Stumps,
   };
 })();

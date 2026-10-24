@@ -48,6 +48,7 @@ This is the working guide for a new Claude session. Read it together with `CLAUD
 | `vulnerability.jsx` | **The vulnerability shot** (see §9) |
 | `curator-phone-kit.jsx` | The curator's phone in first person (`window.FU_PHONE`): phone, screen UI drawn in value (feed, "…" menu, keyboard, chat, icons), `WarmPost` (comfort faces: cat, sun, cup, friends, plant, bowl, heart), feed layout, and hands (`Mitt`, `Stumps`). Load after `rigs/fu-look.jsx` and `open-engagers-concepts.jsx` |
 | `Curator Phone Concepts.dc.html` + `curator-phone-concepts.jsx` | Round-1 ideation for the phone shot (§11) |
+| `Curator Phone.dc.html` + `curator-phone.jsx` | **The current phone shot** (concept A, §12). `--set variant=two` (default) or `one` |
 | `tools/render.mjs` | Headless renderer (§6) |
 
 Load order in a page: `./animations-v3.jsx ./tweaks-panel.jsx ./rigs/bean-rig.jsx ./open-engagers-concepts.jsx ./your-shot.jsx`.
@@ -101,7 +102,7 @@ node tools/render.mjs "<page>" --frames 0,120,300 --half --guide                
 1. **Curation / Topography** (`curation-topography.jsx`, `timing_1.srt`, 8.24 s). Finished. See `HANDOFF.md`.
 2. **Open engagers** (`open-engagers.jsx`, `timing_2.srt`, 22.48 s). The user chose **variant 2**. Moved to the toned look in October 2026 (§8, "Look").
 3. **The toned look** (October 2026, `LOOK.md`). The rig and mockups are done. Open engagers is the first shot moved to it; Vulnerability Alley and Topography are next.
-5. **Curators on the phone** (`timing_0.srt`, 9s4f = 9.16 s). Round-1 concepts (§11).
+5. **Curators on the phone** (`timing_0.srt`, 9s4f = 9.16 s). Round-1 concepts (§11); the user chose **A · Long press** (§12).
 4. **Vulnerability** (5.00 s, no SRT yet). Round 1, the city of apartment blocks (`vulnerability.jsx`, variant 1), was exported at 4K; the user then found it too busy. Round 2 is the alley (`vulnerability-alley.jsx`, §10).
 
 ## 8. Open engagers shot: what is approved
@@ -167,3 +168,13 @@ Sections: Unfollow 0–1.80, Vent 1.80–3.80, Comfort 3.80–6.40, Feed 6.40–
 Hands: the Bean has no hands. The `X` sheet shows four options: a mitt with a thumb (Bean arm grown a palm, fingertips over the far edge), two thumbs, plain Bean stumps (round-capped forearms holding the sides, one lifts to tap), and no hands (taps only). Hands are value art filled with the screen's light gradient and toned through a `ToneFilter`, so the screen lights them.
 
 Screen content is value art in three graded layers (`Layers`): the curator ramp, then red posts in the red ramp, then menus. No readable words: text is bars (no kinetic typography).
+
+## 12. Curators on the phone: round 2 (concept A)
+
+The user chose concept A, the hands from the `X` sheet (mitt and thumb) and A's bedroom. `Curator Phone.dc.html` + `curator-phone.jsx`.
+
+- **Beats:** long press on a red post (a ring grows under the thumb), the "…" menu slides up, unfollow, the post folds away. Swipe to a chat, type with both thumbs, send; a heart lands on the sent message (3.5 s), then the reply (3.68 s). Swipe back, double-tap a cat (heart). The feed scrolls warm; a red post that slips in is veiled into a hidden-post outline and folds away.
+- **The message keeps its shape:** the compose box grows a line at a time as the text wraps, and the sent bubble draws the same scribble (`Scribble`, same seed and line width), rising out of the box. (Round 1 typed one line and sent four.)
+- **Thumb reach:** every thumb target is within `THUMB_REACH` (230 screen units) of the thumb's root; menus, double-taps and swipes are placed in the lower right. Typing uses both thumbs: the left hand comes up for the chat, each thumb types its own half of the keyboard, and the grip slides lower (`grip` 0.8). The fingertips over the far edge fade out while both hands hold the phone. Variant `one` keeps one hand and types only on the keys the right thumb can reach.
+- **Hands against the phone:** hands are lifted out of the ramp's darkest tones (`phTone` from tone 2 up behind the phone, `phToneF` from tone 3 up in front), so the thumb's edge band never merges with the phone's dark body.
+- **Room glow:** the bedroom's glow follows the screen's brightness (`screenLight`: red area on screen and the menu's dim lower it), softer than concept B. The room and hands drift a little toward red (at most 0.2) while a red post fills the screen.
