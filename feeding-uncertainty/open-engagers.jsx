@@ -574,8 +574,9 @@ function Shot({ k, variant }) {
       {swing && secOp > 0 && <rect x={DXo - 135} y={FL - 170} width="3000" height="172" fill="url(#oeFootFade)" opacity={secOp} />}
       {swing && ceilOp > 0 && (
         <g>
-          <g filter="url(#oeBackDark-open)"><HouseSection dark={0.7} op={roomOp} sec={secOp} ceil={ceilOp} part="back" /></g>
-          <g filter="url(#oeDark-open)"><HouseSection dark={0.7} op={roomOp} sec={secOp} ceil={ceilOp} part="cut" /></g>
+          {/* the room outside the lamp's light is untinted too (its own colours, faded toward the dark); only the light is teal */}
+          <HouseSection dark={DARK} op={roomOp} sec={secOp} ceil={ceilOp} part="back" />
+          <HouseSection dark={DARK} op={roomOp} sec={secOp} ceil={ceilOp} part="cut" />
           <HouseSection dark={DARK} sec={secOp} part="ext" />
         </g>
       )}
@@ -677,7 +678,7 @@ function Shot({ k, variant }) {
         {clipOn && <g clipPath="url(#oeOut)"><path d={B.poly} fill="url(#oeHazeW)" opacity={clamp(power * boost, 0, 1.5)} /></g>}
       </g>
       {swing && roomOp > 0 && (
-        <g opacity={roomOp} fill={mix(SETC.cut, C.bg, 0.7)} filter="url(#oeDark-open)">
+        <g opacity={roomOp} fill={mix(SETC.cut, C.bg, DARK)}>
           {/* the side wall stops the light; it only gets out through the window */}
           <rect x={SEC.x1} y={CEIL - SEC.t} width={SEC.t} height={SEC.win[0] - CEIL + SEC.t} />
           <rect x={SEC.x1} y={SEC.win[1]} width={SEC.t} height={FL - SEC.win[1]} />
