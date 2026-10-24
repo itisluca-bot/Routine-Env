@@ -118,7 +118,8 @@
       case 'cup':
         return <g>{r(-12, -16, 24, 19, 0.74, 2)}<rect x="-6" y="-6.5" width="10" height="9.5" rx="2" fill={v(0.97)} /><circle cx="5" cy="-2" r="2.6" fill="none" stroke={v(0.97)} strokeWidth="1.5" /><path d="M -3 -9 q 1.5 -2 0 -4 M 1 -9 q 1.5 -2 0 -4" fill="none" stroke={v(0.97)} strokeWidth="1.1" strokeLinecap="round" />{caption}</g>;
       case 'friends':
-        return <g>{r(-12, -16, 24, 19, 0.84, 2)}<ellipse cx="-4.5" cy="2" rx="4.6" ry="5.5" fill={v(0.42)} /><circle cx="-4.5" cy="-8" r="4" fill={v(0.42)} /><ellipse cx="4.5" cy="2.5" rx="4.6" ry="5.5" fill={v(0.58)} /><circle cx="4.8" cy="-7.2" r="4" fill={v(0.58)} />{r(-12, -16, 24, 0.1, 0.84)}{caption}</g>;
+        // two Bean people, bodies sitting on the photo's bottom edge
+        return <g>{r(-12, -16, 24, 19, 0.84, 2)}<path d="M -9.1 3 A 4.6 6.4 0 0 1 0.1 3 Z" fill={v(0.42)} /><circle cx="-4.5" cy="-7.4" r="4" fill={v(0.42)} /><path d="M -0.1 3 A 4.6 5.8 0 0 1 9.1 3 Z" fill={v(0.58)} /><circle cx="4.8" cy="-6.6" r="4" fill={v(0.58)} />{caption}</g>;
       case 'plant':
         return <g>{r(-12, -16, 24, 19, 0.88, 2)}<path d="M -4 -2 L 4 -2 L 3 3 L -3 3 Z" fill={v(0.62)} /><ellipse cx="-3" cy="-7" rx="2.2" ry="4.6" transform="rotate(-28 -3 -7)" fill={v(0.4)} /><ellipse cx="3" cy="-8" rx="2.2" ry="5" transform="rotate(24 3 -8)" fill={v(0.46)} /><ellipse cx="0" cy="-10" rx="1.8" ry="4.2" fill={v(0.4)} />{caption}</g>;
       case 'bowl':
