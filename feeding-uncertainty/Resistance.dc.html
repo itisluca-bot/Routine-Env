@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+<link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@500;600;700&display=swap" rel="stylesheet">
+<style>html,body{margin:0;height:100%;background:#0a0a0a;overflow:hidden} a{color:#5fa69a} a:hover{color:#a8e3d6}</style>
+<script>window.OM_SCENES = '[{"name":"Resistance","dur":3.04,"desc":"Coping is a form of resistance."},{"name":"Question","dur":1.48,"desc":"The question is,"},{"name":"With","dur":3.24,"desc":"what do people have to resist with?"},{"name":"Orange","dur":2,"desc":"Two seconds staying with orange: the camera settles, the window flickers, the swarm flies on out of frame."},{"name":"Hold","dur":0.24,"desc":"Six frames (25 fps) of idle: only the boil, small sways and the posts keep moving."}]';</script>
+<script>window.OM_PLAYBACK = '{"mode":"loop"}';</script>
+<script>window.TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
+  "camera": "track",
+  "motionEditor": true,
+  "referenceOverlay": true,
+  "lineBoil": true,
+  "boilAmp": 0.5
+}/*EDITMODE-END*/;</script>
+</helmet>
+<div style="position:fixed; inset:0; background:#0a0a0a;">
+  <x-import component-from-global-scope="FUResistance" from="./animations-v3.jsx ./tweaks-panel.jsx ./rigs/bean-rig.jsx ./open-engagers-concepts.jsx ./resistance.jsx" hint-size="100%,100%" style="position:absolute; inset:0;"></x-import>
+</div>
+</x-dc>
+</body>
+</html>
