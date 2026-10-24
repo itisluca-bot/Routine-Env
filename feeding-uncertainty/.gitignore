@@ -2,3 +2,5 @@ node_modules/
 renders/
 # reference stills show real people; kept local only
 reference/*.jpg
+# commercially licensed fonts (Futura); kept local only
+fonts/

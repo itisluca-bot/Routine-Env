@@ -105,6 +105,7 @@ node tools/render.mjs "<page>" --frames 0,120,300 --half --guide                
 3. **The toned look** (October 2026, `LOOK.md`). The rig and mockups are done. Open engagers and Vulnerability Alley are moved to it (the alley as a preview only); Topography is next.
 5. **Curators on the phone** (`timing_0.srt`, 9s4f = 9.16 s). Round-1 concepts (§11); the user chose **A · Long press** (§12). Exported at 4K (variant `two`).
 6. **Resistance** (`resistance.jsx`, `timing_4.srt`, not in the repo; 10.00 s). Built in another session; moved to the toned look in October 2026 (§13).
+7. **End credits** (12.00 s, silent for now). Round-1 concepts A–H (§14).
 4. **Vulnerability** (5.00 s, no SRT yet). Round 1, the city of apartment blocks (`vulnerability.jsx`, variant 1), was exported at 4K; the user then found it too busy. Round 2 is the alley (`vulnerability-alley.jsx`, §10).
 
 ## 8. Open engagers shot: what is approved
@@ -192,3 +193,24 @@ Line: "Coping is a form of resistance. The question is, what do people have to r
 - **Camera (chosen: 2 · Track):** the houses further apart; an even drift from blue and teal, a gentle lift as the swarm moves along the doors, then a long ease to a stop at orange with a slow push-in to the last frame. Camera 1 · Push is kept in the file.
 - **Look (toned, October 2026, `look` tweak, default `toned`):** the alley's AE (see `LOOK.md` §8). Hair: blue none; of the teal pair, the smaller (the resident) long and the taller (the companion) beanie; orange none; the teal children long and none. Long hair uses the shot's own hair filter (`rsHair-<ramp>`, edge depth 0.12): the rig's (`fuHair-`) darkens hair toward its outline into the ramp's darkest tone, which read as a dark rim round long hair. Teal's long hair falls over the gap where the companion's arm reaches for teal's shoulder, so that arm is drawn again over teal, masked to the arm and kept off teal's body, left arm and head (`mateHand`). The upper windows vary (toned only, `HouseFront` `vary`): bare glass with glazing bars and a faint sheen, curtains open or drawn, roller shutters part or all the way down, venetian blinds, net curtains; none of them lit.
 - **Render:** `node tools/render.mjs "Resistance.dc.html" --set camera=track,referenceOverlay=false --settle 150` (add `--prores` for a ProRes 4444 .mov).
+
+## 14. End credits: round 1 (concepts)
+
+`Credits Concepts.dc.html` + `credits-concepts.jsx`. The user's brief: the endcard only (title, three names, the RUG logo, the disclaimer), about 12 s, **mostly graphic** (the world only as light, colour, bands, depth of field and the posts), no sound yet so timed visually. The endcard draft (`reference/endcard-draft.png`, from the user's zip) is a **draft**: layout and type are open.
+
+- **Assets:** `assets/rug-logo.png` (tinted `#c23a1b` in the page, as in the draft). The draft's Futura is licensed and lives in `fonts/` (git-ignored); extract it from the user's `feeding-uncertainty-endcard.zip` (`assets/Futura.ttc`, faces 0 Medium, 1 Medium Italic, 2 Bold) with fontTools into `fonts/Futura-Medium.ttf`, `Futura-MediumItalic.ttf`, `Futura-Bold.ttf`. Without them the card falls back to Inter.
+- **Beats:** Open 0–1.20, Title 1.20–3.60, Names 3.60–7.60 (rows at 3.80, 5.05, 6.30), Logo 7.60–9.20, Note 9.20–11.76, Hold to 12.00.
+- **Layouts and type** (`layout`, `type` tweaks, `auto` = the concept's own): `left` is the draft, measured from its PNG (`--set concept=draft` overlays it within a few px); `columns` is centred. `card` is the draft's Futura; `title` is the opening title's style (Inter Light, widely spaced caps, near-black `#141414`, the red dot `#e83144` over the Y). Titles use `textLength`, so the dot and widths don't depend on font metrics.
+- Type stays crisp; bars, rules, pools, the lamp and the dot boil at 8 fps.
+
+| | Concept | How it plays |
+|---|---|---|
+| A | Bars | the four-colour bar draws on; the title rises out of a slot; each row's side bar drops and its text wipes on; the logo wipes on, its slash draws up; rule, note |
+| B | Lamp | the card hangs in the dark (a faint copy); a hanging lamp swings in and its banded pool reads it line by line, taking each row's ramp; on the note the lamp pulls up and the light opens over the whole card |
+| C | Windows | `columns`, `title` type: three windows light up in turn in their ramps (orange's flickers), their blinds roll up, the name sits in the light |
+| D | Develop | each line comes out of a blur posterized into its ramp's bands (rows in their group, the logo in red); the bands tighten onto the letters and the crisp line takes over |
+| E | Drift | a last loose swarm of red posts (mixed kinds, three depths, near ones out of focus) drifts through right to left; the card appears behind it; gone by the note |
+| F | Focus | `columns`: the whole card is there from frame 0, far out of focus over out-of-focus bokeh in the ramps; focus pulls line by line; slow pull-back |
+| G | Ramps | the frame's dark is a ramp's dark: blue, teal on the second name, orange on the third, then the card's grey; a banded pool drifts behind the newest line |
+| H | Dot | `title` type, the opening's near-black and faint grid: the red dot over the Y is a pen; it draws each row's bar, climbs the logo's slash, draws the rule and ends as the note's full stop |
+
