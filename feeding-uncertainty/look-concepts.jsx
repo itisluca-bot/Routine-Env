@@ -1,24 +1,23 @@
-// Feeding Uncertainty — look concepts: ways to bring the animations closer to the film's testimony portraits (see LOOK.md).
-// Each concept is a mockup of a scene or an asset sheet, built with rigs/fu-look.jsx: authored in value, coloured by a
-// group's ramp, posterized figures with contour rings, soft out-of-focus backgrounds. Pick one with the Concept tweak or
-// `--set concept=lamp`. Every frame is a pure function of T; the clock runs 4 s so each concept can also be seen moving.
-const { W, H, OUT_W, OUT_H, MOTION, osc, lerp, hash, cam, C } = window.FU_RIG;
-const { POSES, blendPose, BeanFig, PAL } = window.FU_BEAN;
-const { RAMPS, mixRamp, v, GradeFilter, ToneFilter, LookDefs, ToneBean, RingGroup, BeanBust, PostValue } = window.FU_LOOK;
-const { glide, hit } = MOTION;
+// Feeding Uncertainty — the toned look: asset sheets and scene mockups (see LOOK.md).
+// Built with rigs/fu-look.jsx: scenes authored in value and coloured by a group's ramp, toned Beans lit by the scene's own
+// lights, soft out-of-focus backgrounds, red only through the posts. Pick one with the Concept tweak or `--set concept=lamp`.
+// Every frame is a pure function of T; the clock runs 4 s so each concept can also be seen moving.
+const { W, H, OUT_W, OUT_H, MOTION, osc, lerp, hash, cam } = window.FU_RIG;
+const { POSES, BeanFig, PAL } = window.FU_BEAN;
+const { RAMPS, mixRamp, v, ToneFilter, LookDefs, ToneBean, BeanBust, PostValue } = window.FU_LOOK;
+const { glide } = MOTION;
 
 const CONCEPTS = {
-  tone: 'Sheet · posterized Bean (ToneBean), no rings',
-  rings: 'Sheet · posterized Bean with contour rings',
-  ringvar: 'Sheet · ring variants',
+  tone: 'Sheet · ToneBean, three groups, side and front',
+  hair: 'Sheet · hair: none, beanie, long',
+  light: 'Sheet · moving lights: a swinging lamp, a walk past a streetlight',
   bust: 'Sheet · BeanBust close-ups',
   lamp: 'Scene · lamp (open engagers), teal world',
-  table: 'Scene · dinner table, family ringed as one',
+  table: 'Scene · dinner table under the lamp',
   door: 'Scene · curator child at the door, red seeping into the ramp',
   alley: 'Scene · alley, blue world with one warm window',
   voice: 'Scene · portrait framing, "their voice matters"',
   mask: 'Scene · stock-footage colour-mask look',
-  cut: 'Transition · rings match-cut into a testimony portrait',
 };
 
 // ── small value-art helpers ───────────────────────────────────────────────────
@@ -40,7 +39,7 @@ function RoomBack({ wall = 0.2, floorY = 800, win = [1290, 230, 300, 340], winX 
     </g>
   );
 }
-// a lamp in value: cable, bell shade, bulb
+// a lamp in value: cable, bell shade, bulb. (x, y) is the mouth of the shade; the cable runs up `cable` px
 function LampValue({ x, y, rot = 0, cable = 600 }) {
   return (
     <g transform={`translate(${x} ${y}) rotate(${rot})`}>
@@ -52,6 +51,17 @@ function LampValue({ x, y, rot = 0, cable = 600 }) {
     </g>
   );
 }
+// a streetlight in value: post, arm, lantern. (x, y) is the lantern
+function StreetLight({ x, y, h = 520 }) {
+  return (
+    <g>
+      <rect x={x - 5} y={y} width="10" height={h} fill={v(0.2)} />
+      <path d={`M ${x - 16} ${y + 2} L ${x + 16} ${y + 2} L ${x + 10} ${y - 34} L ${x - 10} ${y - 34} Z`} fill={v(0.3)} />
+      <rect x={x - 12} y={y - 6} width="24" height="10" fill={v(1)} />
+      <path d={`M ${x - 18} ${y - 34} L ${x + 18} ${y - 34} L ${x} ${y - 52} Z`} fill={v(0.24)} />
+    </g>
+  );
+}
 // moths: red posts circling a light, in value
 const moths = (T, cx, cy, n, R, seed, s = 1) => Array.from({ length: n }, (_, i) => {
   const h = (k) => hash(i * 9.1 + k * 3.3 + seed);
@@ -60,7 +70,7 @@ const moths = (T, cx, cy, n, R, seed, s = 1) => Array.from({ length: n }, (_, i)
   return <PostValue key={i} x={cx + r * Math.cos(a)} y={cy + 0.55 * r * Math.sin(a) + 14 * osc(T, 1.3 + h(5), h(6))} rot={-25 + 50 * h(7) + 18 * osc(T, 0.9 + h(8))} s={s * (0.8 + 0.4 * h(9))} flip={Math.cos(T * (5 + 3 * h(10)) + 6 * h(11))} />;
 });
 // the stage: 1920 × 1080 design scaled ×2 into the 4K stage
-function Frame({ children, label, guide, bg = '#0e0e0e' }) {
+function Frame({ children, label, guide, bg }) {
   return (
     <div data-screen-label={label} style={{ position: 'absolute', left: 0, top: 0, width: W, height: H, overflow: 'hidden', background: bg, transform: `scale(${OUT_W / W})`, transformOrigin: '0 0' }}>
       <svg width={W} height={H} style={{ position: 'absolute', left: 0, top: 0 }}>{children}</svg>
@@ -68,74 +78,95 @@ function Frame({ children, label, guide, bg = '#0e0e0e' }) {
     </div>
   );
 }
+// a soft ground for the sheets: a wall with a glow, a floor
+function SheetGround({ x0, w, ramp, glow = [0.66, 0.36] }) {
+  return (
+    <g filter={`url(#fuGradeBg-${ramp})`}>
+      <rect x={x0 - 100} y="-100" width={w + 200} height="1280" fill={v(0.22)} />
+      {blob(x0 + w * glow[0], 1080 * glow[1], w * 0.42, 220, 0.42)}
+      <rect x={x0 - 100} y="860" width={w + 200} height="400" fill={v(0.14)} />
+    </g>
+  );
+}
 
 // ── sheets ────────────────────────────────────────────────────────────────────
 const GROUPS = ['wd', 'open', 'cur'];
-function SheetBeans({ k, rings }) {
+function SheetTone({ k }) {
   const { T } = k;
+  const hair = [['none', 'beanie'], ['long', 'none'], ['beanie', 'long']];
   return (
     <g>
       {GROUPS.map((g, i) => (
         <g key={g}>
           <clipPath id={'col' + i}><rect x={i * 640} y="0" width="640" height="1080" /></clipPath>
           <g clipPath={`url(#col${i})`}>
-            <g filter={`url(#fuGradeBg-${g})`}>
-              <rect x={i * 640 - 100} y="-100" width="840" height="1280" fill={v(0.22)} />
-              {blob(i * 640 + 420, 380, 260, 220, 0.42)}
-              {blob(i * 640 + 140, 820, 300, 160, 0.12)}
-              <rect x={i * 640 - 100} y="860" width="840" height="400" fill={v(0.14)} />
-            </g>
-            <ToneBean {...k.ba} id={i * 2 + 1} x={i * 640 + 200} y={860} s={2.1} pose={i === 1 ? POSES.talk(T) : i === 2 ? POSES.phone(T) : POSES.idle(T + 1)} phone={i === 2 ? 1 : 0} ramp={g} rings={rings} ringK={0.7} />
-            <ToneBean {...k.ba} id={i * 2 + 2} x={i * 640 + 470} y={860} s={2.1} view="front" pose={{ lean: 2 * osc(T, 3.1, i * 0.3), tilt: 4 * osc(T, 2.6, i * 0.2), look: [-0.6, 0], armL: [10, 8], armR: [10, 8] }} ramp={g} rings={rings} ringK={0.7} />
+            <SheetGround x0={i * 640} w={640} ramp={g} />
+            <ToneBean {...k.ba} id={i * 2 + 1} x={i * 640 + 200} y={860} s={2.1} pose={i === 1 ? POSES.talk(T) : i === 2 ? POSES.phone(T) : POSES.idle(T + 1)} phone={i === 2 ? 1 : 0} ramp={g} hair={hair[i][0]} />
+            <ToneBean {...k.ba} id={i * 2 + 2} x={i * 640 + 470} y={860} s={2.1} view="front" pose={{ lean: 2 * osc(T, 3.1, i * 0.3), tilt: 4 * osc(T, 2.6, i * 0.2), look: [-0.6, 0], armL: [14, 10], armR: [14, 10] }} ramp={g} hair={hair[i][1]} />
           </g>
         </g>
       ))}
     </g>
   );
 }
-function SheetRingVariants({ k }) {
+function SheetHair({ k }) {
   const { T } = k;
-  const pose = POSES.idle(T);
-  const panel = (i, children) => (
-    <g key={i}>
-      <clipPath id={'rv' + i}><rect x={(i % 2) * 960} y={Math.floor(i / 2) * 540} width="960" height="540" /></clipPath>
-      <g clipPath={`url(#rv${i})`}>
-        <g filter="url(#fuGradeBg-open)">
-          <rect x={(i % 2) * 960 - 50} y={Math.floor(i / 2) * 540 - 50} width="1060" height="640" fill={v(0.24)} />
-          {blob((i % 2) * 960 + 700, Math.floor(i / 2) * 540 + 200, 240, 160, 0.4)}
-        </g>
-        {children}
-      </g>
-    </g>
-  );
   return (
     <g>
-      {panel(0, <ToneBean {...k.ba} id={1} x={480} y={500} s={1.75} pose={pose} ramp="open" rings zones={[6, 4, 6, 4, 6, 4]} />)}
-      {panel(1, <ToneBean {...k.ba} id={2} x={1440} y={500} s={1.75} pose={pose} ramp="open" rings />)}
-      {panel(2, (
-        <RingGroup {...k.ba} id={3} ramp="open" items={[
-          { x: 330, y: 1010, s: 1.2, pose: POSES.talk(T) },
-          { x: 490, y: 1010, s: 0.8, headScale: 1.3, pose: POSES.idle(T + 0.7) },
-          { x: 640, y: 1010, s: 1.2, dir: -1, pose: POSES.talk(T + 0.8) },
-        ]} />
-      ))}
-      {panel(3, (
-        <g>
-          <ToneBean {...k.ba} x={1150} y={1010} s={1.0} pose={POSES.idle(T + 2)} ramp="open" op={0.85} />
-          <ToneBean {...k.ba} id={4} x={1440} y={1010} s={1.2} pose={POSES.phone(T)} phone={1} ramp="cur" rings />
-          <ToneBean {...k.ba} x={1720} y={1010} s={1.0} dir={-1} pose={POSES.idle(T + 1)} ramp="wd" op={0.85} />
+      <SheetGround x0={0} w={1920} ramp="open" glow={[0.5, 0.3]} />
+      {['none', 'beanie', 'long'].map((h, i) => (
+        <g key={h}>
+          <ToneBean {...k.ba} id={i * 2 + 1} x={i * 640 + 210} y={880} s={2.2} pose={POSES.idle(T + i)} ramp="open" hair={h} />
+          <ToneBean {...k.ba} id={i * 2 + 2} x={i * 640 + 460} y={880} s={2.2} view="front" pose={{ lean: 2 * osc(T, 3.3, i * 0.2), tilt: 3 * osc(T, 2.4, i * 0.3), look: [-0.5, 0], armL: [14, 10], armR: [14, 10] }} ramp="open" hair={h} />
         </g>
       ))}
     </g>
   );
 }
+// the lights move, and the bands move with them
+function SheetLight({ k }) {
+  const { T } = k;
+  // left: a lamp swinging over a standing figure
+  const piv = [480, 40], len = 270, a = 0.42 * Math.sin((T / 2.6) * 2 * Math.PI);
+  const bulb = [piv[0] + len * Math.sin(a), piv[1] + len * Math.cos(a)];
+  const lamp = [{ x: bulb[0], y: bulb[1] + 14, i: 0.95, reach: 420 }, { dir: [0.3, 1], i: 0.08 }];
+  // right: a figure walking past a streetlight
+  const sl = [1440, 420], wx = lerp(1020, 1860, T / 4);
+  const street = [{ x: sl[0], y: sl[1], i: 1, reach: 260 }, { dir: [-0.3, 1], i: 0.06 }];
+  return (
+    <g>
+      <clipPath id="ll"><rect x="0" y="0" width="960" height="1080" /></clipPath>
+      <clipPath id="lr"><rect x="960" y="0" width="960" height="1080" /></clipPath>
+      <g clipPath="url(#ll)">
+        <g filter="url(#fuGradeBg-open)">
+          <rect x="-100" y="-100" width="1160" height="1280" fill={v(0.12)} />
+          {blob(bulb[0], bulb[1] + 60, 360, 300, 0.3)}
+          <rect x="-100" y="870" width="1160" height="400" fill={v(0.08)} />
+        </g>
+        <g filter="url(#fuGradeFg-open)">
+          <ellipse cx={bulb[0] + (bulb[0] - piv[0]) * 0.9} cy="890" rx="300" ry="50" fill="url(#fuPool)" />
+          <g transform={`rotate(${(-a * 180) / Math.PI} ${piv[0]} ${piv[1]})`}><LampValue x={piv[0]} y={piv[1] + len} cable={len} /></g>
+        </g>
+        <ToneBean {...k.ba} id={1} x={480} y={890} s={1.7} pose={POSES.idle(T)} ramp="open" lights={lamp} hair="beanie" />
+      </g>
+      <g clipPath="url(#lr)">
+        <g filter="url(#fuGradeBg-wd)">
+          <rect x="860" y="-100" width="1160" height="1280" fill={v(0.08)} />
+          {blob(sl[0], sl[1] + 120, 300, 340, 0.3)}
+          <rect x="860" y="900" width="1160" height="400" fill={v(0.07)} />
+        </g>
+        <g filter="url(#fuGradeFg-wd)">
+          <ellipse cx={sl[0]} cy="910" rx="260" ry="44" fill="url(#fuPool)" />
+          <StreetLight x={sl[0]} y={sl[1]} h={490} />
+        </g>
+        <ToneBean {...k.ba} id={2} x={wx} y={910} s={1.8} pose={POSES.walk(T)} ramp="wd" lights={street} hair="long" />
+      </g>
+    </g>
+  );
+}
 function SheetBusts({ k }) {
   const { T } = k;
-  const spec = [
-    { g: 'wd', detail: 0, hair: 'none', turn: 0.4 },
-    { g: 'open', detail: 1, hair: 'short', turn: -0.35 },
-    { g: 'cur', detail: 1, hair: 'long', turn: 0.3 },
-  ];
+  const spec = [{ g: 'wd', hair: 'none', turn: 0.4 }, { g: 'open', hair: 'beanie', turn: -0.35 }, { g: 'cur', hair: 'long', turn: 0.3 }];
   return (
     <g>
       {spec.map((p, i) => (
@@ -147,7 +178,8 @@ function SheetBusts({ k }) {
               {blob(i * 640 + 520, 260, 200, 260, 0.46)}
               {blob(i * 640 + 90, 700, 160, 300, 0.1)}
             </g>
-            <BeanBust {...k.ba} id={i + 1} x={i * 640 + 320} y={1080} s={0.82} ramp={p.g} turn={p.turn} detail={p.detail} hair={p.hair} tilt={2 * osc(T, 3.4, i * 0.3)} nod={osc(T, 2.8, i * 0.2)} />
+            <BeanBust {...k.ba} id={i + 1} x={i * 640 + 320} y={1080} s={0.82} ramp={p.g} turn={p.turn} hair={p.hair} tilt={2 * osc(T, 3.4, i * 0.3)} nod={osc(T, 2.8, i * 0.2)}
+              lights={[{ x: i * 640 + 560, y: 200, i: 0.8, reach: 900 }]} />
           </g>
         </g>
       ))}
@@ -157,13 +189,12 @@ function SheetBusts({ k }) {
 
 // ── scenes ────────────────────────────────────────────────────────────────────
 // Lamp: the open engagers opening, in the teal world. The wall and floor are out of focus; the light pool posterizes into
-// bands that echo the rings; red posts are on the red ramp.
+// bands; the figure is lit by the bulb above; red posts are on the red ramp.
 function SceneLamp({ k, look = 'tone' }) {
   const { T } = k;
   const z = glide(T, 0, 4, 1.62, 1.72), CAM = cam(985, 700, z);
-  const hand = POSES.idle(T);
-  const pose = { ...hand, armN: [62 + 4 * osc(T, 2.3), 52 + 6 * osc(T, 1.7)], tilt: -6 + 2 * osc(T, 3) };
-  const sway = 2.5 * osc(T, 3.6);
+  const pose = { ...POSES.idle(T), armN: [62 + 4 * osc(T, 2.3), 52 + 6 * osc(T, 1.7)], tilt: -6 + 2 * osc(T, 3) };
+  const sway = 2.5 * osc(T, 3.6), bulb = [960 - 14 * Math.sin((sway * Math.PI) / 180), 314];   // the shade turns about its mouth
   const cone = <path d="M 925 300 L 995 300 L 1250 880 L 670 880 Z" fill="url(#lampCone)" />;
   const back = (
     <g transform={CAM}>
@@ -177,8 +208,8 @@ function SceneLamp({ k, look = 'tone' }) {
         <g filter="url(#maskBlur)">{back}</g>
         <g transform={CAM}>
           <ellipse cx="960" cy="880" rx="300" ry="54" fill={v(0.42)} opacity="0.7" />
-          <g filter="url(#maskBlur2)">{moths(T, 960, 520, 9, 230, 3)}</g>
-          <LampValue x={960} y={300 + 0} rot={sway} />
+          <g filter="url(#maskRed)">{moths(T, 960, 520, 9, 230, 3)}</g>
+          <LampValue x={960} y={300} rot={sway} />
           <g filter="url(#fuGlow)"><BeanFig x={960} y={880} s={1.15} pose={pose} c={PAL.open} T={T} boilAmp={k.amp} id={1} /></g>
         </g>
       </g>
@@ -194,7 +225,7 @@ function SceneLamp({ k, look = 'tone' }) {
         </g>
       </g>
       <g transform={CAM}>
-        <ToneBean {...k.ba} x={960} y={880} s={1.15} pose={pose} ramp="open" rings />
+        <ToneBean {...k.ba} x={960} y={880} s={1.15} pose={pose} ramp="open" lights={[{ x: bulb[0], y: bulb[1], i: 0.95, reach: 420 }]} />
       </g>
       <g filter="url(#fuGradeFg-red)">
         <g transform={CAM}>
@@ -206,12 +237,13 @@ function SceneLamp({ k, look = 'tone' }) {
   );
 }
 
-// Dinner table: one set of rings round the whole family, as if the family is one portrait; the room is out of focus.
+// Dinner table: the family seated under the lamp; the room is out of focus.
 const SIT = (T, ph = 0, talk = 0) => ({ hx: 0, lean: 6 + 2 * osc(T, 3.1, ph), tilt: -2 + 3 * osc(T, 2.3, ph), legN: [82, 84], legF: [78, 80],
   armN: [52 + 14 * talk * osc(T, 1.2, ph), 40 + 20 * talk * osc(T, 0.7, ph)], armF: [40, 50], phone: 0 });
 function SceneTable({ k }) {
   const { T } = k;
   const CAM = cam(960, 790, glide(T, 0, 4, 2.0, 2.1));
+  const lamp = [{ x: 960, y: 344, i: 1, reach: 380 }];
   const table = (
     <g>
       <rect x="770" y="790" width="380" height="18" rx="4" fill={v(0.62)} />
@@ -243,11 +275,9 @@ function SceneTable({ k }) {
         </g>
       </g>
       <g transform={CAM}>
-        <RingGroup {...k.ba} ramp="open" ringK={0.5} extra={[{ d: 'M 680 770 L 1240 770 L 1240 940 L 680 940 Z' }]} items={[
-          { x: 700, y: 940, s: 1, pose: SIT(T, 0, 1) },
-          { x: 860, y: 940, s: 0.66, headScale: 1.3, pose: { ...POSES.idle(T + 0.4), armN: [48, 50] } },
-          { x: 1225, y: 940, s: 1, dir: -1, pose: SIT(T, 0.4, 0.6) },
-        ]} />
+        <ToneBean {...k.ba} id={1} x={700} y={940} s={1} pose={SIT(T, 0, 1)} ramp="open" lights={lamp} hair="long" />
+        <ToneBean {...k.ba} id={2} x={860} y={940} s={0.66} headScale={1.3} pose={{ ...POSES.idle(T + 0.4), armN: [48, 50] }} ramp="open" lights={lamp} hair="beanie" />
+        <ToneBean {...k.ba} id={3} x={1225} y={940} s={1} dir={-1} pose={SIT(T, 0.4, 0.6)} ramp="open" lights={lamp} />
       </g>
       <g filter="url(#fuGradeFg-open)"><g transform={CAM}>{table}</g></g>
       <g filter="url(#fuGradeFg-red)">
@@ -257,14 +287,12 @@ function SceneTable({ k }) {
   );
 }
 
-// Door: the curator child behind the window in the door, close. The ramp itself slides toward red as the posts close in;
-// out-of-focus posts pass in the foreground.
+// Door: the curator child behind the window in the door, close. A story beat where red comes in: the child's ramp slides
+// toward red as the posts close in; out-of-focus posts pass in the foreground. Lit by the hall light behind and the street.
 const HOLE = 'M 720 300 L 720 600 L 1020 600 L 1020 300 Z';
-function SceneDoor({ k }) {
+function SceneDoor({ k, red }) {
   const { T } = k;
-  const red = glide(T, 0.3, 3.6, 0.15, 0.55);
   const CAM = cam(870, 470, glide(T, 0, 4, 1.3, 1.36));
-  const childRamp = mixRamp(RAMPS.cur, RAMPS.red, red * 0.6);
   const sway = osc(T, 2.7);
   const look = [0.6 * osc(T, 3.3), -0.2];
   const door = (
@@ -272,7 +300,7 @@ function SceneDoor({ k }) {
       <path d={`M -200 -200 L 2120 -200 L 2120 1280 L -200 1280 Z ${HOLE}`} fill={v(0.2)} fillRule="evenodd" />
       <g clipPath="url(#doorWall)">{Array.from({ length: 40 }, (_, i) => <rect key={i} x="-200" y={i * 34 - 200} width="2320" height="3" fill={v(0.13)} />)}</g>
       <path d={`M 560 90 L 1180 90 L 1180 1190 L 560 1190 Z ${HOLE}`} fill={v(0.15)} fillRule="evenodd" />
-      <path d="M 590 120 L 1150 120 L 1150 1200 L 590 1200 Z M 720 300 L 720 600 L 1020 600 L 1020 300 Z" fill="url(#doorLight)" fillRule="evenodd" />
+      <path d={`M 590 120 L 1150 120 L 1150 1200 L 590 1200 Z ${HOLE}`} fill="url(#doorLight)" fillRule="evenodd" />
       <rect x="700" y="280" width="340" height="20" fill={v(0.72)} />
       <rect x="700" y="600" width="340" height="20" fill={v(0.4)} />
       <rect x="700" y="280" width="20" height="340" fill={v(0.6)} />
@@ -284,14 +312,15 @@ function SceneDoor({ k }) {
   return (
     <g>
       <clipPath id="glass"><rect x="720" y="300" width="300" height="300" /></clipPath>
-      <clipPath id="doorWall"><path d={`M -200 -200 L 2120 -200 L 2120 1280 L -200 1280 Z M 560 90 L 560 1190 L 1180 1190 L 1180 90 Z`} clipRule="evenodd" /></clipPath>
+      <clipPath id="doorWall"><path d="M -200 -200 L 2120 -200 L 2120 1280 L -200 1280 Z M 560 90 L 560 1190 L 1180 1190 L 1180 90 Z" clipRule="evenodd" /></clipPath>
       <g clipPath="url(#glass)">
         <g transform={CAM}>
           <g filter="url(#doorHall)">
             <rect x="600" y="200" width="600" height="500" fill={v(0.1)} />
             {blob(930, 360, 90, 140, 0.34)}
           </g>
-          <ToneBean {...k.ba} x={870 + 6 * sway} y={1060} s={2.7} view="front" headScale={1.3} ramp={childRamp} toneId="toneChild" rings ringK={0.95} red={RAMPS.red[5]}
+          <ToneBean {...k.ba} x={870 + 6 * sway} y={1060} s={2.7} view="front" headScale={1.3} ramp={mixRamp(RAMPS.cur, RAMPS.red, red * 0.6)} toneId="toneChild" hair="long"
+            lights={[{ x: 1500, y: 160, i: 0.55, reach: 900 }, { x: 930, y: 330, i: 0.35, reach: 260 }]}
             pose={{ lean: 3 * sway, tilt: 6 * sway, look, armL: { to: [-34, -176], elbow: 'in' }, armR: { to: [36, -178], elbow: 'in' } }} />
           <rect x="600" y="200" width="600" height="500" fill={RAMPS.red[4]} opacity={0.18 * red} />
         </g>
@@ -308,6 +337,7 @@ function SceneDoor({ k }) {
 }
 
 // Alley: the withdrawal-blue night street, out of focus; one curator's window in the foreground keeps its own warm ramp.
+// The curator is lit by the room lamp behind them and the streetlight outside.
 function SceneAlley({ k }) {
   const { T } = k;
   const CAM = cam(960, 540, glide(T, 0, 4, 1, 1.04));
@@ -345,7 +375,9 @@ function SceneAlley({ k }) {
             <rect x="740" y="300" width="420" height="480" fill={v(0.42)} />
             {blob(1060, 420, 120, 150, 0.85)}
           </g>
-          <ToneBean {...k.ba} x={905 + 10 * osc(T, 2.9)} y={1040} s={2.2} view="front" rings ringK={0.85} pose={{ lean: -4 + 3 * osc(T, 2.9), tilt: -6, look: [-0.8, -0.3], armL: null, armR: { to: [44, -150], elbow: 'in' } }} ramp="cur" />
+          <ToneBean {...k.ba} x={905 + 10 * osc(T, 2.9)} y={1040} s={2.2} view="front" ramp="cur" hair="beanie"
+            lights={[{ x: 1070, y: 420, i: 0.8, reach: 200 }, { x: 1380, y: 120, i: 0.35, reach: 600 }]}
+            pose={{ lean: -4 + 3 * osc(T, 2.9), tilt: -6, look: [-0.8, -0.3], armL: null, armR: { to: [44, -150], elbow: 'in' } }} />
           <g filter="url(#fuGradeFg-cur)">
             <path d={`M 990 300 C ${1010 + 8 * osc(T, 2.9)} 480, ${980 + 10 * osc(T, 2.9)} 640, 1000 780 L 1160 780 L 1160 300 Z`} fill={v(0.7)} />
             <path d="M 1050 300 C 1060 480, 1040 640, 1060 780 L 1080 780 C 1062 640, 1080 480, 1070 300 Z" fill={v(0.5)} />
@@ -370,7 +402,8 @@ function SceneAlley({ k }) {
   );
 }
 
-// Voice: the open engager in close-up, framed like a testimony portrait (subject left, out-of-focus room right).
+// Voice: the open engager in close-up, framed like a testimony portrait (subject left, out-of-focus room right),
+// lit by the window.
 function SceneVoice({ k }) {
   const { T } = k;
   const z = glide(T, 0, 4, 1, 1.04);
@@ -384,32 +417,8 @@ function SceneVoice({ k }) {
         </g>
       </g>
       <g transform={`translate(960 1080) scale(${z}) translate(-960 -1080)`}>
-        <BeanBust {...k.ba} x={640} y={1140} s={0.95} ramp="open" turn={0.45} detail={1} hair="short" tilt={2 * osc(T, 3.7)} nod={glide(T, 1.2, 1.8, 0, 1) - glide(T, 1.8, 2.6, 0, 1)} />
-      </g>
-    </g>
-  );
-}
-
-// Cut: rings carry the shot from the animated world into a testimony portrait. Wide in the lamp, push in on the head,
-// dissolve to the bust, then the rings multiply outward until they fill the frame: the cut point to the real portrait.
-function SceneCut({ k }) {
-  const { T } = k;
-  const push = glide(T, 0.8, 2.2, 0, 1), xf = glide(T, 1.7, 2.3, 0, 1);
-  const head = [960, 880 - 1.15 * 230];
-  const z = lerp(1.25, 4.2, push);
-  const CAM = `translate(960 540) scale(${z}) translate(${-lerp(960, head[0], push)} ${-lerp(610, head[1], push)})`;
-  return (
-    <g>
-      <g opacity={1 - xf}>
-        <g filter="url(#fuGradeBg-open)"><g transform={CAM}><RoomBack wall={0.13} floorY={760} win={[1420, 200, 260, 330]} pic={[340, 260, 160, 120]} glow={[960, 520, 520, 380, 0.3]} /></g></g>
-        <g filter="url(#fuGradeFg-open)"><g transform={CAM}><ellipse cx="960" cy="880" rx="330" ry="62" fill="url(#fuPool)" /><LampValue x={960} y={300} /></g></g>
-        <g transform={CAM}><ToneBean {...k.ba} x={960} y={880} s={1.15} pose={POSES.idle(T)} ramp="open" rings /></g>
-      </g>
-      <g opacity={xf}>
-        <g filter="url(#fuGradeBg-open)"><rect x="-100" y="-100" width="2120" height="1280" fill={v(0.2)} />{blob(1400, 400, 400, 300, 0.4)}</g>
-        <g transform={`translate(960 540) scale(${lerp(1.15, 1, xf)}) translate(-960 -540)`}>
-          <BeanBust {...k.ba} x={960} y={1080} s={1.12} ramp="open" turn={0.2} detail={1} hair="short" zones={k.cutZones} />
-        </g>
+        <BeanBust {...k.ba} x={640} y={1140} s={0.95} ramp="open" turn={0.45} hair="beanie" tilt={2 * osc(T, 3.7)} nod={glide(T, 1.2, 1.8, 0, 1) - glide(T, 1.8, 2.6, 0, 1)}
+          lights={[{ x: 1500, y: 380, i: 0.85, reach: 1100 }, { dir: [0.4, 1], i: 0.08 }]} />
       </g>
     </g>
   );
@@ -419,17 +428,14 @@ function SceneCut({ k }) {
 function ConceptPiece({ concept, guide, boil, boilAmp }) {
   const { T } = useComposition();
   const bf = Math.floor(T * 8), amp = boil ? boilAmp : 0;
-  // the cut: past the portrait's own rings, new ones open outward one after another until they fill the frame
-  const grow = glide(T, 2.2, 3.9, 0, 1);
-  const cutZones = Array.from({ length: 120 }, (_, i) => (i < 8 ? window.FU_LOOK.RING_ZONES[i] : 7 * clamp(grow * 113 - (i - 8), 0, 1)));
-  const k = { T, bf, amp, ba: { bf, amp }, cutZones };
-  const ramps = { tone: GROUPS, rings: GROUPS, ringvar: ['open', 'cur', 'wd'], bust: GROUPS, lamp: ['open'], table: ['open'], door: ['cur'], alley: ['wd', 'cur'], voice: ['open'], mask: ['open'], cut: ['open'] }[concept] || ['open'];
-  const body = {
-    tone: <SheetBeans k={k} rings={false} />, rings: <SheetBeans k={k} rings />, ringvar: <SheetRingVariants k={k} />, bust: <SheetBusts k={k} />,
-    lamp: <SceneLamp k={k} />, table: <SceneTable k={k} />, door: <SceneDoor k={k} />, alley: <SceneAlley k={k} />, voice: <SceneVoice k={k} />,
-    mask: <SceneLamp k={k} look="mask" />, cut: <SceneCut k={k} />,
-  }[concept] || <SceneLamp k={k} />;
+  const k = { T, bf, amp, ba: { bf, amp } };
+  const ramps = { tone: GROUPS, hair: ['open'], light: ['open', 'wd'], bust: GROUPS, lamp: ['open'], table: ['open'], door: ['cur'], alley: ['wd', 'cur'], voice: ['open'], mask: ['open'] }[concept] || ['open'];
   const red = glide(T, 0.3, 3.6, 0.15, 0.55);
+  const body = {
+    tone: <SheetTone k={k} />, hair: <SheetHair k={k} />, light: <SheetLight k={k} />, bust: <SheetBusts k={k} />,
+    lamp: <SceneLamp k={k} />, table: <SceneTable k={k} />, door: <SceneDoor k={k} red={red} />, alley: <SceneAlley k={k} />, voice: <SceneVoice k={k} />,
+    mask: <SceneLamp k={k} look="mask" />,
+  }[concept] || <SceneLamp k={k} />;
   return (
     <Frame label={CONCEPTS[concept] || concept} guide={guide} bg={concept === 'mask' ? '#1b1b1b' : RAMPS[ramps[0]][1]}>
       <LookDefs ramps={ramps} bf={bf} amp={amp} />
@@ -443,13 +449,13 @@ function ConceptPiece({ concept, guide, boil, boilAmp }) {
         <radialGradient id="alleyLight" cx="0.72" cy="0.22" r="0.9">
           <stop offset="0" stopColor={v(0.8)} /><stop offset="0.4" stopColor={v(0.46)} /><stop offset="1" stopColor={v(0.12)} />
         </radialGradient>
-        <GradeFilter id="doorGrade" ramp="cur" poster />
-        <GradeFilter id="doorHall" ramp={mixRamp(RAMPS.cur, RAMPS.red, red * 0.6)} blur={8} />
-        <ToneFilter id="toneChild" ramp={mixRamp(RAMPS.cur, RAMPS.red, red * 0.6)} bf={bf} amp={amp} />
-        <GradeFilter id="alleyBack" ramp="wd" blur={10} gain={1.25} />
-        <GradeFilter id="alleyWall" ramp="wd" poster gain={1.1} />
+        {concept === 'door' && <window.FU_LOOK.GradeFilter id="doorGrade" ramp="cur" poster />}
+        {concept === 'door' && <window.FU_LOOK.GradeFilter id="doorHall" ramp={mixRamp(RAMPS.cur, RAMPS.red, red * 0.6)} blur={8} />}
+        {concept === 'door' && <ToneFilter id="toneChild" ramp={mixRamp(RAMPS.cur, RAMPS.red, red * 0.6)} bf={bf} amp={amp} />}
+        <window.FU_LOOK.GradeFilter id="alleyBack" ramp="wd" blur={10} gain={1.25} />
+        <window.FU_LOOK.GradeFilter id="alleyWall" ramp="wd" poster gain={1.1} />
         <filter id="maskBlur" x="-10%" y="-10%" width="120%" height="120%"><feGaussianBlur stdDeviation="8" /></filter>
-        <filter id="maskBlur2" x="-10%" y="-10%" width="120%" height="120%"><feGaussianBlur stdDeviation="1" /><feColorMatrix type="matrix" values="0.9 0.2 0 0 0.05  0.2 0.3 0 0 0  0.1 0.1 0.1 0 0  0 0 0 1 0" /></filter>
+        <filter id="maskRed" x="-10%" y="-10%" width="120%" height="120%"><feGaussianBlur stdDeviation="1" /><feColorMatrix type="matrix" values="0.9 0.2 0 0 0.05  0.2 0.3 0 0 0  0.1 0.1 0.1 0 0  0 0 0 1 0" /></filter>
       </defs>
       {body}
     </Frame>

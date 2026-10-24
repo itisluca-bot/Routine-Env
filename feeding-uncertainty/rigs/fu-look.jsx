@@ -1,16 +1,20 @@
-// Feeding Uncertainty — the portrait look as reusable pieces (exploration, see LOOK.md).
+// Feeding Uncertainty — the toned look: the Bean posterized into its group's ramp, lit by the scene's own lights (see LOOK.md).
 // The film's testimony portraits live inside one tonal ramp per group: 7 tones from a tinted dark to a pale cream, no black.
-// The subject is posterized into flat bands, ringed by concentric contour lines, against a soft, blurred background.
-// This kit lets the animations share that look. Scenes are authored in VALUE (greys) and coloured by the grade, the way the
-// portraits are photo luminance mapped onto a ramp.
+// The animations borrow that: scenes are authored in VALUE (greys) and coloured by a grade, the way the portraits are photo
+// luminance mapped onto a ramp. Figures are toned into flat bands; there are no contour rings.
 // Load it after animations-v3.jsx and rigs/bean-rig.jsx; it exports window.FU_LOOK and touches no other globals.
 //
-//   <LookDefs ramps={['open', 'cur']} bf={bf} amp={amp} />   filters + shading gradients, once per <svg>
+//   <LookDefs ramps={['open', 'cur']} bf={bf} amp={amp} />   filters, once per <svg>
 //   <g filter="url(#fuGradeBg-open)">…</g>                     smooth gradient map + depth-of-field blur (backgrounds)
 //   <g filter="url(#fuGradeFg-open)">…</g>                     posterized gradient map (sets, light pools)
-//   <ToneBean ramp="open" rings x y s pose bf amp />          a posterized Bean, optionally with contour rings
-//   <RingGroup ramp="open" items={[…]} bf amp />              one set of rings round several figures (a family as one portrait)
-//   <BeanBust ramp="open" rings x y s turn detail hair />     a close-up head-and-shoulders Bean, framed like the portraits
+//   <ToneBean ramp="open" x y s pose lights={[…]} hair="beanie" bf amp />   a toned Bean, side or front view
+//   <BeanBust ramp="open" x y s turn lights={[…]} hair="long" bf amp />     the Bean in close-up, framed like the portraits
+//
+// Lights are in the same coordinates as the figure's x, y (the scene's world space):
+//   { x, y, i, reach }   a point light (lamp, streetlight, phone): intensity 0..1, falling to half at `reach` px
+//   { dir: [dx, dy], i } a directional light, dir pointing from the light into the scene
+// Each body part is lit from the light's direction and dimmed by its distance, so the bands follow a swinging lamp or a
+// figure walking out of a streetlight's pool. Without lights a figure gets DEFAULT_LIGHTS (soft key from the upper right).
 (() => {
   // ── ramps measured from the reference stills (k-means, 7 clusters), tidied to rise evenly in brightness ──
   const RAMPS = {
@@ -19,33 +23,34 @@
     wd: ['#131d27', '#1b2937', '#24364a', '#2f455e', '#4a687c', '#6f8f98', '#a3bdb6'],
     red: ['#2b0f0a', '#4d170d', '#73200f', '#a32e11', '#cc4a2a', '#ee7a55', '#f6c9ad'],
   };
+  const DEFAULT_LIGHTS = [{ dir: [-0.45, 0.9], i: 0.72 }];
   const hexRgb = (h) => [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16));
   const clamp = (x, a, b) => Math.min(b, Math.max(a, x));
   const rgbHex = (c) => '#' + c.map((x) => Math.round(clamp(x, 0, 255)).toString(16).padStart(2, '0')).join('');
   const mix = (a, b, t) => { const A = hexRgb(a), B = hexRgb(b); return rgbHex(A.map((x, i) => x + (B[i] - x) * clamp(t, 0, 1))); };
-  const mixRamp = (A, B, t) => rampOf(A).map((c, i) => mix(c, rampOf(B)[i], t));
   const rampOf = (r) => (Array.isArray(r) ? r : RAMPS[r]);
+  const mixRamp = (A, B, t) => rampOf(A).map((c, i) => mix(c, rampOf(B)[i], t));
   const v = (x) => { const g = Math.round(clamp(x, 0, 1) * 255).toString(16).padStart(2, '0'); return '#' + g + g + g; };   // a value as a grey
   const hash = (n) => { const x = Math.sin(n * 127.1 + 311.7) * 43758.5453; return x - Math.floor(x); };
   const chan = (ramp, i) => ramp.map((c) => (hexRgb(c)[i] / 255).toFixed(4)).join(' ');
   const lum = (g = 1, b = 0) => { const r = (k) => (k * g).toFixed(4); const row = `${r(0.2126)} ${r(0.7152)} ${r(0.0722)} 0 ${b}`; return `${row}  ${row}  ${row}  0 0 0 1 0`; };
   const mapFuncs = (ramp, type) => [0, 1, 2].map((i) => React.createElement(['feFuncR', 'feFuncG', 'feFuncB'][i], { key: i, type, tableValues: chan(ramp, i) }));
+  const safeId = (s) => 'fu' + String(s).replace(/[^a-zA-Z0-9_-]/g, '');
 
-  // smooth noise textures, baked once (feTurbulence is far too slow on the CPU at 4K): R and G hold a displacement around 128.
+  // grey value-noise textures, baked once on a canvas (feTurbulence is far too slow on the CPU at 4K).
   // cells sets the grain: a random cells × cells grid, smoothed up to 256 px. Four boil textures cycle at 8 fps.
-  function bakeNoise(seed, cells) {
+  function bakeGray(seed, cells) {
     let st = seed >>> 0; const rnd = () => (st = (st * 1664525 + 1013904223) >>> 0) / 4294967296;
     const s = document.createElement('canvas'); s.width = s.height = cells;
     const g = s.getContext('2d'), im = g.createImageData(cells, cells);
-    for (let i = 0; i < im.data.length; i += 4) { im.data[i] = rnd() * 255; im.data[i + 1] = rnd() * 255; im.data[i + 2] = 128; im.data[i + 3] = 255; }
+    for (let i = 0; i < im.data.length; i += 4) { const x = rnd() * 255; im.data[i] = im.data[i + 1] = im.data[i + 2] = x; im.data[i + 3] = 255; }
     g.putImageData(im, 0, 0);
     const b = document.createElement('canvas'); b.width = b.height = 256;
     const bg = b.getContext('2d'); bg.imageSmoothingEnabled = true; bg.imageSmoothingQuality = 'high'; bg.filter = `blur(${(256 / cells) * 0.35}px)`;
     bg.drawImage(s, -1, -1, 258, 258);
     return b.toDataURL('image/png');
   }
-  const NOISE = { warp16: bakeNoise(7, 16), warp10: bakeNoise(11, 10), boil: [21, 33, 45, 57].map((k) => bakeNoise(k, 24)) };
-  const noiseImg = (href, region, result) => <feImage href={href} x={region[0]} y={region[1]} width={region[2]} height={region[3]} preserveAspectRatio="none" result={result} />;
+  const NOISE = { fine: bakeGray(7, 14), coarse: bakeGray(11, 9), boil: [21, 33, 45, 57].map((k) => bakeGray(k, 20)) };
 
   // ── grade: luminance → ramp. poster = flat bands (discrete), else a smooth gradient map. blur = depth of field ──
   // gain / lift shape the values before mapping (a dark set can be lifted into the ramp's middle tones).
@@ -61,22 +66,31 @@
     );
   }
 
-  // ── tone: a figure posterized into its group's ramp, with organic (blobby) band edges like the portraits ──
-  // The organic warp is fixed to the figure (it moves with it); the boil swaps a smaller warp at 8 fps.
-  function ToneFilter({ id, ramp, organic = 14, freq = 0.03, soft = 1.6, gain = 1, lift = 0, bf = 0, amp = 0.5, region = [-260, -460, 520, 620] }) {
+  // ── tone: a figure posterized into its group's ramp ───────────────────────────
+  // 1. the lit value art → luminance; 2. multiplied by an edge field (the silhouette's alpha, blurred by `edge`), so every
+  // part darkens toward its outline and the bands run parallel to it (no slivers where a band meets the edge); 3. a little
+  // low-frequency value noise makes the band edges irregular like the portraits, and a smaller one boils them at 8 fps;
+  // 4. posterized to the ramp; 5. cut to the exact silhouette, so the outline stays the rig's own crisp, boiling shape.
+  function ToneFilter({ id, ramp, edge = 7, depth = 0.5, grain = 0.1, coarse = false, soft = 1.1, gain = 1, lift = 0, bf = 0, amp = 0.5, region = [-180, -340, 360, 400] }) {
+    const img = (href, r) => <feImage href={href} x={region[0]} y={region[1]} width={region[2]} height={region[3]} preserveAspectRatio="none" result={r} />;
+    const bAmt = 0.035 * amp;
     return (
       <filter id={id} filterUnits="userSpaceOnUse" x={region[0]} y={region[1]} width={region[2]} height={region[3]} colorInterpolationFilters="sRGB">
-        {noiseImg(freq > 0.01 ? NOISE.warp16 : NOISE.warp10, region, 'n0')}
-        <feDisplacementMap in="SourceGraphic" in2="n0" scale={organic} xChannelSelector="R" yChannelSelector="G" result="d0" />
-        {noiseImg(NOISE.boil[bf % 4], region, 'n1')}
-        <feDisplacementMap in="d0" in2="n1" scale={amp * 2.4} xChannelSelector="R" yChannelSelector="G" result="d1" />
-        <feGaussianBlur in="d1" stdDeviation={soft} result="b" />
-        <feColorMatrix in="b" type="matrix" values={lum(gain, lift)} result="l" />
-        <feComponentTransfer in="l">
+        <feColorMatrix in="SourceGraphic" type="matrix" values={lum(gain, lift)} result="l" />
+        <feGaussianBlur in="SourceAlpha" stdDeviation={edge} result="eb" />
+        <feColorMatrix in="eb" type="matrix" values="0 0 0 1 0  0 0 0 1 0  0 0 0 1 0  0 0 0 0 1" result="e" />
+        <feComposite in="l" in2="e" operator="arithmetic" k1={depth} k2={1 - depth} k3="0" k4="0" result="sh" />
+        {img(coarse ? NOISE.coarse : NOISE.fine, 'n')}
+        <feComposite in="sh" in2="n" operator="arithmetic" k1="0" k2="1" k3={grain} k4={-grain / 2} result="sn" />
+        {img(NOISE.boil[bf % 4], 'nb')}
+        <feComposite in="sn" in2="nb" operator="arithmetic" k1="0" k2="1" k3={bAmt} k4={-bAmt / 2} result="sb" />
+        <feGaussianBlur in="sb" stdDeviation={soft} result="b" />
+        <feComponentTransfer in="b" result="p">
           {mapFuncs(rampOf(ramp), 'discrete')}
-          <feFuncA type="linear" slope="9" intercept="-3.9" />
+          <feFuncA type="linear" slope="0" intercept="1" />
         </feComponentTransfer>
-        <feGaussianBlur stdDeviation="0.5" />
+        <feGaussianBlur in="p" stdDeviation="0.45" result="pa" />
+        <feComposite in="pa" in2="SourceAlpha" operator="in" />
       </filter>
     );
   }
@@ -91,234 +105,237 @@
     );
   }
 
-  // ── contour rings, as vectors ─────────────────────────────────────────────────
-  // A shape painted with a round-joined stroke of width 2d around its fill is exactly the shape offset by d. So each ring zone
-  // is the figure's parts (plus a few hidden fillets that round off the neck and crotch) redrawn fatter, painted from the
-  // outermost zone in. zones run from the figure outward: gap, line, gap, line, gap, line, gap, thick band (as in the portraits).
-  // A part: { d: path, w: stroke width of the part itself (0 for a filled shape), tf: transform, s: that transform's scale }.
-  const RING_ZONES = [7, 6, 7, 6, 7, 6, 7, 15];
-  function RingStack({ parts, zones = RING_ZONES, k = 1, line, gap, shade, shadeOp = 0.5, bf = 0, amp = 0.5, id = 1, children }) {
-    const D = []; let acc = 0;
-    zones.forEach((z) => { acc += z * k; D.push(acc); });
-    const n = D.length, layers = [];
-    for (let i = n - 1; i >= 0; i--) {
-      if (D[i] < 0.05) continue;
-      // 8 fps boil: each ring breathes a fraction of a pixel, like the line boil elsewhere
-      const d = D[i] + (amp ? (hash(bf * 3.7 + i * 1.9 + id * 7.1) - 0.5) * 1.2 * amp : 0);
-      const col = i % 2 === 1 ? line : gap;
-      layers.push(
-        <g key={i} fill={col} stroke={col} strokeLinejoin="round" strokeLinecap="round">
-          {parts.map((p, j) => <path key={j} d={p.d} transform={p.tf} strokeWidth={(p.w || 0) + (2 * d) / (p.s || 1)} fill={p.w ? 'none' : col} />)}
-        </g>
-      );
-    }
-    const sd = (D[1] || D[0]) * 0.6;
-    return (
-      <g>
-        {layers}
-        {shade && (
-          <g filter="url(#fuRingShade)" opacity={shadeOp}>
-            <g fill={shade} stroke={shade} strokeLinejoin="round" strokeLinecap="round">
-              {parts.map((p, j) => <path key={j} d={p.d} transform={p.tf} strokeWidth={(p.w || 0) + (2 * sd) / (p.s || 1)} fill={p.w ? 'none' : shade} />)}
-            </g>
-          </g>
-        )}
-        {children}
-      </g>
-    );
-  }
-  const ringCols = (ramp, red) => { const R = rampOf(ramp); return { line: red ? mix(R[6], red, 0.75) : R[6], gap: R[1], shade: R[0] }; };
-
-  // shading gradients shared by every ToneBean / BeanBust (bounding-box units, light from the front and above)
-  function ShadeDefs() {
-    const rg = (id, cx, cy, r, stops) => (
-      <radialGradient id={id} cx={cx} cy={cy} r={r} fx={cx} fy={cy}>
-        {stops.map(([o, x, a], i) => <stop key={i} offset={o} stopColor={v(x)} stopOpacity={a == null ? 1 : a} />)}
-      </radialGradient>
-    );
-    return (
-      <React.Fragment>
-        {rg('fuShBody', 0.72, 0.2, 1.05, [[0, 0.8], [0.45, 0.66], [0.8, 0.5], [1, 0.4]])}
-        {rg('fuShHead', 0.7, 0.28, 1.0, [[0, 0.86], [0.5, 0.72], [0.85, 0.56], [1, 0.46]])}
-        {rg('fuShBodyF', 0.42, 0.12, 1.1, [[0, 0.8], [0.45, 0.66], [0.8, 0.5], [1, 0.4]])}
-        {rg('fuShHeadF', 0.36, 0.24, 1.0, [[0, 0.86], [0.5, 0.72], [0.85, 0.56], [1, 0.46]])}
-        {rg('fuShBust', 0.62, 0.1, 0.95, [[0, 0.84], [0.4, 0.68], [0.75, 0.5], [1, 0.36]])}
-        {rg('fuShBustHead', 0.62, 0.3, 0.95, [[0, 0.92], [0.45, 0.78], [0.78, 0.6], [1, 0.46]])}
-        {rg('fuShHair', 0.4, 0.25, 0.8, [[0, 0.44], [0.6, 0.27], [1, 0.16]])}
-        {rg('fuPool', 0.5, 0.5, 0.5, [[0, 0.98], [0.3, 0.78], [0.62, 0.52, 0.9], [1, 0.3, 0]])}
-      </React.Fragment>
-    );
-  }
-
   // everything a scene needs for the given ramps, plus the red ramp for crisis content
   function LookDefs({ ramps = ['open'], bf = 0, amp = 0.5, dof = 20 }) {
     const all = Array.from(new Set([...ramps, 'red']));
     return (
       <defs>
-        <ShadeDefs />
         {all.map((r) => (
           <React.Fragment key={r}>
             <GradeFilter id={'fuGradeBg-' + r} ramp={r} blur={dof} />
             <GradeFilter id={'fuGradeFg-' + r} ramp={r} poster />
             <ToneFilter id={'fuTone-' + r} ramp={r} bf={bf} amp={amp} />
-            <ToneFilter id={'fuBustTone-' + r} ramp={r} organic={34} freq={0.006} soft={5} bf={bf} amp={amp * 4} region={[-800, -1200, 1600, 1400]} />
+            <ToneFilter id={'fuBustTone-' + r} ramp={r} edge={40} depth={0.32} grain={0.05} coarse soft={9} bf={bf} amp={amp} region={BUST_REGION} />
           </React.Fragment>
         ))}
-        <filter id="fuRingShade" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="7" /></filter>
+        <radialGradient id="fuPool" cx="0.5" cy="0.5" r="0.5">
+          <stop offset="0" stopColor={v(0.98)} /><stop offset="0.3" stopColor={v(0.78)} />
+          <stop offset="0.62" stopColor={v(0.52)} stopOpacity="0.9" /><stop offset="1" stopColor={v(0.3)} stopOpacity="0" />
+        </radialGradient>
         <GlowFilter id="fuGlow" />
       </defs>
     );
   }
 
-  // ── the Bean in value ────────────────────────────────────────────────────────
+  // ── lighting ──────────────────────────────────────────────────────────────────
+  // lights → the figure's local frame (origin under the hips, x forward, unscaled). k is the figure's world scale.
+  const toLocal = (lights, x, y, s, dir) => (lights || DEFAULT_LIGHTS).map((L) => (L.dir
+    ? { dir: [L.dir[0] * dir, L.dir[1]], i: L.i }
+    : { p: [((L.x - x) / s) * dir, (L.y - y) / s], i: L.i, reach: L.reach || 300 }));
+  // how strongly a light reaches a point c (local), and from which direction; k converts local distance to world px
+  function lightAt(L, c, k) {
+    if (L.dir) { const n = Math.hypot(L.dir[0], L.dir[1]) || 1; return { f: L.i, u: [-L.dir[0] / n, -L.dir[1] / n] }; }
+    const d = [L.p[0] - c[0], L.p[1] - c[1]], n = Math.hypot(d[0], d[1]) || 1, w = (n * k) / L.reach;
+    return { f: L.i / (1 + w * w), u: [d[0] / n, d[1] / n] };
+  }
+  // a part filled with its base value, brightened from each light's side (clipped to the part). c, rho: the part's centre
+  // and rough radius in local units; the bands that come out of the posterize then sit where the light falls.
+  function LitShape({ d, c, rho, base, lights, k, uid, gain = 1 }) {
+    return (
+      <g>
+        <path d={d} fill={v(base)} />
+        <clipPath id={uid + 'c'}><path d={d} /></clipPath>
+        <g clipPath={`url(#${uid}c)`}>
+          {lights.map((L, i) => {
+            const { u } = lightAt(L, c, k), f = lightAt(L, c, k).f * gain;
+            if (f < 0.01) return null;
+            const cx = c[0] + u[0] * rho * 0.85, cy = c[1] + u[1] * rho * 0.85;
+            return (
+              <g key={i}>
+                <radialGradient id={uid + 'g' + i} gradientUnits="userSpaceOnUse" cx={cx} cy={cy} r={rho * 1.9}>
+                  <stop offset="0" stopColor="#fff" stopOpacity={clamp(f, 0, 1)} />
+                  <stop offset="0.45" stopColor="#fff" stopOpacity={clamp(f * 0.7, 0, 1)} />
+                  <stop offset="0.8" stopColor="#fff" stopOpacity={clamp(f * 0.25, 0, 1)} />
+                  <stop offset="1" stopColor="#fff" stopOpacity="0" />
+                </radialGradient>
+                <circle cx={cx} cy={cy} r={rho * 1.9} fill={`url(#${uid}g${i})`} />
+              </g>
+            );
+          })}
+        </g>
+      </g>
+    );
+  }
+  // the total light at a point, for parts too thin to shade (limbs, shoes)
+  const lightSum = (lights, c, k) => clamp(lights.reduce((a, L) => a + lightAt(L, c, k).f, 0), 0, 1);
+
+  // ── boil: the same 8 fps wobble as the Bean rig ───────────────────────────────
+  function boilFn(f, id, amp) {
+    if (!amp) return () => 0;
+    const p1 = hash(f * 7.3 + id * 1.9) * 6.283, p2 = hash(f * 3.1 + id * 5.7) * 6.283, p3 = hash(f * 9.7 + id * 2.3) * 6.283;
+    const a = amp * (0.7 + 0.6 * hash(f * 1.3 + id * 8.1));
+    return (t) => a * (Math.sin(2 * t + p1) + 0.6 * Math.sin(3 * t + p2) + 0.35 * Math.sin(5 * t + p3));
+  }
+  const fx = (n) => n.toFixed(1);
+  const pathOf = (P, close) => P.map((p, i) => (i ? 'L' : 'M') + fx(p[0]) + ' ' + fx(p[1])).join(' ') + (close ? ' Z' : '');
+  const circlePath = (c, r, b, N = 48) => pathOf(Array.from({ length: N }, (_, i) => { const t = (i / N) * 2 * Math.PI, rr = r + (b ? b(t) : 0); return [c[0] + rr * Math.cos(t), c[1] + rr * Math.sin(t)]; }), true);
+  const addv = (a, b) => [a[0] + b[0], a[1] + b[1]], mulv = (a, s) => [a[0] * s, a[1] * s];
+  const centroid = (P) => mulv(P.reduce((a, p) => addv(a, p), [0, 0]), 1 / P.length);
   const egg = (cy, ry, wb, wt, shift, N = 40) => Array.from({ length: N }, (_, i) => {
     const t = (i / N) * 2 * Math.PI, s = Math.sin(t);
     return [Math.cos(t) * (wb + (wt - wb) * (s + 1) / 2) + shift * (1 - Math.abs(s)), cy + ry * s];
   });
   const BODY = egg(40, 54, 28, 18, 4), FBODY = egg(40, 54, 28, 18, 0);
-  const fx = (n) => n.toFixed(1);
-  const pathOf = (P, close) => P.map((p, i) => (i ? 'L' : 'M') + fx(p[0]) + ' ' + fx(p[1])).join(' ') + (close ? ' Z' : '');
-  const circ = (c, r) => `M ${fx(c[0] - r)} ${fx(c[1])} a ${fx(r)} ${fx(r)} 0 1 0 ${fx(2 * r)} 0 a ${fx(r)} ${fx(r)} 0 1 0 ${fx(-2 * r)} 0 Z`;
-  const addv = (a, b) => [a[0] + b[0], a[1] + b[1]], mulv = (a, s) => [a[0] * s, a[1] * s];
-  const st = { fill: 'none', strokeLinecap: 'round', strokeLinejoin: 'round' };
 
-  // the figure's geometry for either view, in the rig's own frame (origin on the floor under the hips, facing +x)
-  function beanGeom(pose, view = 'side', headScale = 1) {
-    const B = window.FU_BEAN;
+  // keep the part of a convex polygon within distance d of the line through p0, measured along the unit normal n
+  function clipHalf(poly, p0, n, d) {
+    const f = (p) => (p[0] - p0[0]) * n[0] + (p[1] - p0[1]) * n[1] - d, out = [];
+    poly.forEach((a, i) => {
+      const b = poly[(i + 1) % poly.length], fa = f(a), fb = f(b);
+      if (fa <= 0) out.push(a);
+      if ((fa <= 0) !== (fb <= 0)) { const t = fa / (fa - fb); out.push([a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t]); }
+    });
+    return out;
+  }
+  // ── hair, in the head's own frame: a = along `fwd` (forward, or screen right in the front view), b = along `up` ──
+  // beanie: a knitted cap over the top of the head with a folded brim. long: hair over the top and falling behind the
+  // shoulders. Returns { back, front, brim }: back is drawn behind the body, front and brim over the head.
+  function hairShapes(kind, Hc, r, up, fwd, view, neckDown) {
+    if (!kind || kind === 'none') return null;
+    const P = (a, b) => addv(Hc, addv(mulv(fwd, a * r), mulv(up, b * r)));
+    const arc = (R, t0, t1, n = 24, dome = 0) => Array.from({ length: n + 1 }, (_, i) => { const t = t0 + ((t1 - t0) * i) / n; return P(R * Math.cos(t), R * Math.sin(t) * (1 + dome * Math.max(0, Math.sin(t)))); });
+    if (kind === 'beanie') {
+      // the cap sits lower at the back in profile; level in the front view
+      const [t0, t1] = view === 'front' ? [0.32, Math.PI - 0.32] : [0.42, Math.PI + 0.08];
+      const crown = arc(1.08, t0, t1, 32, 0.16);   // a knitted cap rises a little above the skull
+      // the folded brim: the strip of the cap within 0.3 head radii of its lower edge
+      const a0 = crown[0], a1 = crown[crown.length - 1], e = [a1[0] - a0[0], a1[1] - a0[1]], el = Math.hypot(e[0], e[1]) || 1;
+      let n = [-e[1] / el, e[0] / el];
+      if (n[0] * up[0] + n[1] * up[1] < 0) n = [-n[0], -n[1]];
+      const brim = clipHalf(crown, a0, n, 0.3 * r);
+      return { front: pathOf(crown, true), brim: pathOf(brim, true) };
+    }
+    // long hair
     if (view === 'front') {
+      const top = arc(1.12, -0.25, Math.PI + 0.25);
+      const fall = neckDown + 0.9;   // down past the shoulders, in head radii below the head centre
+      const back = [...top, P(-1.16, -fall + 0.4), P(-1.02, -fall + 0.06), P(-0.8, -fall), P(0.8, -fall), P(1.02, -fall + 0.06), P(1.16, -fall + 0.4)];
+      const cap = [...arc(1.06, 0.38, Math.PI - 0.38), P(-0.62, 0.42), P(-0.1, 0.5), P(0.62, 0.42)];
+      return { back: pathOf(back, true), front: pathOf(cap, true) };
+    }
+    const back = [...arc(1.07, 0.95, Math.PI + 0.35), P(-1.05, -(neckDown + 1.05)), P(-0.55, -(neckDown + 1.1)), P(-0.35, -0.6)];
+    const cap = [...arc(1.06, 1.05, Math.PI + 0.15), P(-0.4, 0.2), P(0.25, 0.62)];
+    return { back: pathOf(back, true), front: pathOf(cap, true) };
+  }
+
+  // ── the Bean in value, lit ────────────────────────────────────────────────────
+  // geometry for either view, in the rig's own frame (origin on the floor under the hips, facing +x), with the 8 fps boil
+  function beanGeom(pose, view, headScale, bf, amp, id) {
+    const B = window.FU_BEAN;
+    const J = (p, k) => (amp ? [p[0] + (hash(bf * 3.1 + k * 1.7 + id * 13.3) - 0.5) * 1.6 * amp, p[1] + (hash(bf * 7.7 + k * 1.3 + id * 5.1) - 0.5) * 1.6 * amp] : p);
+    const hb = boilFn(bf, id * 31 + 7, amp * 0.8);
+    if (view === 'front') {
+      const p = { lean: 0, tilt: 0, ...pose };
       const R = B.frontRig({ ...pose, armL: pose.armL || [8, 6], armR: pose.armR || [8, 6] }, headScale);   // null hides an arm
+      const a = ((p.lean + p.tilt) * Math.PI) / 180;
       return {
-        view, R, head: [R.Hc, R.r], eyes: R.eyes, body: FBODY.map((p) => R.loc(p[0], p[1])), neck: R.N,
-        limbs: [[R.legL, 9, 0.3], [R.legR, 9, 0.36], ...(pose.armL === null ? [] : [[R.armL, 8, 0.62]]), ...(pose.armR === null ? [] : [[R.armR, 8, 0.66]])],
-        shoes: [[addv(R.legL[2], [-4, 1]), 0.26], [addv(R.legR[2], [4, 1]), 0.3]], shoeR: 9,
+        view, Hc: R.Hc, r: R.r, hb, eyes: R.eyes, up: [Math.sin(a), -Math.cos(a)], fwd: [Math.cos(a), Math.sin(a)],
+        body: FBODY.map((q, i) => J(R.loc(q[0], q[1]), 200 + i)),
+        legs: [[R.legL, 9, 1, 1], [R.legR, 9, 1, 2]], arms: [...(pose.armL === null ? [] : [[R.armL, 8, 1, 5]]), ...(pose.armR === null ? [] : [[R.armR, 8, 1, 6]])],
+        shoes: [[addv(R.legL[2], [-4, 1]), 9, 1, 11], [addv(R.legR[2], [4, 1]), 9, 1, 12]], hand: null, neckDown: (R.Hc[1] - R.N[1]) / -R.r, J,
       };
     }
     const R = B.rig(pose, headScale);
     const loc = (x, y) => addv(R.H, addv(mulv(R.fw, x), mulv(R.u, y)));
     return {
-      view, R, head: [R.Hc, R.r], eyes: [addv(addv(R.Hc, mulv(R.fh, R.r * 0.52)), mulv(R.uh, R.r * 0.12))], body: BODY.map((p) => loc(p[0], p[1])), neck: R.S,
-      limbsBack: [[R.legF, 9, 0.2], [R.armF, 8, 0.26], [R.legN, 9, 0.36]], limbs: [[R.armN, 8, 0.6]],
-      shoes: [[addv(R.legF[2], [7, 1]), 0.18], [addv(R.legN[2], [7, 1]), 0.32]], shoeR: 11,
+      view, Hc: R.Hc, r: R.r, hb, up: R.uh, fwd: R.fh, eyes: [addv(addv(R.Hc, mulv(R.fh, R.r * 0.52)), mulv(R.uh, R.r * 0.12))],
+      body: BODY.map((q, i) => J(loc(q[0], q[1]), 200 + i)),
+      legs: [[R.legF, 9, 0.78, 1], [R.legN, 9, 1, 3]], armsBack: [[R.armF, 8, 0.78, 2]], arms: [[R.armN, 8, 1.06, 5]],
+      shoes: [[addv(R.legF[2], [7, 1]), 11, 0.78, 11], [addv(R.legN[2], [7, 1]), 11, 1, 12]], hand: R.armN[2], phone: R.phone,
+      neckDown: Math.hypot(R.Hc[0] - R.S[0], R.Hc[1] - R.S[1]) / R.r, J,
     };
   }
-  function BeanValue({ pose, view = 'side', headScale = 1, phone = 0, eyes = true }) {
-    const G = beanGeom(pose, view, headScale), [Hc, r] = G.head;
-    const limb = ([P, w, x], i) => <path key={i} d={pathOf(P)} stroke={v(x)} strokeWidth={w} {...st} />;
-    const shoe = ([p, x], i) => <ellipse key={'s' + i} cx={p[0]} cy={p[1]} rx={G.shoeR} ry="5" fill={v(x)} />;
-    const h = G.R.armN ? G.R.armN[2] : null;
+  function BeanValue({ G, lights, k, amb, hair, hairTone, uid }) {
+    const limbV = (P, m) => clamp((amb * 1.05 + (1 - amb) * 0.55 * lightSum(lights, P[1], k)) * m, 0, 1);
+    const armV = (P, m) => clamp((amb * 1.2 + (1 - amb) * 0.8 * lightSum(lights, P[1], k)) * m, 0, 1);   // the near arm reads over the body
+    const jit = G.J || ((p) => p);
+    const limb = ([P, w, m, kk], arm) => <path key={'l' + kk} d={pathOf(P.map((p, i) => jit(p, kk * 10 + i)))} stroke={v((arm === true ? armV : limbV)(P, m))} strokeWidth={w} fill="none" strokeLinecap="round" strokeLinejoin="round" />;
+    const shoe = ([p, rx, m, kk]) => { const q = jit(p, kk); return <ellipse key={'s' + kk} cx={q[0]} cy={q[1]} rx={rx} ry="5" fill={v(limbV([p, p], m * 0.85))} />; };
+    const H = hairShapes(hair, G.Hc, G.r, G.up, G.fwd, G.view, G.neckDown);
+    const hc = addv(G.Hc, mulv(G.up, G.r * 0.5));
+    const side = G.view !== 'front';
     return (
       <g>
-        {(G.limbsBack || []).map(limb)}
-        {G.view === 'front' && G.limbs.slice(0, 2).map(limb)}
-        {G.shoes.map(shoe)}
-        <path d={pathOf(G.body, true)} fill={G.view === 'front' ? 'url(#fuShBodyF)' : 'url(#fuShBody)'} />
-        <clipPath id={'fuBodyClip' + G.view}><path d={pathOf(G.body, true)} /></clipPath>
-        <g clipPath={`url(#fuBodyClip${G.view})`}>
-          <ellipse cx={G.body[10][0]} cy={G.body[10][1] - 30} rx="16" ry="40" fill={v(0.42)} opacity="0.7" />
-          <ellipse cx={G.body[32][0]} cy={G.body[32][1] + 10} rx="12" ry="30" fill={v(0.84)} opacity="0.5" />
-        </g>
-        <circle cx={Hc[0]} cy={Hc[1]} r={r} fill={G.view === 'front' ? 'url(#fuShHeadF)' : 'url(#fuShHead)'} />
-        {phone > 0 && <circle cx={Hc[0] + r * 0.5} cy={Hc[1] + r * 0.25} r={r * 0.8} fill={v(1)} opacity={0.55 * phone} />}
-        {eyes && G.eyes.map((e, i) => <circle key={'e' + i} cx={e[0]} cy={e[1]} r={3.8 * Math.max(0.85, r / 26)} fill={v(0.03)} />)}
-        {(G.view === 'front' ? G.limbs.slice(2) : G.limbs).map(limb)}
-        {phone > 0 && h && <rect x={h[0] - 3} y={h[1] - 12} width="6" height="24" rx="2" fill={v(1)} transform={`rotate(-30 ${h[0]} ${h[1]})`} />}
+        {H && H.back && <LitShape d={H.back} c={hc} rho={G.r * 1.2} base={hairTone} lights={lights} k={k} uid={uid + 'hb'} gain={0.55} />}
+        {side && G.legs.slice(0, 1).map(limb)}
+        {side && G.shoes.slice(0, 1).map(shoe)}
+        {side && G.armsBack.map(limb)}
+        {side ? G.legs.slice(1).map(limb) : G.legs.map(limb)}
+        {side ? G.shoes.slice(1).map(shoe) : G.shoes.map(shoe)}
+        <LitShape d={pathOf(G.body, true)} c={centroid(G.body)} rho={46} base={amb} lights={lights} k={k} uid={uid + 'b'} />
+        <LitShape d={circlePath(G.Hc, G.r, G.hb)} c={G.Hc} rho={G.r} base={amb * 1.08} lights={lights} k={k} uid={uid + 'h'} />
+        {H && H.front && <LitShape d={H.front} c={hc} rho={G.r} base={hairTone} lights={lights} k={k} uid={uid + 'hf'} gain={0.55} />}
+        {H && H.brim && <LitShape d={H.brim} c={G.Hc} rho={G.r} base={hairTone * 1.3} lights={lights} k={k} uid={uid + 'hr'} gain={0.55} />}
+        {G.arms.map((a) => limb(a, true))}
       </g>
     );
-  }
-  // the parts the rings follow: body, head, limbs, shoes, plus fillets at the neck and between the legs so the rings round off
-  function beanParts(pose, view, headScale, tf, s) {
-    const G = beanGeom(pose, view, headScale), [Hc, r] = G.head;
-    const out = [];
-    const P = (d, w = 0) => out.push({ d, w, tf, s });
-    P(pathOf(G.body, true));
-    P(circ(Hc, r));
-    [...(G.limbsBack || []), ...G.limbs].forEach(([L, w]) => P(pathOf(L), w));
-    G.shoes.forEach(([p]) => P(circ(p, G.shoeR * 0.7), 6));
-    // neck fillet: from the shoulders to the head's sides
-    const up = [Hc[0] - G.neck[0], Hc[1] - G.neck[1]], ul = Math.hypot(up[0], up[1]) || 1, side = [-up[1] / ul, up[0] / ul];
-    P(pathOf([addv(G.neck, mulv(side, 20)), addv(Hc, mulv(side, r * 0.8)), addv(Hc, mulv(side, -r * 0.8)), addv(G.neck, mulv(side, -20))], true));
-    // crotch fillet: the hips and both ankles
-    const legs = G.view === 'front' ? [G.R.legL, G.R.legR] : [G.R.legF, G.R.legN];
-    P(pathOf([legs[0][0], legs[0][2], legs[1][2], legs[1][0]], true));
-    return out;
   }
 
-  // x, y: floor point under the hips. ramp: a RAMPS key or an array of 7 colours. rings: draw the contour rings.
-  // ringK scales the ring widths (design px at s = 1). red: a colour the ring lines lean toward.
-  function ToneBean({ x, y, s = 1, dir = 1, pose, view = 'side', ramp = 'open', rings = false, ringK = 0.62, zones, red, headScale = 1, phone = 0, op = 1, toneId, eyes = true, bf = 0, amp = 0.5, id = 1 }) {
+  // ── ToneBean: the Bean toned into its group's ramp ────────────────────────────
+  // x, y: floor point under the hips. ramp: a RAMPS key or an array of 7 colours. lights: see the top of the file.
+  // amb: the figure's value with no light on it (0.34 sits in the ramp's lower middle). hair: 'none' | 'beanie' | 'long'.
+  // phone 0..1: a phone in the near hand, which is also a light on the face. Eyes and phone are drawn after the toning,
+  // so they stay sharp. id: unique per figure on screen (boil seed).
+  function ToneBean({ x, y, s = 1, dir = 1, pose, view = 'side', ramp = 'open', lights, amb = 0.34, hair = 'none', hairTone = 0.16, headScale = 1, phone = 0, op = 1, toneId, eyes = true, bf = 0, amp = 0.5, id = 1 }) {
+    const uid = safeId(React.useId());
     const key = typeof ramp === 'string' ? ramp : 'custom';
-    const tf = `scale(${dir} 1)`;
-    const body = (
-      <g filter={`url(#${toneId || 'fuTone-' + key})`}>
-        <g transform={tf}><BeanValue pose={pose} view={view} headScale={headScale} phone={phone} eyes={eyes} /></g>
-      </g>
-    );
+    const R = rampOf(ramp);
+    const G = beanGeom(pose, view, headScale, bf, amp, id);
+    const L = toLocal(lights, x, y, s, dir);
+    const ph = view === 'front' ? 0 : phone;
+    if (ph > 0.01 && G.hand) L.push({ p: G.hand, i: 0.75 * ph, reach: 34 * s });   // screen light on the face
+    const h = G.hand, er = 3.8 * Math.max(0.85, G.r / 26);
     return (
       <g transform={`translate(${x} ${y}) scale(${s})`} opacity={op}>
-        {rings ? <RingStack parts={beanParts(pose, view, headScale, tf, s)} zones={zones} k={ringK} {...ringCols(ramp, red)} bf={bf} amp={amp} id={id}>{body}</RingStack> : body}
+        <g transform={`scale(${dir} 1)`}>
+          <g filter={`url(#${toneId || 'fuTone-' + key})`}><BeanValue G={G} lights={L} k={s} amb={amb} hair={hair} hairTone={hairTone} uid={uid} /></g>
+          {eyes && G.eyes.map((e, i) => <circle key={i} cx={e[0]} cy={e[1]} r={er} fill={R[0]} />)}
+          {ph > 0.01 && h && <rect x={h[0] - 3} y={h[1] - 12} width="6" height="24" rx="2" fill={R[6]} opacity={ph} transform={`rotate(${(-30).toFixed(1)} ${fx(h[0])} ${fx(h[1])})`} />}
+        </g>
       </g>
-    );
-  }
-  // one set of rings round several figures. items: [{ x, y, s, dir, pose, view, headScale, ramp, phone }]
-  function RingGroup({ items, ramp = 'open', ringK = 0.62, zones, red, bf = 0, amp = 0.5, id = 1, extra = [] }) {
-    const parts = [...extra];
-    items.forEach((it) => parts.push(...beanParts(it.pose, it.view || 'side', it.headScale || 1, `translate(${it.x} ${it.y}) scale(${(it.s || 1) * (it.dir || 1)} ${it.s || 1})`, it.s || 1)));
-    return (
-      <RingStack parts={parts} zones={zones} k={ringK} {...ringCols(ramp, red)} bf={bf} amp={amp} id={id}>
-        {items.map((it, i) => <ToneBean key={i} {...it} ramp={it.ramp || ramp} rings={false} bf={bf} amp={amp} />)}
-      </RingStack>
     );
   }
 
   // ── BeanBust: the Bean in close-up, head and shoulders, framed like the testimony portraits ──
-  // Built from the Bean's own proportions, scaled ×9: the round head over the narrow top of the egg body, so it stays the same
-  // character as the full-figure rig. Local frame: origin at the bottom centre of the frame edge; the head is about 470 across.
-  // turn -1..1 turns the face toward screen right (+). detail 0 = shading only; 1 adds a soft shadow on the far side of the
-  // head, which posterizes into a portrait-like blob. hair: 'none' | 'short' | 'long'.
+  // Built from the Bean's own proportions ×9: the round head over the narrow top of the egg body. Local frame: origin at
+  // the bottom centre of the frame edge; the head is about 470 across. turn -1..1 turns the face toward screen right (+).
+  // hair: 'none' | 'beanie' | 'long'. Lights as for ToneBean.
   const BK = 9, HIP = 300;   // bust scale over the rig, and where the (off-frame) hip sits below the frame edge
-  const bustGeom = ({ turn = 0.35, nod = 0 }) => {
-    const sh = turn * 4;     // the belly shift follows the facing, as in the side rig
-    const body = egg(40, 54, 28, 18, sh).map(([x, y]) => [x * BK, HIP - y * BK]);
-    return { body, hx: (6 * turn) * BK, hy: HIP - (84 + 6 + 26) * BK + 10 * nod, r: 26 * BK, neck: [0, HIP - 84 * BK] };
-  };
-  function BustValue({ turn = 0.35, detail = 1, hair = 'none', tilt = 0, nod = 0, eyes = true, lit = 0 }) {
-    const { body, hx, hy, r } = bustGeom({ turn, nod });
-    const sg = Math.sign(turn || 1), eo = turn * 0.42 * r, ex = 0.32 * r;
-    return (
-      <g>
-        {hair === 'long' && <path d={`M ${hx - r * 0.98} ${hy} C ${hx - r * 1.1} ${hy + r * 1.3}, ${-r * 1.1} -120, ${-r * 1.05} 0 L ${r * 1.05} 0 C ${r * 1.1} -120, ${hx + r * 1.1} ${hy + r * 1.3}, ${hx + r * 0.98} ${hy} Z`} fill="url(#fuShHair)" />}
-        <path d={pathOf(body, true)} fill="url(#fuShBust)" />
-        <g transform={`rotate(${tilt} ${hx} ${hy + r})`}>
-          <circle cx={hx} cy={hy} r={r} fill="url(#fuShBustHead)" />
-          {detail > 0 && (
-            <g opacity={detail} clipPath="url(#fuBustHeadClip)">
-              <ellipse cx={hx - sg * r * 0.95} cy={hy + r * 0.15} rx={r * 0.55} ry={r * 1.05} fill={v(0.36)} opacity="0.75" />
-            </g>
-          )}
-          {hair === 'short' && <path d={`M ${hx - r - 6} ${hy - r * 0.05} A ${r + 6} ${r + 6} 0 0 1 ${hx + r + 6} ${hy - r * 0.05} C ${hx + r * 0.6} ${hy - r * 0.62}, ${hx - r * 0.6} ${hy - r * 0.62}, ${hx - r - 6} ${hy - r * 0.05} Z`} fill="url(#fuShHair)" />}
-          {hair === 'long' && <path d={`M ${hx - r - 8} ${hy + r * 0.2} A ${r + 8} ${r + 8} 0 0 1 ${hx + r + 8} ${hy + r * 0.2} C ${hx + r * 0.55} ${hy - r * 0.72}, ${hx - r * 0.5} ${hy - r * 0.66}, ${hx - r - 8} ${hy + r * 0.2} Z`} fill="url(#fuShHair)" />}
-          {eyes && <circle cx={hx + eo - ex} cy={hy - r * 0.04} r={r * 0.068} fill={v(0.04)} />}
-          {eyes && <circle cx={hx + eo + ex} cy={hy - r * 0.04} r={r * 0.064} fill={v(0.04)} />}
-          {lit > 0 && <circle cx={hx + r * 0.9} cy={hy + r * 0.4} r={r * 0.9} fill={v(1)} opacity={0.5 * lit} />}
-        </g>
-        <clipPath id="fuBustHeadClip"><circle cx={hx} cy={hy} r={r} /></clipPath>
-      </g>
-    );
-  }
-  function bustParts(p, s) {
-    const { body, hx, hy, r, neck } = bustGeom(p);
-    const tf = `rotate(${p.tilt || 0} ${hx} ${hy + r})`;
-    const out = [{ d: pathOf(body, true), s }, { d: circ([hx, hy], r + (p.hair ? 6 : 0)), s, tf },
-      { d: pathOf([[neck[0] - 150, neck[1] + 20], [hx - r * 0.8, hy + r * 0.55], [hx + r * 0.8, hy + r * 0.55], [neck[0] + 150, neck[1] + 20]], true), s }];
-    if (p.hair === 'long') out.push({ d: pathOf([[hx - r, hy], [-r * 1.05, 0], [r * 1.05, 0], [hx + r, hy]], true), s });
-    return out;
-  }
-  function BeanBust({ x, y, s = 1, ramp = 'open', rings = true, ringK = 1.15, zones, red, toneId, op = 1, bf = 0, amp = 0.5, id = 1, ...rest }) {
+  const BUST_REGION = [-460, -1060, 920, 1120];
+  function BeanBust({ x, y, s = 1, ramp = 'open', lights, amb = 0.34, hair = 'none', hairTone = 0.16, turn = 0.35, tilt = 0, nod = 0, op = 1, toneId, eyes = true, bf = 0, amp = 0.5, id = 1 }) {
+    const uid = safeId(React.useId());
     const key = typeof ramp === 'string' ? ramp : 'custom';
-    const body = <g filter={`url(#${toneId || 'fuBustTone-' + key})`}><BustValue {...rest} /></g>;
+    const R = rampOf(ramp);
+    const L = toLocal(lights, x, y, s, 1);
+    const hb = boilFn(bf, id * 31 + 7, amp * 0.8 * BK * 0.5);
+    const J = (p, kk) => (amp ? [p[0] + (hash(bf * 3.1 + kk * 1.7 + id * 13.3) - 0.5) * 1.6 * amp * 3, p[1] + (hash(bf * 7.7 + kk * 1.3 + id * 5.1) - 0.5) * 1.6 * amp * 3] : p);
+    const body = egg(40, 54, 28, 18, turn * 4).map(([px, py], i) => J([px * BK, HIP - py * BK], i));
+    const r = 26 * BK, Hc = [6 * turn * BK, HIP - (84 + 6 + 26) * BK + 10 * nod];
+    const a = (tilt * Math.PI) / 180, up = [Math.sin(a), -Math.cos(a)], fwd = [Math.cos(a), Math.sin(a)];
+    const H = hairShapes(hair, Hc, r, up, fwd, 'front', 1.15);
+    const eo = turn * 0.42 * r, ex = 0.32 * r;
+    const eye = (sd) => addv(Hc, addv(mulv(fwd, eo + sd * ex), mulv(up, r * 0.04)));
+    const hc = addv(Hc, mulv(up, r * 0.5));
     return (
       <g transform={`translate(${x} ${y}) scale(${s})`} opacity={op}>
-        {rings ? <RingStack parts={bustParts(rest, s)} zones={zones} k={ringK} {...ringCols(ramp, red)} shadeOp={0.6} bf={bf} amp={amp * 2} id={id}>{body}</RingStack> : body}
+        <g filter={`url(#${toneId || 'fuBustTone-' + key})`}>
+          {H && H.back && <LitShape d={H.back} c={hc} rho={r * 1.2} base={hairTone} lights={L} k={s} uid={uid + 'hb'} gain={0.55} />}
+          <LitShape d={pathOf(body, true)} c={centroid(body)} rho={46 * BK} base={amb * 0.92} lights={L} k={s} uid={uid + 'b'} gain={0.8} />
+          <LitShape d={circlePath(Hc, r, hb, 72)} c={Hc} rho={r} base={amb * 1.08} lights={L} k={s} uid={uid + 'h'} />
+          {H && H.front && <LitShape d={H.front} c={hc} rho={r} base={hairTone} lights={L} k={s} uid={uid + 'hf'} gain={0.55} />}
+          {H && H.brim && <LitShape d={H.brim} c={Hc} rho={r} base={hairTone * 1.3} lights={L} k={s} uid={uid + 'hr'} gain={0.55} />}
+        </g>
+        {eyes && [-1, 1].map((sd) => { const e = eye(sd); return <circle key={sd} cx={e[0]} cy={e[1]} r={r * 0.066} fill={R[0]} />; })}
       </g>
     );
   }
@@ -351,5 +368,5 @@
     return `<svg xmlns="http://www.w3.org/2000/svg" width="0" height="0" style="position:absolute"><filter id="fu-look" x="0" y="0" width="1" height="1" color-interpolation-filters="sRGB">${body}</filter></svg>`;
   }
 
-  window.FU_LOOK = { RAMPS, mix, mixRamp, v, GradeFilter, ToneFilter, GlowFilter, RingStack, ShadeDefs, LookDefs, ToneBean, RingGroup, BeanValue, beanParts, BeanBust, BustValue, bustParts, PostValue, lookFilterMarkup, RING_ZONES };
+  window.FU_LOOK = { RAMPS, DEFAULT_LIGHTS, mix, mixRamp, v, GradeFilter, ToneFilter, GlowFilter, LookDefs, ToneBean, BeanBust, PostValue, lookFilterMarkup };
 })();

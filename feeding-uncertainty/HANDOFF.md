@@ -38,7 +38,7 @@ Read this first. It covers the film, the rules the user has set, what was built 
 
 - **Resolution:** design in **1920 × 1080** coordinates and render/export at **3840 × 2160** (4K UHD). Everything is vector, scaled up 2×.
 - **Frame rate:** **25 fps**. SRT timings land on 25 fps frames.
-- **Background:** RGB 14/14/14, **`#0e0e0e`**.
+- **Background:** ~~RGB 14/14/14, `#0e0e0e`~~ **not a rule any more** (October 2026). Scenes in the toned look sit in a group's ramp; see `LOOK.md`.
 - **Group colours:**
   - withdrawal **`#46647a`**
   - open **`#5fa69a`**
@@ -51,7 +51,7 @@ Read this first. It covers the film, the rules the user has set, what was built 
   - kinetic typography
   - overly literal visual metaphors
   - grey or neutral people (only blue, teal and orange)
-  - ~~imitating the existing posterized-portrait look in new animation~~ **Outdated (October 2026).** Feedback on the finished animations was that they feel too different from the rest of the film, so the user now wants to explore bringing them closer to the portraits. See `LOOK.md`.
+  - ~~imitating the existing posterized-portrait look in new animation~~ **Outdated (October 2026).** The animations were found too different from the rest of the film. The agreed direction is the toned look: people toned into their group's ramp, lit by the scene's lights, without contour rings. See `LOOK.md`.
 - **Narration guide:** an on-screen caption of the line is fine as a toggle for timing review. It must be off for renders.
 - **Keep to what's asked:** when given feedback, change only what was asked.
 

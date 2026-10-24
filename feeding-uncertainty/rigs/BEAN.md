@@ -55,3 +55,9 @@ The same Bean seen from the front, added for the Vulnerability shot (people peek
 - **Pose fields:** `hx`, `lean` (torso roll about the hip), `tilt` (head roll about the neck), both in degrees with + toward screen right; `look: [x, y]` moves both eyes (-1..1, + is right / down); `legL`, `legR`: [angle, knee]; `armL`, `armR`: [angle, bend], where + is away from the body, or `{ to: [x, y] }`, a point in the figure's own frame (origin at the floor under the hips, unscaled) for the hand, with `elbow: 'in'` to bend the elbow toward the body.
 - **Props:** as `BeanFig` (no `dir`, no phone), plus `arms={false}` to leave the arms out.
 - **Use:** `const { BeanFront } = window.FU_BEAN; <BeanFront x={960} y={820} s={0.55} pose={{ lean: 10, tilt: 8, look: [1, 0] }} c={PAL.cur} T={T} id={4} />`
+
+## Toned (`ToneBean`, in `rigs/fu-look.jsx`)
+The agreed look for people since October 2026 (see `LOOK.md`): the same Bean, toned into flat bands of the group's ramp and lit by the scene's own lights. No contour rings; eyes always sharp.
+- **Use:** load `rigs/fu-look.jsx` after this rig, put `<LookDefs ramps={['open']} bf={bf} amp={amp} />` in the `<svg>`, then `const { ToneBean } = window.FU_LOOK; <ToneBean x={960} y={880} pose={POSES.idle(T)} ramp="open" lights={[{ x: 960, y: 314, i: 0.95, reach: 420 }]} hair="beanie" bf={bf} amp={amp} id={1} />`.
+- **Props:** as `BeanFig`, plus `view` (`'side'` | `'front'`, with `BeanFront`'s pose fields), `ramp`, `lights` (point `{ x, y, i, reach }` or directional `{ dir, i }`, in the figure's coordinates), `amb` (unlit value, default 0.34), `hair` (`'none'` | `'beanie'` | `'long'`), `hairTone`, `phone` (side view; the phone also lights the face).
+- **Close-ups:** `BeanBust` is the Bean ×9, head and shoulders, with the same props plus `turn`, `tilt`, `nod`.

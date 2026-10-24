@@ -12,12 +12,14 @@ This is the working guide for a new Claude session. Read it together with `CLAUD
 
 ## 2. Standing rules (every shot)
 
-- Design in **1920 × 1080**, render at **3840 × 2160**, **25 fps**. Background **`#0e0e0e`**.
+- Design in **1920 × 1080**, render at **3840 × 2160**, **25 fps**. Background: black (`#0e0e0e`) is **not a rule**; in the toned look the scene sits in a group's ramp.
 - Colours: withdrawal `#46647a`, open `#5fa69a`, curators `#e0a165`, crisis red `#a32e11` (hot accent `#f0613f`).
 - People are only blue, teal or orange. Never grey.
+- **The toned look** (agreed October 2026; details in `LOOK.md`): people are `ToneBean` (`rigs/fu-look.jsx`), the Bean toned into flat bands of their group's ramp. **No contour rings.** **Eyes always sharp.** The bands come from the scene's own lights, passed as `lights`; whatever lights the set (a lamp, a streetlight, a phone) lights the people, and moving lights move the bands. Hair per character: `none`, `beanie` or `long`. Backgrounds are out of focus and graded into the ramp.
+- **Red** comes in through the posts (and possibly through some story beats), not as a general colour.
 - No grain. **Line boil at 8 fps**, subtle, with an amplitude slider (default 0.5 px, 0–3) and an on/off toggle.
 - End every shot with **6 frames (0.24 s) of idle** (a `Hold` section) where only boil and small sways move.
-- Not wanted: kinetic typography, overly literal metaphors. (The old rule against imitating the film's posterized portraits is outdated: the animations were found too different from the rest of the film, and bringing them closer is now being explored. See `LOOK.md`.)
+- Not wanted: kinetic typography, overly literal metaphors, contour rings on people, a ring transition into the portraits. (The old rule against imitating the film's posterized portraits is outdated: the animations were found too different from the rest of the film. See `LOOK.md`.)
 - The narration caption is a review toggle only. It is **off** in final renders.
 - **Change only what the user asked for.** Keep everything they approved.
 
@@ -37,6 +39,8 @@ This is the working guide for a new Claude session. Read it together with `CLAUD
 | `animations-v3.jsx` | Engine: `CompositionStage`, `useComposition()` → `{ T, CUES }`, `Captions`, `Easing`, `clamp` |
 | `tweaks-panel.jsx` | Control panel: `useTweaks`, `TweakSelect`, `TweakToggle`, `TweakSlider` |
 | `rigs/bean-rig.jsx` | **The people rig** (`window.FU_BEAN`). See `rigs/BEAN.md` |
+| `rigs/fu-look.jsx` | **The toned look** (`window.FU_LOOK`): ramps, grades, `ToneBean` (the Bean toned and lit), `BeanBust`, `PostValue`. Load after `bean-rig.jsx`. See `LOOK.md` |
+| `Look Concepts.dc.html` + `look-concepts.jsx` | Toned-look sheets and scene mockups (`--set concept=lamp` etc.) |
 | `rigs/row-house.jsx` | Houses (`window.FU_HOUSE`): `RowHouse`, the curator's brick row house, with its door window left for the shot to draw; and `TerraceHouse`, the same style with parameters (width, storeys, roof: flat / pitched / gable / step, brick colour, door side), whose windows a shot fills through a `fill(win, i)` callback |
 | `open-engagers-concepts.jsx` | Round-1 ideation (concepts A–H). Also exports shared helpers as `window.FU_RIG`: `MOTION`, `osc`, `lerp`, `lerp2`, `cam`, `mix`, `C`, `hash`, `Card` (the red post), `Ripples`, `Table`, `Chair`, … |
 | `open-engagers.jsx` | **The current open engagers shot** (see §8) |
@@ -64,6 +68,7 @@ Load order in a page: `./animations-v3.jsx ./tweaks-panel.jsx ./rigs/bean-rig.js
 - **Red posts** (`Card`) are the crisis content. In the light they are filled; in the dark they show only as red outlines. They can flutter like moths (flap = squashing the card's width).
 - **Bean IK:** Bean takes joint angles. To put a hand on a point, solve the two-bone arm (upper 44, forearm 42) for shoulder angle and elbow bend; subtract the torso lean from the shoulder angle. `open-engagers.jsx` has `reachArm`, `armTo`, `headW`, `handW`, a seated pose `SIT` and a cowering blend `cower`.
 - **Children:** Bean at smaller scale (about 0.56–0.7 of an adult) with `headScale` 1.3.
+- **Toned scenes:** author the set in value (`v(0.4)`) inside `<g filter="url(#fuGradeBg-<ramp>)">` (out of focus) or `fuGradeFg-<ramp>` (posterized, for props and light pools); draw red posts as `PostValue` inside `fuGradeFg-red`. Give every `ToneBean` the same `lights` as the set: a lamp's bulb or a streetlight's lantern as `{ x, y, i, reach }`, evaluated from `T` so a swinging lamp's light swings with it. Lights are in the figure's own coordinates (inside the same camera transform).
 
 ## 6. Rendering and checking
 
@@ -90,7 +95,8 @@ node tools/render.mjs "<page>" --frames 0,120,300 --half --guide                
 
 1. **Curation / Topography** (`curation-topography.jsx`, `timing_1.srt`, 8.24 s). Finished. See `HANDOFF.md`.
 2. **Open engagers** (`open-engagers.jsx`, `timing_2.srt`, 22.48 s). In refinement. The user chose **variant 2**.
-3. **Vulnerability** (5.00 s, no SRT yet). Round 1, the city of apartment blocks (`vulnerability.jsx`, variant 1), was exported at 4K; the user then found it too busy. Round 2 is the alley (`vulnerability-alley.jsx`, §10).
+3. **The toned look** (October 2026, `LOOK.md`). The rig and mockups are done; the finished shots have not been moved to it yet. Next: lighting choices for mixed beats.
+4. **Vulnerability** (5.00 s, no SRT yet). Round 1, the city of apartment blocks (`vulnerability.jsx`, variant 1), was exported at 4K; the user then found it too busy. Round 2 is the alley (`vulnerability-alley.jsx`, §10).
 
 ## 8. Open engagers shot: what is approved
 
