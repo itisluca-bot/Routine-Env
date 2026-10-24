@@ -18,14 +18,16 @@
 // red ramp, outlines outside the pools, filled inside.
 const { W, H, OUT_W, OUT_H, MOTION, osc, lerp, lerp2, cam, mix, C, hash, jitter, Card } = window.FU_RIG;
 const { BeanFront, PAL } = window.FU_BEAN;
-const { RAMPS, LookDefs, ToneBean, PostValue, POST_KINDS } = window.FU_LOOK;
+const { RAMPS, LookDefs, ToneBean, ToneFilter, PostValue, POST_KINDS } = window.FU_LOOK;
 const RK = ['wd', 'open', 'cur'];
 const NEUTRAL = '#1a1d1c';                          // the night outside the light (the alley's, untinted)
 const TDARK = 0.6;                                  // toned: the unlit copy, muted brick, sharp enough for the bricks to read
 const GLOW_K = 1.5;                                 // toned: the glows' strength (the alley's AE); above 1 they wash their facade
 const GCOL = RK.map((r, i) => mix([PAL.wd, PAL.open, PAL.cur][i].body, RAMPS[r][5], 0.35));   // each glow, toward its ramp
-// hair per character (toned): the teal resident as the teal hero of Open Engagers (beanie)
-const HAIR = { 1: 'none', 2: 'beanie', 3: 'none', 5: 'long', 11: 'long', 12: 'none' };
+// hair per character (toned): of the teal pair, the smaller (the resident) long, the taller (the companion) beanie
+const HAIR = { 1: 'none', 2: 'long', 3: 'none', 5: 'beanie', 11: 'long', 12: 'none' };
+// the upper windows' curtains and blinds (toned), muted fabrics near the brick's values
+const FABRIC = ['#3d3129', '#2f3331', '#3a3330', '#34302c', '#2c2f33', '#40362c'];
 const LIGHT = '#e9f5ef';
 const GRP = [PAL.wd, PAL.open, PAL.cur];
 const GLOW = [PAL.wd.body, PAL.open.body, PAL.cur.body];
@@ -43,7 +45,7 @@ function Front({ k, id, ...p }) {
   const { c, arms = true, pose, lights, amb, ...q } = p;
   const ramp = RK[[PAL.wd, PAL.open, PAL.cur].indexOf(c)];
   return <ToneBean {...q} view="front" pose={arms ? pose : { ...pose, armL: null, armR: null }} ramp={ramp} hair={HAIR[id] || 'none'}
-    lights={lights} amb={amb ?? 0.28} bf={k.bf} amp={k.amp} id={k.uid * 1000 + id} />;
+    lights={lights} amb={amb ?? 0.28} hairId={`rsHair-${ramp}`} bf={k.bf} amp={k.amp} id={k.uid * 1000 + id} />;
 }
 // a grade from a set's own colours into a ramp (luminance × gain), as in vulnerability-alley.jsx. The region is the element's
 // own box, so it works inside the camera transform (LookDefs' grades cover a fixed 1920 × 1080 region; this street is wider)
@@ -103,7 +105,7 @@ function street(SP) {
 const lightAt = (S, x, y) => Math.max(0, ...S.lamps.map((lx) => Math.exp(-(((x - lx) / 260) ** 2) - (((y - 560) / 420) ** 2))));
 
 // one brick front, drawn lit or in the dark
-function HouseFront({ hs, lit, J, dk = DARK }) {
+function HouseFront({ hs, lit, J, dk = DARK, vary = false }) {
   const c = (col) => mix(col, C.bg, lit ? 0 : dk);
   const { x0, x1, dx, brick } = hs, top = -700;
   const mortar = c(mix(brick, '#000000', 0.3));
@@ -120,6 +122,36 @@ function HouseFront({ hs, lit, J, dk = DARK }) {
       <rect x={x - 12} y={y + h + 4} width={w + 24} height="12" fill={c(STONE)} />
     </g>
   );
+  // vary (toned): what is behind each unlit upper window, picked per window: bare glass with a faint sheen, curtains open or
+  // drawn, a roller shutter part or all the way down, a venetian blind, or a net curtain. Nothing is lit up there.
+  const upper = (x, y, w, h, n) => {
+    const r = (m) => hash(hs.j * 7.13 + n * 3.31 + m * 1.7 + 11);
+    const kind = ['glass', 'curtains', 'closed', 'shutter', 'blind', 'net', 'curtains', 'shutter'][Math.floor(r(1) * 8)];
+    const fab = FABRIC[Math.floor(r(2) * FABRIC.length)], fold = c(mix(fab, '#000000', 0.25));
+    const panel = (a, b, key) => (
+      <g key={key}>
+        <rect x={Math.min(a, b)} y={y} width={Math.abs(b - a)} height={h} fill={c(fab)} />
+        {[0.33, 0.66].map((f) => <line key={f} x1={lerp(a, b, f)} x2={lerp(a, b, f) + 2} y1={y} y2={y + h} stroke={fold} strokeWidth="3" />)}
+      </g>
+    );
+    const bar = <rect x={x + w / 2 - 2} y={y} width="4" height={h} fill={c(FRAME)} />;
+    if (kind === 'glass') return <g key={'v' + n}><path d={`M ${x + w * 0.15} ${y} L ${x + w * 0.45} ${y} L ${x + w * 0.1} ${y + h} L ${x} ${y + h} L ${x} ${y + h * 0.45} Z`} fill={c('#1d2321')} />{bar}<rect x={x} y={y + h * 0.45} width={w} height="4" fill={c(FRAME)} /></g>;
+    if (kind === 'curtains') { const o = 0.22 + 0.12 * r(3); return <g key={'v' + n}>{bar}{panel(x, x + w * o, 'a')}{panel(x + w, x + w * (1 - o), 'b')}</g>; }
+    if (kind === 'closed') return <g key={'v' + n}>{panel(x, x + w / 2 - 2, 'a')}{panel(x + w, x + w / 2 + 2, 'b')}</g>;
+    if (kind === 'shutter') {
+      const f = r(3) < 0.5 ? 1 : 0.4 + 0.3 * r(4);
+      return (
+        <g key={'v' + n}>
+          {bar}
+          <rect x={x} y={y} width={w} height={h * f} fill={c('#2b2f2d')} />
+          {Array.from({ length: Math.ceil((h * f) / 13) }, (_, j) => <line key={j} x1={x} x2={x + w} y1={y + h * f - j * 13} y2={y + h * f - j * 13} stroke={c('#1e2120')} strokeWidth="2" />)}
+          <rect x={x - 6} y={y - 12} width={w + 12} height="14" fill={c('#333836')} />
+        </g>
+      );
+    }
+    if (kind === 'blind') { const f = 0.5 + 0.5 * r(3); return <g key={'v' + n}>{Array.from({ length: Math.floor((h * f) / 11) }, (_, j) => <rect key={j} x={x} y={y + 2 + j * 11} width={w} height="8" fill={c('#4a4744')} />)}</g>; }
+    return <g key={'v' + n}>{bar}<rect x={x} y={y + h * 0.42} width={w} height={h * 0.58} fill={c('#55534e')} opacity="0.55" />{panel(x, x + w * 0.18, 'a')}</g>;   // net curtain
+  };
   return (
     <g transform={`translate(${J[0]} ${J[1]})`}>
       <rect x={x0} y={top} width={x1 - x0} height={FLR - top} fill={c(brick)} />
@@ -130,6 +162,8 @@ function HouseFront({ hs, lit, J, dk = DARK }) {
       <rect x={x0 - 4} y={top} width="8" height={FLR - top} fill={c(mix(brick, '#000000', 0.4))} />
       {win(dx - 65, UP.y, 130, UP.h, 'u0')}
       {hs.wins.map((wx, i) => win(wx, UP.y, WIN.w, UP.h, 'u' + (i + 1)))}
+      {vary && upper(dx - 65, UP.y, 130, UP.h, 0)}
+      {vary && hs.wins.map((wx, i) => upper(wx, UP.y, WIN.w, UP.h, i + 1))}
       {hs.wins.map((wx, i) => win(wx, WIN.y, WIN.w, WIN.h, 'g' + i))}
       <rect x={dx - DW / 2 - 18} y={FLR - DH - 72} width={DW + 36} height="18" fill={c(STONE)} />
       <rect x={dx - DW / 2 - 10} y={FLR - DH - 56} width={DW + 20} height={DH + 56} fill={c(FRAME)} />
@@ -228,10 +262,35 @@ function Street({ k, camMode }) {
     const fx = i === 1 ? dx + 18 : mir ? gx0 + DW - Math.min(gap * 0.5 + 4, DW / 2) : gx0 + Math.min(gap * 0.5 + 4, DW / 2);
     // toned: lit by the streetlights and, from behind and above, by their own room light
     const lights = [...lamps, { x: gx0 + DW / 2, y: top + 30, i: 0.5 * room[i], reach: 160 }];
-    let mate = null;
+    let mate = null, mateHand = null;
     if (i === 1) {   // teal's companion, just inside: right hand reaches up to teal's left shoulder
       const ms = 1.08, mx = dx - 38, sh = [(fx - 13 - mx) / ms, -174 / ms];
-      mate = <Front k={k} id={5} x={mx} y={FLR} s={ms} c={PAL.open} lights={lights} amb={0.24} pose={{ lean: 5 * hand + 1.5 * osc(T, 3.4, 0.4), tilt: 6 * hand + 2 * osc(T, 2.9), look: [0.7 * hand, 0.2], armR: { to: lerp2([26, -92], sh, hand) }, armL: [8, 6] }} />;
+      const mp = { lean: 5 * hand + 1.5 * osc(T, 3.4, 0.4), tilt: 6 * hand + 2 * osc(T, 2.9), look: [0.7 * hand, 0.2], armR: { to: lerp2([26, -92], sh, hand) }, armL: [8, 6] };
+      const mf = (key) => <Front key={key} k={k} id={5} x={mx} y={FLR} s={ms} c={PAL.open} lights={lights} amb={0.24} pose={mp} />;
+      mate = mf('m');
+      // toned: teal's long hair falls over the gap between the two, where the reaching arm showed before. The arm is drawn
+      // again over teal (the same pixels as the copy behind), masked to the arm and kept off teal's body, left arm and head
+      if (toned) {
+        const arm = window.FU_BEAN.frontRig(mp).armR.map((q) => [mx + ms * q[0], FLR + ms * q[1]]);
+        const seg = (a, b2, r) => { const l = Math.hypot(b2[0] - a[0], b2[1] - a[1]) || 1, n = [(-(b2[1] - a[1]) / l) * r, ((b2[0] - a[0]) / l) * r]; return `M ${a[0] + n[0]} ${a[1] + n[1]} L ${b2[0] + n[0]} ${b2[1] + n[1]} L ${b2[0] - n[0]} ${b2[1] - n[1]} L ${a[0] - n[0]} ${a[1] - n[1]} Z`; };
+        const TR = window.FU_BEAN.frontRig({ ...pose, armL: [8, 6], armR: [8, 6] });
+        const body = Array.from({ length: 40 }, (_, j) => {   // the toned Bean's front body (egg 40, 54, 28, 18), in the world
+          const t = (j / 40) * 2 * Math.PI, sn = Math.sin(t), q = TR.loc(Math.cos(t) * (28 - 5 * (sn + 1)), 40 + 54 * sn);
+          return [fx + q[0], FLR + q[1]];
+        });
+        mateHand = (
+          <g>
+            <mask id={`rsHand${k.uid}`} maskUnits="userSpaceOnUse" x={dx - 200} y={FLR - 400} width="400" height="400">
+              <path d={seg(arm[0], arm[1], 6) + ' ' + seg(arm[1], arm[2], 6)} fill="#fff" />
+              {arm.map((q, j) => <circle key={j} cx={q[0]} cy={q[1]} r={j === 2 ? 7 : 6} fill="#fff" />)}
+              <path d={'M ' + body.map((q) => q.join(' ')).join(' L ') + ' Z'} fill="#000" />
+              <path d={'M ' + TR.armL.map((q) => `${fx + q[0]} ${FLR + q[1]}`).join(' L ')} stroke="#000" strokeWidth="8" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+              <circle cx={fx + TR.Hc[0]} cy={FLR + TR.Hc[1]} r={TR.r} fill="#000" />
+            </mask>
+            <g mask={`url(#rsHand${k.uid})`}>{mf('h')}</g>
+          </g>
+        );
+      }
     }
     const wx = hs.wins[0], wy = WIN.y, ww = WIN.w, wh = WIN.h, gl = glow[i];
     const leafL = lightAt(S, dx, FLR - DH / 2);
@@ -247,6 +306,7 @@ function Street({ k, camMode }) {
         <g clipPath={`url(#rsDoor${k.uid}${i})`}>
           {mate}
           <Front k={k} id={i + 1} x={fx} y={FLR} s={1} pose={pose} c={GRP[i]} arms={i === 1} lights={lights} />
+          {mateHand}
         </g>
         <rect x={leafX} y={top} width={DW - gap} height={DH} fill={mix(hs.door, C.bg, dk * (1 - leafL))} />
         {[0, 1].map((r) => <rect key={r} x={leafX + 18} y={top + 26 + r * 128} width={Math.max(0, DW - gap - 36)} height="100" fill="none" stroke={mix(mix(hs.door, '#000000', 0.3), C.bg, dk * (1 - leafL))} strokeWidth="3" />)}
@@ -343,14 +403,14 @@ function Street({ k, camMode }) {
         )}
       </defs>
       <Pavement lit={false} S={S} dk={dk} />
-      {S.houses.map((hs) => <HouseFront key={hs.j} hs={hs} lit={false} J={J(hs.j + 10)} dk={dk} />)}
+      {S.houses.map((hs) => <HouseFront key={hs.j} hs={hs} lit={false} J={J(hs.j + 10)} dk={dk} vary={toned} />)}
       <g mask={`url(#rsLit${k.uid})`}>
         <Pavement lit S={S} />
-        {S.houses.map((hs) => <HouseFront key={hs.j} hs={hs} lit J={J(hs.j + 10)} />)}
+        {S.houses.map((hs) => <HouseFront key={hs.j} hs={hs} lit J={J(hs.j + 10)} vary={toned} />)}
       </g>
       {/* toned: each window's light on its own facade, in its ramp */}
       {glowWins.map(({ hs, ramp }) => (
-        <g key={hs.j} mask={`url(#rsGlowM${k.uid}.${hs.j})`}><g filter={`url(#rsGlowG-${ramp})`}><HouseFront hs={hs} lit J={J(hs.j + 10)} /></g></g>
+        <g key={hs.j} mask={`url(#rsGlowM${k.uid}.${hs.j})`}><g filter={`url(#rsGlowG-${ramp})`}><HouseFront hs={hs} lit J={J(hs.j + 10)} vary /></g></g>
       ))}
       {neighbours}
       {residents}
@@ -397,6 +457,8 @@ function Piece({ guide, boil, boilAmp, camMode, look = 'toned' }) {
       <svg width={W} height={H} style={{ position: 'absolute', left: 0, top: 0 }}>
         <rect width={W} height={H} fill={ground} />
         {toned && <LookDefs ramps={RK} bf={bf} amp={amp} />}
+        {/* hair: the rig's hair tone darkens toward its outline, which put a near-black rim round long hair; much less here */}
+        {toned && <defs>{RK.map((r) => <ToneFilter key={r} id={`rsHair-${r}`} ramp={r} edge={5} depth={0.12} grain={0} soft={1.2} bf={bf} amp={amp} />)}</defs>}
         <Street k={k} camMode={camMode} />
       </svg>
       {guide && (
