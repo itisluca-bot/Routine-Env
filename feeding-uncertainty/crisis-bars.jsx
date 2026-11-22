@@ -19,8 +19,9 @@
 //     ones still to come hold still. The curators' wiggle ends at "more" and stays; then a short, slight camera push
 //     toward the orange bean, anchored on them (the whole frame, type included).
 //
-// Values. The slider runs from 1 point below to 1 point above the average on the mean-centred exposure scale.
-// Curators: 21.7 + 4.91·x (Table 4 slope, Figure 3 level), 16.8 → 26.6. Withdrawal and open: `others` tweak (see SOFT). Everyone: the pooled synthetic sample, 25.9 − 0.24·x.
+// Values. The slider runs from 1.5 points below to 1.5 above the average on the mean-centred exposure scale (X_RANGE).
+// Curators: 21.7 + 4.91·x (Table 4 slope, Figure 3 level), 14.3 → 29.1: far below the others at "less", just above them
+// at "more". Withdrawal and open: `others` tweak (see SOFT). Everyone: the pooled synthetic sample, 25.9 − 0.24·x.
 // Every frame is a pure function of T.
 const { W, H, OUT_W, OUT_H, MOTION, osc, lerp, lerp2, mix, hash } = window.FU_RIG;
 const { RAMPS, v, LookDefs, ToneBean, PostValue, POST_KINDS, GradeFilter } = window.FU_LOOK;
@@ -33,9 +34,12 @@ const GROUPS = ['wd', 'open', 'cur'];
 const NAME = { wd: 'Withdrawal', open: 'Open Engagement', cur: 'Curation' };
 const TXT = { wd: '#8ea6b6', open: '#8cc2b8', cur: '#e0a165' };   // the group colours lifted for type on the dark
 const LINE = { wd: [25.7, -1.06], open: [28.2, -1.54], cur: [21.7, 4.91] }, POOL = [25.92, -0.24];
-// `others` = 'soft' (default, the user's call): withdrawal and open dip at about a quarter of their estimated slopes, so
-// they swing 7.5 and 10.5 px across the slider (orange 147 px); their slopes are small and not significant. 'data': the full estimates.
-const SOFT = { wd: -0.25, open: -0.35 };
+// `others` = 'soft' (default, the user's call): withdrawal and open dip at about a sixth of their estimated slopes, so
+// they swing 7.5 and 10.5 px across the slider (orange 221 px); their slopes are small and not significant. 'data': the full estimates.
+const SOFT = { wd: -0.1667, open: -0.2333 };
+// the slider's range: 1.5 points either side of average, so the curators start far below and end just above the others
+// (their line crosses withdrawal at x 0.67 and open at x 1.0, Figure 3); well inside the plotted range (−3.1 to 2.8)
+const X_RANGE = 1.5;
 const PW = 280, SIDE = 56, LID = 18, OVER = 10;             // plinth width, shadow side, lid height, lid overhang
 const SPACE = 440, CX = 930, BASE = 980, U = 15, FS = 1.3;
 const AX = 200, TOP = 150, XR = 1580;                       // y axis, baseline's right end
@@ -63,7 +67,7 @@ function exposure(T, B) {
   for (const [a, b, c] of B.wig) e += 0.5 * Math.sin(2 * Math.PI * c * glide(T, a, b, 0, 1));
   return e;
 }
-const valueAt = (line, e) => line[0] + line[1] * (2 * e - 1);
+const valueAt = (line, e) => line[0] + line[1] * X_RANGE * (2 * e - 1);
 
 function plinth(T, B, k, e, others) {
   const g = GROUPS[k];
@@ -262,7 +266,7 @@ function FUCrisisBars() {
       </CompositionStage>
       <TweaksPanel>
         <TweakSection label="Data" />
-        <TweakSelect label="Withdrawal and open" value={t.others || 'soft'} options={[{ value: 'soft', label: 'Small dips, softened (7.5 / 10.5 px)' }, { value: 'data', label: 'Their full estimates (30 / 43 px)' }, { value: 'flat', label: 'Hold still' }]} onChange={(x) => setTweak('others', x)} />
+        <TweakSelect label="Withdrawal and open" value={t.others || 'soft'} options={[{ value: 'soft', label: 'Small dips, softened (7.5 / 10.5 px)' }, { value: 'data', label: 'Their full estimates (48 / 69 px)' }, { value: 'flat', label: 'Hold still' }]} onChange={(x) => setTweak('others', x)} />
         <TweakSection label="Actions (from the triptych)" />
         <TweakSelect label="Withdrawal" value={t.wd} options={[{ value: 'turn', label: 'Turns their back' }, { value: 'shoo', label: 'Shoo, then turns away' }, { value: 'walk', label: 'Walks off' }]} onChange={(x) => setTweak('wd', x)} />
         <TweakSelect label="Curation" value={t.cur} options={[{ value: 'warm', label: 'Takes comfort posts, recoils from red' }, { value: 'red', label: 'All red' }]} onChange={(x) => setTweak('cur', x)} />

@@ -365,3 +365,11 @@ The user: the slider is easy to miss, make it thicker and more dominant; halve t
 - **Fader:** track 24 px (was 9), red fill `RED[4]`, knob radius 36 with an 8 px `RED[3]` ring, title 34 px and "more" / "less" 28 px in white. At x 1715 (was 1760), so the push at the end does not crop its title.
 - **Dips** (`soft`, default): −0.25 and −0.35 per point, so withdrawal and open swing 7.5 and 10.5 px across the slider (orange 147 px). About a quarter of their estimated slopes (−1.06, −1.54), which are not significant; `data` keeps the estimates.
 
+### Round 8 (the curators end on top, as in the paper's figure)
+
+The user: at maximum exposure teal was still the highest, which does not match the paper's graph, where curation starts much lower and ends slightly higher.
+
+- **Why:** at ±1 point the slider ended where the curators' line crosses open engagement's (x 1.0 in Figure 3), and the softened dips had lifted teal a little at that end.
+- **Range:** the slider now spans 1.5 points either side of average (`X_RANGE`), well inside Figure 3's plotted range (−3.1 to 2.8). Curators 14.3 → 29.1: far below at "less", just above both others at "more" (teal 27.9, blue 25.4 with the softened dips; 25.9 and 24.1 with the full estimates). Orange now swings 221 px (was 147).
+- **Softened dips** rescaled to keep 7.5 and 10.5 px over the wider range: −0.167 and −0.233 per point (about a sixth of the estimates).
+
