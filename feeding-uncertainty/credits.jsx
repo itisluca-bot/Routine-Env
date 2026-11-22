@@ -1,7 +1,7 @@
 // Feeding Uncertainty — end credits (12 s). The user chose concept H's look from round 1 (credits-concepts.jsx):
 // the opening title's world (near-black, a faint grid, Inter Light in widely spaced caps, the red dot over the Y),
 // made simple and clean: the dot sits still over the Y as in the opening, the names are not in the group colours,
-// and every line just fades in on its beat. On the right, the funders: NWO (Open Competition SSH-XS) and the RUG
+// and every line just fades in on its beat (the three names together). On the right, the funders: NWO (Open Competition SSH-XS) and the RUG
 // Faculty of Arts (Impact Grant), each under a label: the first level with the first row's label; the second placed so
 // the logo's "faculty of arts" line sits on the disclaimer's last line. The card is centred vertically (equal margins top and bottom) with even gaps between
 // blocks; labels and the disclaimer are bold enough to read. No camera move: a push this slow makes the type step from
@@ -20,7 +20,7 @@ const LABEL_Y = [348, 488, 628], NAME_Y = LABEL_Y.map((y) => y + 56);
 // the funders' column: a label level with a row label on the left, the logo under it. Logos are alpha-only PNGs,
 // tinted in the page: assets/rug-arts-logo.png from the user's black-on-white file, and assets/nwo-logo.png, the user's
 // NWO logo exactly as given: a white sheet with the emblem and "NWO" cut out (the cuts at the sheet's edges are the
-// logo's design), with black behind it so the cut-outs read black.
+// logo's design); its cut-outs show the dark red behind it.
 const RULE = { y: 810, w: 300 }, NOTE_Y = [858, 893];
 const FX = 1340;
 const ARTS_W = 220, ARTS_BASE = 1049 / 1000;   // the "faculty of arts" baseline, in logo widths from its top
@@ -44,7 +44,8 @@ const DOT = { x: X + TITLE.len - 25 + 5, y: TITLE.y - 37, r: 6.2 };
 // carry a slow travelling wave and the 8 fps boil, and slide in from the right at the start. The dot is in the same red
 // family, a step lighter so it reads on the near-black
 const RED = { outer: '#a32e11', inner: '#6e1d0c', dot: '#d03c1e', label: '#efc3b0' };   // label: the funders' labels, on the red
-const EDGE = [[610, 1110], [1000, 560], [1080, 170], [1990, 120]];
+// lifted at the top so the dark band clears the funders' column (labels and logos) with a margin
+const EDGE = [[650, 1110], [890, 560], [980, 60], [1990, 10]];
 const EDGE_PTS = (() => {
   const pts = [];
   for (let i = 0; i <= 120; i++) {
@@ -95,7 +96,7 @@ function CreditsPiece({ guide, boil, boilAmp, logo }) {
           </Arrive>
           <circle cx={DOT.x} cy={DOT.y} r={DOT.r + (hash(bf * 2.3 + 99) - 0.5) * amp * 0.3} fill={RED.dot} opacity={ap(T, b.title + 0.9, 0.6)} />
           {ROWS.map((r, i) => (
-            <Arrive key={i} T={T} t0={b.rows[i]}>
+            <Arrive key={i} T={T} t0={b.rows[0]}>
               <Txt t={r.label} x={X} y={LABEL_Y[i]} st={ST.label} fill={LABEL} />
               <Txt t={r.name} x={X} y={NAME_Y[i]} st={ST.name} fill={OPEN_TXT} />
             </Arrive>
@@ -103,7 +104,6 @@ function CreditsPiece({ guide, boil, boilAmp, logo }) {
           {FUNDERS.map((f, i) => (
             <Arrive key={i} T={T} t0={b.logo + 0.7 * i} d={1.1} px={FX}>
               <Txt t={f.label} x={FX} y={f.y} st={ST.label} fill={RED.label} />
-              {f.nwo && <rect x={FX} y={f.y + 18} width={f.w} height={f.w * f.aspect} fill="#000" />}
               <Mark src={f.src} x={FX} y={f.y + 18} w={f.w} aspect={f.aspect} color={f.rug && logo === 'red' ? LOGO_C : OPEN_TXT} id={'crMark' + i} />
             </Arrive>
           ))}
