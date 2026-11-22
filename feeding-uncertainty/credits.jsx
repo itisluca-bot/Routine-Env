@@ -1,10 +1,12 @@
 // Feeding Uncertainty — end credits (12 s). The user chose concept H's look from round 1 (credits-concepts.jsx):
 // the opening title's world (near-black, a faint grid, Inter Light in widely spaced caps, the red dot over the Y),
 // made simple and clean: the dot sits still over the Y as in the opening, the names are not in the group colours,
-// and every line just fades in on its beat. No camera move: a push this slow makes the type step from pixel to
+// and every line just fades in on its beat. On the right, the funders: the RUG Faculty of Arts (Impact Grant) and
+// NWO (Open Competition SSH-XS), each under a label: the first level with the first row's label, the second level with
+// the last name's baseline. No camera move: a push this slow makes the type step from pixel to
 // pixel; the rule and the dot boil at 8 fps instead. The logo is off-white (`logo` tweak: `red` for the RUG red).
 const { W, H, OUT_W, OUT_H, MOTION, hash } = window.FU_RIG;
-const { TYPES, Txt, Logo, ROWS, NOTE, beats, ap, brect, OPEN_BG, OPEN_TXT, OPEN_DOT, LOGO_C } = window.FU_CREDITS;
+const { TYPES, Txt, ROWS, NOTE, beats, ap, brect, OPEN_BG, OPEN_TXT, OPEN_DOT, LOGO_C } = window.FU_CREDITS;
 const { glide } = MOTION;
 const LABEL = '#8a8a88', MUTE = '#7c7c7a';
 const ST = TYPES.title;
@@ -13,7 +15,21 @@ const ST = TYPES.title;
 const X = 180;
 const TITLE = { y: 324, len: 960 };
 const ROW_Y = [0, 1, 2].map((i) => 415 + 135 * i);   // label baseline +26, name baseline +82
-const LOGO = { x: W - 180 - 380, y: 421, w: 380 };
+// the funders' column: a label level with a row label on the left, the logo under it. Logos are alpha-only PNGs
+// (assets/rug-arts-logo.png from the user's black-on-white file; assets/nwo-logo.png from a white sheet with the logo
+// cut out, cropped tight in the source, so the emblem's outer ring is redrawn and the canvas padded), tinted in the page
+const FX = 1340;
+const FUNDERS = [
+  { label: 'IMPACT GRANT', y: ROW_Y[0] + 26, src: 'assets/rug-arts-logo.png', w: 230, aspect: 1070 / 1000, rug: true },
+  { label: 'NWO OPEN COMPETITION SSH-XS', y: ROW_Y[2] + 82, src: 'assets/nwo-logo.png', w: 110, aspect: 987 / 639 },
+];
+// an alpha-only logo filled with one colour
+const Mark = ({ src, x, y, w, aspect, color, id }) => (
+  <g>
+    <defs><filter id={id} x="0" y="0" width="1" height="1" colorInterpolationFilters="sRGB"><feFlood floodColor={color} /><feComposite in2="SourceAlpha" operator="in" /></filter></defs>
+    <image href={src} x={x} y={y} width={w} height={w * aspect} filter={`url(#${id})`} />
+  </g>
+);
 const RULE = { y: 890, w: 300 }, NOTE_Y = [939, 974];
 // the dot as in the opening: just right of the Y's right arm, level with the cap height. textLength includes the
 // spacing after the last letter (0.5 em), so the Y ends 25 px before X + len
@@ -47,9 +63,12 @@ function CreditsPiece({ guide, boil, boilAmp, logo }) {
               <Txt t={r.name} x={X} y={ROW_Y[i] + 82} st={ST.name} fill={OPEN_TXT} />
             </Arrive>
           ))}
-          <Arrive T={T} t0={b.logo} d={1.2} rise={0}>
-            <Logo L={LOGO} color={logo === 'red' ? LOGO_C : OPEN_TXT} id="crLogo" />
-          </Arrive>
+          {FUNDERS.map((f, i) => (
+            <Arrive key={i} T={T} t0={b.logo + 0.7 * i} d={1.1}>
+              <Txt t={f.label} x={FX} y={f.y} st={ST.label} fill={LABEL} />
+              <Mark src={f.src} x={FX} y={f.y + 18} w={f.w} aspect={f.aspect} color={f.rug && logo === 'red' ? LOGO_C : OPEN_TXT} id={'crMark' + i} />
+            </Arrive>
+          ))}
           <Arrive T={T} t0={b.note} rise={0}>
             <path d={brect(X, RULE.y - 0.75, RULE.w, 1.5, bf, 30, amp * 0.4)} fill={MUTE} />
           </Arrive>
@@ -74,7 +93,7 @@ function FUCredits() {
       </CompositionStage>
       <TweaksPanel>
         <TweakSection label="Credits" />
-        <TweakRadio label="Logo" value={t.logo} options={[{ value: 'white', label: 'Off-white' }, { value: 'red', label: 'RUG red' }]} onChange={(x) => setTweak('logo', x)} />
+        <TweakRadio label="Logo" value={t.logo} options={[{ value: 'white', label: 'Off-white' }, { value: 'red', label: 'RUG red (Faculty of Arts logo)' }]} onChange={(x) => setTweak('logo', x)} />
         <TweakSection label="Preview" />
         <TweakToggle label="Label" value={t.referenceOverlay} onChange={(x) => setTweak('referenceOverlay', x)} />
         <TweakToggle label="Line boil (8 fps)" value={t.lineBoil} onChange={(x) => setTweak('lineBoil', x)} />

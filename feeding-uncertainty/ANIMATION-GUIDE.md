@@ -52,6 +52,7 @@ This is the working guide for a new Claude session. Read it together with `CLAUD
 | `Resistance.dc.html` + `resistance.jsx` | **The resistance shot** (§13). `--set camera=track` (chosen), `look=toned` (default) or `old` |
 | `Three Groups Concepts.dc.html` + `three-groups-concepts.jsx` | Round-1 layout concepts for the three groups side by side (§16) |
 | `Three Groups.dc.html` + `three-groups.jsx` | **The three groups shot** (concept F, §17). `--set wd=turn|walk|blind|shoo,cur=warm|red`; `view=wd` shows the withdrawal options side by side |
+| `Crisis Bars.dc.html` + `crisis-bars.jsx` | **The crisis finding as a bar chart** (§18), replacing the crisis scatter. Loads `three-groups.jsx` for the characters' actions (`window.FU_THREE_GROUPS`). Needs `fonts/Futura-Bold.ttf` |
 | `tools/render.mjs` | Headless renderer (§6) |
 
 Load order in a page: `./animations-v3.jsx ./tweaks-panel.jsx ./rigs/bean-rig.jsx ./open-engagers-concepts.jsx ./your-shot.jsx`.
@@ -109,6 +110,7 @@ node tools/render.mjs "<page>" --frames 0,120,300 --half --guide                
 6. **Resistance** (`resistance.jsx`, `timing_4.srt`, not in the repo; 10.00 s). Built in another session; moved to the toned look in October 2026 (§13).
 7. **End credits** (12.00 s, silent for now). Round-1 concepts A–H (§14); the user chose H's look, made simple and clean (§15).
 8. **The three groups side by side** (7.00 s, no SRT yet). Round-1 layout concepts A–H (§16); the user chose **F · Triptych** (§17).
+9. **The crisis finding** (16.00 s, the crisis scatter's v6 narration timing). The scatter (a separate Python handoff) was found too hard to read; replaced by a bar chart with the triptych's characters (§18).
 4. **Vulnerability** (5.00 s, no SRT yet). Round 1, the city of apartment blocks (`vulnerability.jsx`, variant 1), was exported at 4K; the user then found it too busy. Round 2 is the alley (`vulnerability-alley.jsx`, §10).
 
 ## 8. Open engagers shot: what is approved
@@ -229,6 +231,7 @@ Line: "Coping is a form of resistance. The question is, what do people have to r
 - **Motion:** every line fades in on its beat with a small rise (title, then the three names 1.25 s apart, the logo, the rule, the disclaimer). No camera move: a 2% push made the type step from pixel to pixel; the rule and the dot boil at 8 fps instead.
 - **Render:** `node tools/render.mjs "Credits.dc.html"` (4K PNG sequence; add `--set logo=red` for the red logo).
 - **Exported at 4K** (October 2026): white logo, PNG sequence and ProRes 4444, pop check clean (the only flagged step is the faint grid's fade-in moving one 8-bit grey level).
+- **Round 3 (November 2026):** the research assistant's name is **Anastasija Zareckytė** (ė). The logo beat is now the funders' column on the right: label `IMPACT GRANT` level with the first row's label, the **RUG Faculty of Arts** logo under it (230 wide, `assets/rug-arts-logo.png`, made alpha-only from the user's black-on-white file); then, 0.7 s later, label `NWO OPEN COMPETITION SSH-XS` level with the last name's baseline and the **NWO** logo under it (110 wide, `assets/nwo-logo.png`). The user's NWO file was a white sheet with the logo cut out, cropped tight: the emblem was clipped to its circle (centre 292, 306.5; ring 280.2–310.6 px in the source) with the outer ring redrawn on a padded canvas. The O of the wordmark is still cut by about 4 source px on its right and bottom (under a pixel on screen); replace the file if an official NWO logo turns up. The `logo` tweak (`red`) now only tints the Faculty of Arts logo. Re-exported at 4K.
 
 
 ## 16. The three groups side by side: round 1 (layout concepts)
@@ -263,3 +266,16 @@ Render one: `node tools/render.mjs "Three Groups Concepts.dc.html" --set concept
 - **Labels and hair (user notes):** the labels are there the whole time, as a heading at the top of each panel (Inter Medium caps, 40 px, spacing 0.2 em, baseline y 196), centred on the panel (`Lbl` moves the centre right by half the letter spacing, which SVG also adds after the last letter), drawn behind the figure and the cards. Round 2 had them thin, small and floating just above the heads, which left the top of the panels empty. Hair: blue long, teal beanie, orange none.
 - **Withdrawal chosen:** option 1, `turn`.
 - **Set:** three panels with 6 px dark gutters, each its group's ramp (wall, a window light with blinds / bare / half-curtained, floor), out of focus; figures `ToneBean` at 1.9, lit by their window; labels in each ramp's palest tone. A 3% push over the shot.
+
+## 18. The crisis finding as a bar chart
+
+`Crisis Bars.dc.html` + `crisis-bars.jsx`. Replaces the crisis scatter (the separate Python handoff `crisis_scatter_handoff_v6`: a 644-dot scatter that splits into three panels). Feedback: too complicated for a general audience. The user asked for a simple bar graph, made playful with the beanoids from the triptych (§17) in their actions, and for the y axis to be relabelled: it is the **likelihood of voting for a populist radical party**, not "political extremism".
+
+- **Narration (v6 timing, 16.00 s):** Sample 0–4.00 "Across the sample, crisis exposure barely had any effect"; Closer 4.00–5.12 "but then we looked closer, group by group"; Withdrawal 5.12–6.32; Open 6.32–8.00 ("and there it was"); Curators 8.00–15.76 "the curators!"; Hold to 16.00.
+- **Chart:** two clusters, **Less crisis exposure** and **More crisis exposure**, three bars each (withdrawal, open engagement, curation, in the group colours). Bars start at zero; faint gridlines, no numbers. The y axis is an up arrow with the title "Likelihood of voting for a populist radical party". Futura Bold (as the scatter), from the user's zip (`source/fonts/Futura-Bold.ttf`) into `fonts/` (git-ignored); falls back to Jost / Inter.
+- **Values:** "less" and "more" are one point below and above the average on the mean-centred exposure scale (Table 4 slopes, Figure 3 levels at average exposure): withdrawal 26.8 → 24.6, open 29.7 → 26.7, curators 16.8 → 26.6; everyone (the pooled synthetic sample, slope −0.24) 26.2 → 25.7. The curators' "more" bar ends level with the others: the finding is the climb, not a gap.
+- **Beats:** the six figures drop onto the floor; two grey "Everyone" bars rise with three figures on each, nearly level, while red posts circle over the "more" side. On "looked closer" each grey bar splits into three, the posts fly off and the bars sink to the floor. Each group's two bars then rise in its colour on its beat, carrying its two figures; on "the curators!" their "less" bar rises a little, then the "more" bar climbs, slower and higher; the other groups dim (bars and figures to 55%).
+- **Characters:** the triptych's `ToneBean`s (hair follows the triptych; now blue long, teal beanie, orange none). On the "less" side they stand calm (one red post drifts slowly across the top: less exposure is not none). On the "more" side they do their triptych action, imported live from `three-groups.jsx` so they stay as designed there: blue turns their back (`wd` tweak: `turn`, `shoo`, `walk`), teal raises the loupe, orange takes comfort posts and flinches from a red one (`cur`: `warm`, `red`).
+- **Not carried over from the scatter:** no "exposure slider" (bars compare people, never one person changing), and the dots are gone, so the synthetic-data note no longer applies to this shot. Still open from the handoff: confirm with Qinfeng that the outcome measure is the likelihood of voting for a populist radical party (the paper's pages call it "political extremism").
+- **Render:** `node tools/render.mjs "Crisis Bars.dc.html"` (4K PNG sequence, about 0.25 s a frame at half size).
+
