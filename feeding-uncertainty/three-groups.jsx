@@ -200,7 +200,7 @@ function curation(T, t0, mode) {
 // letter-spacing also follows the last letter, so the centre moves right by half of it to sit truly in the middle
 function Lbl({ x, y, text, size = 24, fill, a = 1, dy = 0, spacing = 0.32, weight = 300 }) {
   if (a <= 0.01) return null;
-  return <text x={x + (size * spacing) / 2} y={y + dy} fill={fill} opacity={a} fontFamily="Inter, sans-serif" fontWeight={weight} fontSize={size} letterSpacing={size * spacing} textAnchor="middle">{text.toUpperCase()}</text>;
+  return <text x={x + (size * spacing) / 2} y={y + dy} fill={fill} opacity={a} fontFamily="Inter, sans-serif" textRendering="geometricPrecision" fontWeight={weight} fontSize={size} letterSpacing={size * spacing} textAnchor="middle">{text.toUpperCase()}</text>;
 }
 function deco(i, a) {
   const [wx, wy] = WIN(i);
@@ -253,7 +253,8 @@ function Panel({ f, ba, CAM, lab }) {
     </g>
   ), 'deco'));
   // the label: there the whole time, at the top of the panel, behind the figure and the cards
-  out.push(lay(null, <Lbl x={X0[i] + PW / 2} y={LABEL_Y} size={LABEL_SIZE} spacing={0.2} weight={500} text={LABEL[g]} fill={RAMPS[g][6]} a={intro} dy={12 * (1 - intro)} />, 'label'));
+  // outside the camera push: type scaled by a slow push steps from pixel to pixel (a periodic jitter), so it stays still
+  out.push(<g key="label" clipPath={`url(#tgPanel${i})`}><Lbl x={X0[i] + PW / 2} y={LABEL_Y} size={LABEL_SIZE} spacing={0.2} weight={500} text={LABEL[g]} fill={RAMPS[g][6]} a={intro} dy={12 * (1 - intro)} /></g>);
   out.push(lay('fuGradeFg-' + g, <ellipse cx={X0[i] + 280} cy="925" rx="230" ry="30" fill="url(#fuPool)" opacity={0.6 * L} />, 'pool'));
   if (a.cord) out.push(lay('fuGradeFg-' + g, <g><line x1={a.cord.x} y1={wy - 108} x2={a.cord.x} y2={a.cord.y1} stroke={v(0.5)} strokeWidth="2.5" /><circle cx={a.cord.x} cy={a.cord.y1 + 6} r="7" fill={v(0.7)} /></g>, 'cord'));
   out.push(<g key="fig" transform={CAM}>{clip(<ToneBean {...ba} id={i + 1} x={f.x} y={f.y} s={f.s} dir={f.dir} pose={a.pose} ramp={g} hair={HAIR[g]} lights={f.lights} />)}</g>);
