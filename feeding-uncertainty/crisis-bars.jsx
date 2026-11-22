@@ -82,7 +82,7 @@ function BoilLine({ x1, y1, x2, y2, stroke, w, bf, amp, seed, op = 1 }) {
 }
 function Txt({ x, y, size, fill, a = 1, dy = 0, anchor = 'middle', rot, spacing = 0, children }) {
   if (a <= 0.01) return null;
-  return <text x={x} y={y + dy} fill={fill} opacity={a} fontFamily={FONT} fontWeight={700} fontSize={size} letterSpacing={spacing} textAnchor={anchor} transform={rot ? `rotate(${rot} ${x} ${y + dy})` : undefined}>{children}</text>;
+  return <text x={x} y={y + dy} fill={fill} opacity={a} fontFamily={FONT} textRendering="geometricPrecision" fontWeight={700} fontSize={size} letterSpacing={spacing} textAnchor={anchor} transform={rot ? `rotate(${rot} ${x} ${y + dy})` : undefined}>{children}</text>;
 }
 const pool = (cx, cy, rx, ry, op = 1) => <ellipse cx={cx} cy={cy} rx={rx} ry={ry} fill="url(#fuPool)" opacity={op} />;
 const cone = (x, y0, w0, y1, w1, op = 1) => <path d={`M ${x - w0} ${y0} L ${x + w0} ${y0} L ${x + w1} ${y1} L ${x - w1} ${y1} Z`} fill="url(#cbCone)" opacity={op} />;
@@ -167,10 +167,14 @@ function Piece({ guide, boil, boilAmp, wd, cur, others }) {
   const haze = (p) => <g>{pool(p.x, p.top - 220, 250, 320, 0.5 * lightOn)}{cone(p.x, -20, 26, p.top, 120, 0.7 * lightOn)}{pool(p.x, BASE + 6, 230, 28, 0.6 * lightOn)}</g>;
   // the grey plinth's inner shadow sides appear as it splits; the right-hand one is always there
   const sideOf = (p) => (p.k === 2 ? 1 : p.split);
+  // plaques are drawn outside the push, at their pushed place but never scaled: type scaled by a slow push steps from
+  // pixel to pixel and jitters sideways
+  const px4k = (q) => Math.round(q * 2) / 2;   // whole pixels of the 4K frame: fractional type positions jitter
+  const toS = (x, y) => [anchor[0] + (x - anchor[0]) * z, anchor[1] + (y - anchor[1]) * z];
   const plaque = (p, text, R, a) => {
     if (a <= 0.01) return null;
-    const w = Math.max(130, text.length * 11.5 + 34), x = p.x - 14, y = Math.min(p.top + 46, BASE - 60);
-    return <g key={text + p.k} opacity={a}><rect x={x - w / 2} y={y} width={w} height="36" fill={R[6]} /><Txt x={x} y={y + 24} size={15} fill={R[0]} spacing={1.6}>{text.toUpperCase()}</Txt></g>;
+    const w = Math.max(130, text.length * 11.5 + 34), [x, y] = toS(p.x - 14, Math.min(p.top + 46, BASE - 60));
+    return <g key={text + p.k} opacity={a}><rect x={x - (w * z) / 2} y={y} width={w * z} height={36 * z} fill={R[6]} /><Txt x={px4k(x)} y={px4k(y + 18 * z + 6)} size={15} fill={R[0]} spacing={1.6}>{text.toUpperCase()}</Txt></g>;
   };
   const everyoneA = glide(T, 0.9, 1.4, 0, 1) * (1 - glide(T, B.tS, B.tS + 0.3, 0, 1));
 
@@ -198,13 +202,6 @@ function Piece({ guide, boil, boilAmp, wd, cur, others }) {
         {ps.map((p) => p.tint < 0.99 && <g key={'nh' + p.k} filter="url(#cbNeutBg)" opacity={1 - p.tint}>{haze(p)}</g>)}
         {ps.map((p) => p.tint > 0.01 && <g key={'gh' + p.k} filter={`url(#fuGradeBg-${p.g})`} opacity={p.tint * dimOf(p.g)}>{haze(p)}</g>)}
 
-        {/* y axis */}
-        <g opacity={ui}>
-          <BoilLine x1={AX} y1={BASE - 10} x2={AX} y2={TOP + 14} stroke={MUTED} w={3.5} bf={bf} amp={amp} seed={2} />
-          <path d={`M ${AX - 13} ${TOP + 22} L ${AX} ${TOP} L ${AX + 13} ${TOP + 22} Z`} fill={MUTED} />
-          <Txt x={AX - 34} y={(BASE + TOP) / 2} size={24} fill={INK} rot={-90}>Likelihood of voting for a populist radical party</Txt>
-        </g>
-
         {/* plinths and floor pools: grey (one shape until the split), then each in its group's ramp */}
         {ps.some((p) => p.tint < 0.99) && (
           <g filter="url(#cbNeutFg)">
@@ -212,10 +209,6 @@ function Piece({ guide, boil, boilAmp, wd, cur, others }) {
           </g>
         )}
         {ps.map((p) => p.tint > 0.01 && <g key={'gp' + p.k} filter={`url(#fuGradeFg-${p.g})`} opacity={p.tint * dimOf(p.g)}><PlinthValue x={p.x} top={p.top} side={sideOf(p)} /></g>)}
-        {/* plaques */}
-        {plaque({ x: CX + 14, top: ps[1].top, k: 9 }, 'everyone', NEUT, everyoneA)}
-        {ps.map((p) => plaque(p, NAME[p.g], RAMPS[p.g], glide(T, B.reveal[p.g] + 0.1, B.reveal[p.g] + 0.5, 0, 1) * dimOf(p.g)))}
-
         {/* the posts that come with exposure */}
         <g filter="url(#fuGradeFg-red)">{posts.map((q, k) => <PostValue key={k} x={q.p[0]} y={q.p[1]} s={q.s} rot={q.rot} flip={q.flip} kind={q.kind} op={q.op} />)}</g>
 
@@ -225,6 +218,19 @@ function Piece({ guide, boil, boilAmp, wd, cur, others }) {
         <g filter="url(#cbWarm)">{figs.flatMap((f) => f.a.cards.filter((c) => !c.red).map((c, k) => card(f, c, `${f.n}-${k}`)))}</g>
         {loupeOf && loupeOf.a.ls > 0.02 && <Loupe f={loupeOf} />}
 
+        </g>
+        {/* the axis and the slider stay outside the push: scaled type steps from pixel to pixel */}
+        {/* plaques */}
+        {plaque({ x: CX + 14, top: ps[1].top, k: 9 }, 'everyone', NEUT, everyoneA)}
+        {ps.map((p) => plaque(p, NAME[p.g], RAMPS[p.g], glide(T, B.reveal[p.g] + 0.1, B.reveal[p.g] + 0.5, 0, 1) * dimOf(p.g)))}
+
+        {/* y axis */}
+        <g opacity={ui}>
+          <BoilLine x1={AX} y1={BASE - 10} x2={AX} y2={TOP + 14} stroke={MUTED} w={3.5} bf={bf} amp={amp} seed={2} />
+          <path d={`M ${AX - 13} ${TOP + 22} L ${AX} ${TOP} L ${AX + 13} ${TOP + 22} Z`} fill={MUTED} />
+          <Txt x={AX - 34} y={(BASE + TOP) / 2} size={24} fill={INK} rot={-90}>Likelihood of voting for a populist radical party</Txt>
+        </g>
+
         {/* the exposure slider */}
         <g opacity={ui}>
           <BoilLine x1={SL.x0} y1={SL.y} x2={SL.x1} y2={SL.y} stroke={NEUT[4]} w={8} bf={bf} amp={amp} seed={3} />
@@ -233,7 +239,6 @@ function Piece({ guide, boil, boilAmp, wd, cur, others }) {
           <Txt x={SL.x0 - 26} y={SL.y + 8} size={22} fill={MUTED} anchor="end">less</Txt>
           <Txt x={SL.x1 + 26} y={SL.y + 8} size={22} fill={MUTED} anchor="start">more</Txt>
           <Txt x={(SL.x0 + SL.x1) / 2} y={SL.y + 62} size={26} fill={INK}>Crisis exposure on social media</Txt>
-        </g>
         </g>
       </svg>
       {guide && <div style={{ position: 'absolute', left: 40, top: 28, font: '600 28px Inter, sans-serif', color: '#fff', textShadow: '0 1px 12px rgba(0,0,0,0.8)' }}>{`Crisis bars · others ${others} · ${T.toFixed(2)} s`}</div>}
