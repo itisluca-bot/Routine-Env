@@ -8,7 +8,9 @@
 // blocks; labels and the disclaimer are bold enough to read. No camera move: a push this slow makes the type step from
 // pixel to pixel; the rule and the dot boil at 8 fps instead. The logo is off-white (`logo` tweak: `red` for the RUG red).
 const { W, H, OUT_W, OUT_H, MOTION, hash } = window.FU_RIG;
-const { TYPES, Txt, ROWS, NOTE, beats, ap, brect, OPEN_BG, OPEN_TXT, LOGO_C } = window.FU_CREDITS;
+const { TYPES, Txt, ROWS: ROWS_ALL, NOTE, beats, ap, brect, OPEN_BG, OPEN_TXT, LOGO_C } = window.FU_CREDITS;
+// the order on the card (and of their arrival): researcher, research assistant, then a film by
+const ROWS = [1, 2, 0].map((i) => ROWS_ALL[i]);
 const { glide } = MOTION;
 const LABEL = '#a8a8a5', MUTE = '#9a9a97';
 const ST = { ...TYPES.title, label: { ...TYPES.title.label, weight: 700 }, note: { ...TYPES.title.note, weight: 400 } };
