@@ -171,29 +171,35 @@ function Shot({ k, oneThumb }) {
       {hs > 0.01 && hop > 0 && <Heart x={DT[0]} y={hy} s={hs} op={hop} val={0.36} rim={0.97} />}
     </g>
   );
-  const tipW = toWorld(P, tip), tipLW = toWorld(P, tipL);
+  // The hands are drawn in the phone's own frame (a phone at rest at HAND_AT), placed by one transform. The tone
+  // filter's noise textures sit in that frame, so they move with the hand: the bands no longer crawl as the phone
+  // sways. Lights and tips are given in the same frame.
+  const PH = { ...P, x: HAND_AT[0], y: HAND_AT[1], rot: 0 };
+  const handT = `translate(${P.x.toFixed(2)} ${P.y.toFixed(2)}) rotate(${P.rot.toFixed(3)}) translate(${-HAND_AT[0]} ${-HAND_AT[1]})`;
+  const tipW = toWorld(PH, tip), tipLW = toWorld(PH, tipL);
   const leftIn = `translate(0 ${(520 * (1 - twoIn)).toFixed(1)})`;
   const roomRamp = mixRamp('cur', 'red', 0.2 * redness), handRamp = mixRamp('cur', 'red', 0.22 * redness);
   return (
     <g transform={cam(960, 548, 1 + 0.05 * g01(T, 0, 9.16))}>
-      <PhoneDefs light={[P.x, P.y]} reach={640 + 140 * b} handRamp={handRamp} bf={bf} amp={amp} />
+      <PhoneDefs light={HAND_AT} reach={640 + 140 * b} handRamp={handRamp} bf={bf} amp={amp} handAmp={amp * 0.35} />
       <defs>
         <GradeFilter id="cpRoom" ramp={roomRamp} blur={20} />
         <radialGradient id="cpGlow"><stop offset="0" stopColor="#fff" stopOpacity="0.6" /><stop offset="0.5" stopColor="#fff" stopOpacity="0.2" /><stop offset="1" stopColor="#fff" stopOpacity="0" /></radialGradient>
       </defs>
       <g filter="url(#cpRoom)"><Bedroom at={[P.x, P.y]} glow={0.5 + 0.5 * b} r={590 + 130 * b} /></g>
-      <g filter="url(#phTone)">
-        <Mitt P={P} tip={tipW} layer="back" grip={grip} />
-        {twoIn > 0 && <g transform={leftIn}><Mitt P={P} tip={tipLW} side={-1} layer="back" grip={GRIP_TYPE} /></g>}
-      </g>
+      <g transform={handT}><g filter="url(#phTone)">
+        <Mitt P={PH} tip={tipW} layer="back" grip={grip} />
+        {twoIn > 0 && <g transform={leftIn}><Mitt P={PH} tip={tipLW} side={-1} layer="back" grip={GRIP_TYPE} /></g>}
+      </g></g>
       <Phone P={P} id="cp"><Layers cur={cur} red={red} over={over} /></Phone>
-      <g filter="url(#phToneF)">
-        <Mitt P={P} tip={tipW} layer="front" press={press} grip={grip} fingers={1 - twoIn} />
-        {twoIn > 0 && <g transform={leftIn}><Mitt P={P} tip={tipLW} side={-1} layer="front" grip={GRIP_TYPE} fingers={0} /></g>}
-      </g>
+      <g transform={handT}><g filter="url(#phToneF)">
+        <Mitt P={PH} tip={tipW} layer="front" press={press} grip={grip} fingers={1 - twoIn} />
+        {twoIn > 0 && <g transform={leftIn}><Mitt P={PH} tip={tipLW} side={-1} layer="front" grip={GRIP_TYPE} fingers={0} /></g>}
+      </g></g>
     </g>
   );
 }
+const HAND_AT = [960, 560];   // where the hands are drawn: the phone's centre at rest
 const bump = (T, a, b, d = 0.06) => g01(T, a - d, a) * (1 - g01(T, b, b + d));
 
 function Piece({ variant, guide, boil, boilAmp }) {

@@ -47,15 +47,17 @@
   const phoneT = (P) => `translate(${P.x.toFixed(2)} ${P.y.toFixed(2)}) rotate(${(P.rot || 0).toFixed(3)}) scale(${P.s}) translate(${-SW / 2} ${-SH / 2})`;
 
   // ── defs: screen grades with a tight region (cheap at 4K), the hand tone and the screen's light on the hands ──
-  function PhoneDefs({ id = 'ph', handRamp = 'cur', light = [960, 540], reach = 760, bf = 0, amp = 0.5, region = [-200, -200, 2320, 1480] }) {
+  // handAmp: the 8 fps boil of the hands' band edges (defaults to amp); a big, still hand reads as noisy at full boil
+  function PhoneDefs({ id = 'ph', handRamp = 'cur', light = [960, 540], reach = 760, bf = 0, amp = 0.5, handAmp, region = [-200, -200, 2320, 1480] }) {
+    const ha = handAmp ?? amp;
     return (
       <defs>
         <GradeFilter id="phCur" ramp="cur" poster region={[-60, -60, SW + 120, SH + 120]} />
         <GradeFilter id="phRed" ramp="red" poster region={[-60, -60, SW + 120, SH + 120]} />
         {/* hands are lifted out of the ramp's darkest tones, so a thumb or finger over the phone's dark body stays apart
             from it: behind the phone (Tone) from tone 2 up, in front of it (ToneF) from tone 3 up */}
-        <ToneFilter id={id + 'Tone'} ramp={handRamp} edge={22} depth={0.45} grain={0.08} coarse soft={3} gain={0.7} lift={0.24} bf={bf} amp={amp} region={region} />
-        <ToneFilter id={id + 'ToneF'} ramp={handRamp} edge={18} depth={0.4} grain={0.06} coarse soft={2.5} gain={0.55} lift={0.44} bf={bf} amp={amp} region={region} />
+        <ToneFilter id={id + 'Tone'} ramp={handRamp} edge={22} depth={0.45} grain={0.08} coarse soft={3} gain={0.7} lift={0.24} bf={bf} amp={ha} region={region} />
+        <ToneFilter id={id + 'ToneF'} ramp={handRamp} edge={18} depth={0.4} grain={0.06} coarse soft={2.5} gain={0.55} lift={0.44} bf={bf} amp={ha} region={region} />
         <radialGradient id={id + 'L'} gradientUnits="userSpaceOnUse" cx={light[0]} cy={light[1]} r={reach}>
           <stop offset="0" stopColor={v(0.95)} /><stop offset="0.4" stopColor={v(0.66)} /><stop offset="1" stopColor={v(0.2)} />
         </radialGradient>
