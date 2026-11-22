@@ -397,6 +397,7 @@ The user: flicker in the POV; the people on the TV should be beanoids; swap the 
 - **Bands like the rig's:** darker toward the outline (a radial falloff, which is the edge field of a circle), brighter on the side the lights are on (the phone below and in front, the TV in front), a little noise, posterized to the curator ramp, cut to the crisp outline (`HeadMacro`). The lights stay where they are in the room, so as the head tilts the bands shift a little round it. ToneBean itself cannot run at this scale: its edge blur needs a filter surface of several gigabytes and the page hangs.
 - **Behind the head:** the room in front of the curator, out of focus (a window with bars, the TV's glow, a shelf), moving at 0.6 of the camera's move, so the glance reads as the head tilting while the camera follows the eye.
 - **Less curvature:** the reflection bows at K 0.25 (was 0.55).
+- **Head boil:** the band boil on the close-up head is 0.012 × amp (the rig's 0.035 × amp made whole bands crawl at 8 fps at this scale).
 
 ## 21. The last shot: round 1 (concept stills)
 

@@ -303,7 +303,7 @@ function HeadMacro({ pose, lights, region, bf, amp }) {
     return { u, f, i };
   });
   const img = (href, res) => <feImage href={href} x={region[0]} y={region[1]} width={region[2]} height={region[3]} preserveAspectRatio="none" result={res} />;
-  const b = 0.05 * amp;
+  const b = 0.012 * amp;   // band boil: at this scale the rig's amount made the bands crawl visibly at 8 fps
   return (
     <g>
       <defs>
