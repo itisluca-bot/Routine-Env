@@ -1,29 +1,36 @@
 // Feeding Uncertainty — the last shot, replacing the Resistance alley: "Coping is a form of resistance. The question is,
-// what do people have to resist with?" (10 s, timing_4.srt word times as in resistance.jsx). Round-1 concept stills, all
-// three groups in frame again, in the toned look (LOOK.md). `--set concept=pillars` or `triptych`.
-//   pillars  · the bar plot again, stripped of axes and labels: three plinths of their group's ramp, each group hanging out
-//              on top of its own. Blue (lowest) sit at the edge chatting with their backs to everything; teal look at a post
-//              together; orange are highest, with the red swarm round them: one cowers, one teeters at the edge, arms
-//              windmilling, and a third grabs their back. Camera: a zoom out from teal to the whole plot over "Coping is a
-//              form of resistance".
-//   triptych · three panels, each a group under its own lamp, in its own ramp. Blue: three friends in a huddle, talking,
-//              ignoring the red posts behind them. Teal: a family; the two kids study a post through loupes, each parent has a
-//              hand on a kid's shoulder. Orange: one curator alone in a wide pool of light, hand to head, looking round.
-const { W, H, OUT_W, OUT_H, MOTION, osc, lerp, cam, hash, jitter } = window.FU_RIG;
-const { rig, frontRig, POSES, blendPose } = window.FU_BEAN;
-const { RAMPS, LookDefs, ToneBean, ToneFilter, PostValue, POST_KINDS, v } = window.FU_LOOK;
-const RK = ['wd', 'open', 'cur'];
-const NEUTRAL = '#1a1d1c';
+// what do people have to resist with?" (10 s; the Resistance timing). Round-1 concept stills, all three groups in frame
+// again, built on the two shots the audience has already seen. `--set concept=pillars` or `triptych`.
+//   pillars  · Crisis Bars (crisis-bars.jsx) at its end state ("more" exposure), without the axis, labels and slider: the
+//              same plinths under their spots, the same heights (curators just on top), the same three beanoids, now
+//              hanging out. Blue sits on the left edge of their plinth, legs dangling, facing away, chin up. Teal sits on
+//              the right edge, legs dangling, looking up at orange. Orange, highest and inside the red swarm, teeters at
+//              the edge of theirs: leaning out over the drop, arms windmilling, a foot lifted. Camera: a zoom out from
+//              1.2 to the whole row over "Coping is a form of resistance".
+//   triptych · Three Groups (three-groups.jsx, F): the same three window-lit panels in their ramps, no labels, each now a
+//              group. Blue: three friends in a huddle, talking, their backs to the red posts by the window. Teal: a
+//              family; the two kids study one post through loupes (the lens shows it larger), each parent has a hand on
+//              a kid's shoulder. Orange: the curator alone in an empty room, hand to head, looking round.
+// Every frame is a pure function of T.
+const { W, H, OUT_W, OUT_H, MOTION, osc, lerp, lerp2, hash } = window.FU_RIG;
+const { rig, frontRig, POSES } = window.FU_BEAN;
+const { RAMPS, LookDefs, ToneBean, ToneFilter, PostValue, POST_KINDS, GradeFilter, v } = window.FU_LOOK;
+const { WarmPost } = window.FU_PHONE;
+const { glide } = MOTION;
+const GROUPS = ['wd', 'open', 'cur'];
+const HAIR = { wd: 'long', open: 'beanie', cur: 'none' };   // the heroes, as in the triptych and the bars
+const NEUT = ['#121413', '#1a1d1c', '#232725', '#2e3330', '#444a46', '#666c67', '#a3a69e'];
 const clampN = (x, a, b) => Math.min(b, Math.max(a, x));
 const deg = (r) => (r * 180) / Math.PI;
 
-// ── Bean helpers (as in open-engagers.jsx). A figure is { x, y, s, dir, pose, headScale } ──
+// ── Bean helpers. A figure is { x, y, s, dir, pose, headScale } ────────────────
 const toW = (f, p) => [f.x + (f.dir || 1) * f.s * p[0], f.y + f.s * p[1]];
-const headW = (f) => toW(f, rig(f.pose, f.headScale || 1).Hc);
-const handW = (f) => toW(f, rig(f.pose, f.headScale || 1).armN[2]);
-const shoulderW = (f) => toW(f, rig(f.pose, f.headScale || 1).S);
+const R_ = (f) => rig(f.pose, f.headScale || 1);
+const headW = (f) => toW(f, R_(f).Hc);
+const handW = (f) => toW(f, R_(f).armN[2]);
+const shoulderW = (f) => toW(f, R_(f).S);
 function reachArm(f, P) {
-  const A = rig(f.pose, f.headScale || 1).armN[0];
+  const A = R_(f).armN[0];
   const dx = ((f.dir || 1) * (P[0] - f.x)) / f.s - A[0], dy = (P[1] - f.y) / f.s - A[1];
   const d = clampN(Math.hypot(dx, dy), 3, 85.5);
   const al = deg(Math.acos((44 * 44 + d * d - 42 * 42) / (2 * 44 * d)));
@@ -31,215 +38,175 @@ function reachArm(f, P) {
   return [deg(Math.atan2(dx, dy)) - al - f.pose.lean, 180 - ga];
 }
 const armTo = (f, P) => { f.pose = { ...f.pose, armN: reachArm(f, P) }; };
-// seated on an edge: thighs forward, shins hanging (hip about 55 above the feet; the egg's bottom 14 below the hip)
-const SIT = (T, ph = 0) => ({ hx: 0, lean: 4 + 1.5 * osc(T, 3.3, ph), tilt: 2 * osc(T, 4.1, ph), legN: [86, 84 + 4 * osc(T, 2.7, ph)], legF: [80, 76 + 6 * osc(T, 3.1, ph + 0.4)], armN: [24, 56], armF: [18, 52], phone: 0 });
-const sitY = (top, s) => top + 41 * s;   // floor point for a figure sitting on a ledge at `top`
-const COVER = { hx: 0, lean: 28, tilt: 26, legN: [70, 120], legF: [55, 110], armN: [128, 128], armF: [118, 135], phone: 0 };
-const guard = (T) => { const b = POSES.idle(T + 1.3); return { ...b, lean: b.lean + 4 + 3 * osc(T, 1.9), tilt: 8 + 5 * osc(T, 1.5, 0.2), armN: [40, 88], armF: [30, 92] }; };
-
-function Bean({ f, k, id, lights, amb = 0.34, view = 'side' }) {
+// seated on an edge: thighs forward, shins hanging and swinging a little (hip ~55 above the feet; the egg 14 below the hip)
+const SIT = (T, ph = 0) => ({ hx: 0, lean: 4 + 1.5 * osc(T, 3.3, ph), tilt: 2 * osc(T, 4.1, ph), legN: [86, 80 + 8 * osc(T, 2.7, ph)], legF: [80, 72 + 10 * osc(T, 3.1, ph + 0.4)], armN: [24, 56], armF: [18, 52], phone: 0 });
+const sitY = (seat, s) => seat + 41 * s;
+const FOLD_N = [-10, 125], FOLD_F = [-6, 120];
+function Bean({ f, k, id, lights, amb, view = 'side' }) {
   return <ToneBean x={f.x} y={f.y} dir={f.dir ?? 1} s={f.s} pose={f.pose} view={view} ramp={f.ramp} hair={f.hair || 'none'} lights={lights} amb={amb}
-    headScale={f.headScale || 1} hairId={f.hair === 'long' ? `ccHair-${f.ramp}` : undefined} id={id} bf={k.bf} amp={k.amp} />;
+    headScale={f.headScale || 1} id={id} bf={k.bf} amp={k.amp} />;
 }
-// red posts circling a point (moths), with a little flutter
-const swarm = (T, cx, cy, n, R, seed, s = 0.62, sq = 0.5) => Array.from({ length: n }, (_, i) => {
-  const h = (m) => hash(i * 9.1 + m * 3.3 + seed);
-  const a = T * (0.45 + 0.5 * h(1)) * (h(2) > 0.4 ? 1 : -1) + 6.28 * h(3);
-  const r = R * (0.35 + 0.65 * h(4));
-  return { x: cx + r * Math.cos(a), y: cy + sq * r * Math.sin(a) + 12 * osc(T, 1.3 + h(5), h(6)), rot: -25 + 50 * h(7) + 16 * osc(T, 0.9 + h(8)),
-    s: s * (0.8 + 0.4 * h(9)), flip: 0.55 + 0.45 * Math.cos(T * (4 + 3 * h(10)) + 6 * h(11)), kind: POST_KINDS[(i + seed) % POST_KINDS.length] };
-});
-const posts = (P, outline) => P.map((p, i) => <PostValue key={i} x={p.x} y={p.y} s={p.s} rot={p.rot} flip={p.flip} outline={outline} kind={p.kind} />);
+const post = (p, i, outline) => <PostValue key={i} x={p.x} y={p.y} s={p.s} rot={p.rot} flip={p.flip} outline={outline} kind={p.kind} op={p.op ?? 1} />;
 
-// ── concept 1 · Pillars ───────────────────────────────────────────────────────
-const BASE = 950, PW = 300;
-const PIL = [{ cx: 540, top: 760, r: 'wd' }, { cx: 960, top: 580, r: 'open' }, { cx: 1380, top: 340, r: 'cur' }];
-function Pillar({ p, i }) {
-  const x0 = p.cx - PW / 2;
+// ── concept 1 · Pillars (Crisis Bars at "more", stripped) ───────────────────────
+const PW = 280, SIDE = 56, LID = 18, OVER = 10, BASE = 980, U = 15, FS = 1.3;
+const VAL = { wd: 25.45, open: 27.85, cur: 29.07 };   // crisis-bars.jsx at the end of the shot (slider at "more")
+const PX = { wd: 520, open: 960, cur: 1400 };
+function PlinthValue({ x, top }) {
+  const h = BASE - top;
   return (
-    <g filter={`url(#fuGradeFg-${p.r})`}>
-      <defs>
-        <linearGradient id={`ccPil${i}`} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" stopColor={v(0.78)} /><stop offset="0.25" stopColor={v(0.6)} /><stop offset="1" stopColor={v(0.3)} />
-        </linearGradient>
-      </defs>
-      <rect x={x0} y={p.top} width={PW} height={BASE - p.top} fill={`url(#ccPil${i})`} />
-      <rect x={x0 + PW - 46} y={p.top} width="46" height={BASE - p.top} fill="#000" opacity="0.28" />
-      <rect x={x0 - 4} y={p.top - 10} width={PW + 8} height="12" rx="2" fill={v(0.92)} />
+    <g>
+      <rect x={x - PW / 2} y={top} width={PW} height={h} fill="url(#ccPlinth)" />
+      <rect x={x - PW / 2 - OVER} y={top - LID} width={PW + 2 * OVER} height={LID + 2} fill={v(0.85)} />
+      <rect x={x + PW / 2 - SIDE} y={top + 2} width={SIDE} height={h - 2} fill={v(0.36)} />
     </g>
   );
 }
+// the posts round the top (as the bars' swarm at "more"), denser round orange
+const SWARM = Array.from({ length: 14 }, (_, j) => {
+  const h = (n) => hash(j * 9.7 + n * 4.3 + 3);
+  const nearCur = j < 8;
+  return { j, h, kind: POST_KINDS[(j * 4 + 1) % POST_KINDS.length], x: nearCur ? 1220 + 440 * h(3) : 360 + 820 * h(3), y: nearCur ? 160 + 300 * h(4) : 60 + 160 * h(4), s: 1.05 + 0.35 * h(6) };
+});
 function Pillars({ k }) {
   const { T } = k;
-  // camera: from teal's top, zoom out to the whole plot over "Coping is a form of resistance"
-  const z = MOTION.glide(T, 0.3, 3.2, 1.5, 1.08), cx = MOTION.glide(T, 0.3, 3.2, 960, 975), cy = MOTION.glide(T, 0.3, 3.2, 520, 575);
-  const L = (i) => [{ x: PIL[i].cx - 40, y: PIL[i].top - 300, i: 0.9, reach: 420 }, { dir: [-0.4, 0.9], i: 0.25 }];
-  const s = 0.62;
-  // blue: three on the lowest plinth, all facing left, away from the swarm, chatting
-  const b = PIL[0], bL = b.cx - PW / 2;
-  const B1 = { x: bL + 12, y: sitY(b.top, s), s, dir: -1, ramp: 'wd', hair: 'beanie', pose: { ...SIT(T, 0.1), tilt: -4 + 3 * osc(T, 2.3), armN: [30, 40], armF: [40, 30] } };
-  const B2 = { x: bL + 110, y: sitY(b.top, s), s, dir: -1, ramp: 'wd', hair: 'long', pose: { ...SIT(T, 0.5), lean: -6, tilt: -6 + 3 * osc(T, 1.7, 0.3), legN: [84, 30], legF: [88, 60], armN: [-40, -20], armF: [-30, -10] } };
-  const B3 = { x: bL + 220, y: b.top, s, dir: -1, ramp: 'wd', hair: 'none', pose: { ...POSES.talk(T + 0.7), tilt: 4 } };
-  // teal: one holds a post and the other leans in to look at it; a third sits at the right edge and looks up at orange
-  const t = PIL[1], tL = t.cx - PW / 2;
-  const T1 = { x: tL + 150, y: t.top, s, dir: 1, ramp: 'open', hair: 'beanie', pose: { ...POSES.idle(T), tilt: 18, armN: [62, 50] } };
-  const tPost = [handW(T1)[0] + 12, handW(T1)[1] - 14];
-  const T2 = { x: tL + 82, y: t.top, s, dir: 1, ramp: 'open', hair: 'long', pose: { ...POSES.idle(T + 1.1), lean: 9, tilt: 14 } };
-  armTo(T2, [shoulderW(T1)[0] - 6, shoulderW(T1)[1] + 4]);
-  const T3 = { x: tL + PW - 14, y: sitY(t.top, s), s, dir: 1, ramp: 'open', hair: 'none', pose: { ...SIT(T, 0.8), tilt: -24 + 3 * osc(T, 2.1) } };
-  // orange: highest, the swarm round them. One cowers, one teeters at the right edge, one grabs them
-  const o = PIL[2], oL = o.cx - PW / 2, oR = o.cx + PW / 2;
+  const z = glide(T, 0.3, 3.2, 1.2, 1);
+  const CAM = `translate(960 560) scale(${z}) translate(-960 -560)`;
+  const top = (g) => BASE - VAL[g] * U;
+  const lights = (g) => [{ x: PX[g] - 50, y: -80, i: 1, reach: 820 }, { dir: [0.3, 1], i: 0.08 }];
+  const cone = (x, y0, w0, y1, w1) => <path d={`M ${x - w0} ${y0} L ${x + w0} ${y0} L ${x + w1} ${y1} L ${x - w1} ${y1} Z`} fill="url(#ccCone)" opacity="0.7" />;
+  // blue: on the left edge, facing away from everyone, legs dangling, chin up, leaning back on a hand
+  const bSeat = top('wd') - LID;
+  const B = { x: PX.wd - PW / 2 + 14, y: sitY(bSeat, FS), s: FS, dir: -1, ramp: 'wd', hair: HAIR.wd, pose: { ...SIT(T, 0.1), lean: -4 + 1.5 * osc(T, 3.3), tilt: -12 + 2 * osc(T, 4.1), armN: [36, 70], armF: [-38, 4] } };
+  // teal: on the right edge, facing orange, legs dangling, looking up at them
+  const tSeat = top('open') - LID;
+  const Tl = { x: PX.open + PW / 2 - 4, y: sitY(tSeat, FS), s: FS, dir: 1, ramp: 'open', hair: HAIR.open, pose: { ...SIT(T, 0.7), lean: 2, tilt: -26 + 3 * osc(T, 2.1) } };
+  armTo(Tl, [Tl.x + 34, Tl.y - 128 + 4 * osc(T, 1.6)]);   // a hand half raised toward them
+  // orange: at the outer (right) edge of the highest plinth, leaning out over the drop, arms windmilling, the back foot lifted
   const wob = osc(T, 0.9), wob2 = osc(T, 0.45, 0.3);
-  const O1 = { x: oR - 2, y: o.top, s, dir: 1, ramp: 'cur', hair: 'none', pose: { hx: 0, lean: 34 + 5 * wob, tilt: 26 - 6 * wob,
-    legN: [-6 + 3 * wob, 4], legF: [-48 - 8 * wob2, 40], armN: [118 + 30 * wob2, 10 + 15 * wob], armF: [-150 - 25 * wob2, 20 - 10 * wob], phone: 0 } };
-  const O2 = { x: oR - 96, y: o.top, s, dir: 1, ramp: 'cur', hair: 'long', pose: { ...POSES.idle(T + 0.4), lean: -16 + 3 * wob, tilt: 4, legN: [-14, 6], legF: [20, 4], armF: [60, 40] } };
-  const grab = toW(O1, rig(O1.pose).H);
-  armTo(O2, [grab[0] + 6, grab[1] - 40 * s]);
-  const O3 = { x: oL + 70, y: o.top, s, dir: 1, ramp: 'cur', hair: 'beanie', pose: blendPose(guard(T), COVER, 0.75) };
-  const sw = [...swarm(T, o.cx - 20, o.top - 120, 18, 320, 3, 0.6, 0.45), ...swarm(T + 4, t.cx + 140, t.top - 210, 4, 160, 11, 0.55, 0.5)];
-  const held = { x: tPost[0], y: tPost[1], rot: -12 + 4 * osc(T, 2.2), s: 0.55, flip: 1, kind: 'chart' };
+  const O = { x: PX.cur + PW / 2 - 2, y: top('cur') - LID, s: FS, dir: 1, ramp: 'cur', hair: HAIR.cur, pose: { hx: 0, lean: 22 + 5 * wob, tilt: 30 - 5 * wob,
+    legN: [-4 + 3 * wob, 4], legF: [-30 - 6 * wob2, 34], armN: [150 + 25 * wob2, 15 + 15 * wob], armF: [-160 - 20 * wob2, 25 - 10 * wob], phone: 0 } };
+  const posts = SWARM.map((P) => ({ x: P.x + 10 * osc(T, 2.3, P.h(7)), y: P.y + 8 * osc(T, 1.7, P.h(8)), rot: 16 * Math.sin(T * 1.3 + P.h(9) * 5), flip: 0.78 + 0.2 * Math.cos(T * 2.6 + P.h(10) * 9), s: P.s, kind: P.kind }));
   return (
-    <g transform={cam(cx, cy, z)}>
-      {/* the plot's grid, far out of focus behind */}
-      <g filter="url(#ccSoft)" opacity="0.5">
-        {[260, 420, 580, 740, 900].map((y) => <rect key={y} x="-300" y={y} width="2520" height="3" fill="#3a3f3d" />)}
-      </g>
-      <ellipse cx="960" cy={BASE + 40} rx="1100" ry="120" fill="#232726" opacity="0.8" />
-      <rect x="-300" y={BASE} width="2520" height="400" fill="#151817" />
-      <rect x="240" y={BASE - 1} width="1440" height="3" fill="#4a504d" opacity="0.7" />
-      {PIL.map((p, i) => <Pillar key={i} p={p} i={i} />)}
-            <Bean f={B3} k={k} id={13} lights={L(0)} />
-      <Bean f={B2} k={k} id={12} lights={L(0)} />
-      <Bean f={B1} k={k} id={11} lights={L(0)} />
-      <Bean f={T2} k={k} id={22} lights={L(1)} />
-      <Bean f={T1} k={k} id={21} lights={L(1)} />
-      <Bean f={T3} k={k} id={23} lights={L(1)} />
-      <Bean f={O3} k={k} id={33} lights={L(2)} />
-      <Bean f={O2} k={k} id={32} lights={L(2)} />
-      <Bean f={O1} k={k} id={31} lights={L(2)} />
-      <g filter="url(#fuGradeFg-red)">{posts([held], false)}{posts(sw, false)}</g>
+    <g transform={CAM}>
+      <g filter="url(#ccBack)"><rect x="-300" y="-300" width="2520" height="1680" fill={v(0.16)} /></g>
+      {GROUPS.map((g) => (
+        <g key={'h' + g} filter={`url(#fuGradeBg-${g})`}>
+          <ellipse cx={PX[g]} cy={top(g) - 260} rx="330" ry="400" fill="url(#fuPool)" opacity="0.5" />
+          {cone(PX[g], -60, 34, top(g), 170)}
+        </g>
+      ))}
+      {GROUPS.map((g) => <g key={'p' + g} filter={`url(#fuGradeFg-${g})`}><PlinthValue x={PX[g]} top={top(g)} /></g>)}
+      <line x1="230" y1={BASE} x2="1690" y2={BASE} stroke="#e9e7e1" strokeWidth="4" strokeLinecap="round" />
+      <rect x="-300" y={BASE + 2} width="2520" height="400" fill={NEUT[0]} />
+      <g filter="url(#fuGradeFg-red)">{posts.map((p, i) => post(p, i))}</g>
+      <Bean f={B} k={k} id={1} lights={lights('wd')} />
+      <Bean f={Tl} k={k} id={2} lights={lights('open')} />
+      <Bean f={O} k={k} id={3} lights={lights('cur')} />
     </g>
   );
 }
 
-// ── concept 2 · Triptych ──────────────────────────────────────────────────────
-const SEP = 14, PWT = (W - 2 * SEP) / 3, FLOOR = 830, LAMP_Y = 250;
-function Lamp({ x, y }) {
+// ── concept 2 · Triptych (Three Groups, F), as groups ──────────────────────────
+const TW = 640, FLOOR = 920, GS = 1.25, KS = 0.62;
+const WIN = (i) => [i * TW + 470, 300];
+function Room({ i }) {
+  const g = GROUPS[i], [wx, wy] = WIN(i), x0 = i * TW;
+  const deco = i === 0
+    ? Array.from({ length: 9 }, (_, n) => <rect key={n} x={wx - 80} y={wy - 110 + n * 25} width="160" height="13" fill={v(0.3)} />)
+    : i === 2 ? <path d={`M ${wx - 80} ${wy - 110} L ${wx + 20} ${wy - 110} C ${wx} ${wy}, ${wx + 10} ${wy + 60}, ${wx - 10} ${wy + 110} L ${wx - 80} ${wy + 110} Z`} fill={v(0.42)} />
+    : <rect x={wx - 6} y={wy - 110} width="12" height="220" fill={v(0.5)} />;
   return (
-    <g transform={`translate(${x} ${y})`}>
-      <line x1="0" y1="-600" x2="0" y2="-26" stroke={v(0.3)} strokeWidth="3" />
-      <rect x="-7" y="-34" width="14" height="14" rx="3" fill={v(0.32)} />
-      <path d="M -10 -22 C -30 -16, -40 -2, -44 14 L 44 14 C 40 -2, 30 -16, 10 -22 Z" fill={v(0.42)} />
-      <path d="M -10 -22 C -30 -16, -40 -2, -44 14 L -20 14 C -22 0, -16 -14, -6 -22 Z" fill={v(0.62)} />
-      <ellipse cx="0" cy="14" rx="44" ry="7" fill={v(0.98)} />
+    <g>
+      <g filter={`url(#fuGradeBg-${g})`}>
+        <rect x={x0} y="0" width={TW} height="1080" fill={v(0.22)} />
+        <ellipse cx={wx - 60} cy="420" rx="360" ry="360" fill="url(#fuPool)" opacity="0.6" />
+        <rect x={wx - 92} y={wy - 122} width="184" height="244" fill={v(0.4)} />
+        <rect x={wx - 80} y={wy - 110} width="160" height="220" fill={v(0.85)} />
+        <rect x={x0} y="900" width={TW} height="200" fill={v(0.13)} />
+      </g>
+      <g filter={`url(#fuGradeBg-${g})`}>{deco}</g>
     </g>
   );
 }
-// one panel's room: back wall and floor out of focus, the lamp's cone and its pool posterized, all in the panel's ramp
-function Room({ r, lx, pool = 1, idx }) {
-  const R = RAMPS[r], w = PWT;
+// the triptych's loupe: the lens shows the post larger. hand: world point; post: the post it looks at
+function Loupe({ hand, lc, post: p, s }) {
+  const R = RAMPS.open, lensR = 20 * s;
+  const oq = lerp2(lc, [p.x, p.y], 0.3);
+  const d = [hand[0] - lc[0], hand[1] - lc[1]], n = Math.hypot(d[0], d[1]) || 1, rim = [lc[0] + (d[0] / n) * lensR, lc[1] + (d[1] / n) * lensR];
+  const id = `ccLens${Math.round(hand[0])}`;
   return (
     <g>
-      <g filter={`url(#fuGradeBg-${r})`}>
-        <rect x="-100" y="-100" width={w + 200} height={FLOOR + 100} fill={v(0.2)} />
-        <ellipse cx={lx} cy={FLOOR - 180} rx={300 * pool} ry="330" fill={v(0.4)} />
-        <rect x="-100" y={FLOOR} width={w + 200} height={H - FLOOR + 100} fill={v(0.14)} />
-        <rect x="-100" y={FLOOR - 4} width={w + 200} height="10" fill={v(0.3)} />
-        {idx === 0 && <rect x="70" y="330" width="120" height="170" fill={v(0.32)} />}
-        {idx === 1 && <rect x={w - 190} y="360" width="100" height="130" fill={v(0.34)} />}
-        {idx === 2 && <rect x="80" y="300" width="150" height="230" fill={v(0.26)} />}
-      </g>
-      <path d={`M ${lx - 40} ${LAMP_Y + 14} L ${lx + 40} ${LAMP_Y + 14} L ${lx + 250 * pool} ${FLOOR + 40} A ${250 * pool} 40 0 0 1 ${lx - 250 * pool} ${FLOOR + 40} Z`} fill={R[6]} opacity="0.07" />
-      <g filter={`url(#fuGradeFg-${r})`}>
-        <ellipse cx={lx} cy={FLOOR + 40} rx={250 * pool} ry="40" fill="url(#fuPool)" opacity="0.85" />
-        <Lamp x={lx} y={LAMP_Y} />
-      </g>
-    </g>
-  );
-}
-function Loupe({ hand, at, R, r = 21 }) {
-  const d = [at[0] - hand[0], at[1] - hand[1]], n = Math.hypot(d[0], d[1]) || 1, u = [d[0] / n, d[1] / n];
-  const c = [hand[0] + u[0] * (r + 6) - 0, hand[1] - r - 4];
-  return (
-    <g>
-      <line x1={hand[0]} y1={hand[1]} x2={c[0] - u[0] * r} y2={c[1] - u[1] * r} stroke={R[1]} strokeWidth="5" strokeLinecap="round" />
-      <circle cx={c[0]} cy={c[1]} r={r} fill={R[6]} fillOpacity="0.22" stroke={R[2]} strokeWidth="4" />
-      <path d={`M ${c[0] - r * 0.5} ${c[1] - r * 0.25} A ${r * 0.6} ${r * 0.6} 0 0 1 ${c[0] - r * 0.1} ${c[1] - r * 0.6}`} stroke={R[6]} strokeWidth="2.2" fill="none" strokeLinecap="round" opacity="0.8" />
-    </g>
-  );
-}
-function Panel({ idx, k }) {
-  const { T } = k, r = RK[idx], R = RAMPS[r], lx = PWT / 2 + (idx === 2 ? 50 : 0);
-  const L = [{ x: lx, y: LAMP_Y + 16, i: 0.95, reach: 460 }];
-  if (idx === 0) {
-    // three withdrawers in a huddle, talking; the red posts behind them, which none of them looks at
-    const s = 0.9;
-    const A = { x: lx - 120, y: FLOOR, s, dir: 1, ramp: 'wd', hair: 'beanie', pose: { ...POSES.talk(T), tilt: -2 } };
-    const Bf = { x: lx + 125, y: FLOOR, s, dir: -1, ramp: 'wd', hair: 'long', pose: { ...POSES.idle(T + 0.5), tilt: -4, armN: [20, 60] } };
-    const Cp = { lean: 2 * osc(T, 3.1), tilt: -6 + 3 * osc(T, 1.9), look: [-0.7 + 0.15 * osc(T, 2.4), 0], legL: [4, 2], legR: [4, 2], armL: [14, 18], armR: [10, 12] };
-    const behind = swarm(T, lx + 40, 330, 9, 300, 5, 0.75, 0.6);
-    return (
-      <g>
-        <Room r={r} lx={lx} idx={idx} />
-        <g opacity="0.8" filter="url(#fuGradeFg-red)">{posts(behind, true)}</g>
-        <ToneBean x={lx + 4} y={FLOOR - 26} s={0.84} view="front" pose={Cp} ramp="wd" hair="none" lights={L} amb={0.3} id={3} bf={k.bf} amp={k.amp} />
-        <Bean f={A} k={k} id={1} lights={L} />
-        <Bean f={Bf} k={k} id={2} lights={L} />
-        <g filter="url(#fuGradeFg-red)">{posts(swarm(T + 2, lx + 10, 430, 3, 120, 17, 0.75, 0.6), false)}</g>
-      </g>
-    );
-  }
-  if (idx === 1) {
-    // a family: the kids study one post through loupes, a parent's hand on each kid's shoulder
-    const s = 0.92, ks = 0.6;
-    const post = { x: lx + 4 + 6 * osc(T, 2.6), y: FLOOR - 150 + 6 * osc(T, 1.9, 0.3), rot: 6 * osc(T, 2.2), s: 1.25, flip: 1, kind: 'feed' };
-    const K1 = { x: lx - 104, y: FLOOR, s: ks, dir: 1, ramp: 'open', hair: 'long', headScale: 1.3, pose: { ...POSES.idle(T + 0.3), lean: 6, tilt: 4 } };
-    const K2 = { x: lx + 110, y: FLOOR, s: ks, dir: -1, ramp: 'open', hair: 'beanie', headScale: 1.3, pose: { ...POSES.idle(T + 1.6), lean: 8, tilt: 10 } };
-    const hd1 = headW(K1), hd2 = headW(K2);
-    armTo(K1, [lerp(hd1[0], post.x, 0.3), lerp(hd1[1], post.y, 0.3) + 26]);
-    armTo(K2, [lerp(hd2[0], post.x, 0.3), lerp(hd2[1], post.y, 0.3) + 26]);
-    const P1 = { x: lx - 200, y: FLOOR, s, dir: 1, ramp: 'open', hair: 'none', pose: { ...POSES.idle(T + 0.9), lean: 10, tilt: 22 } };
-    const P2 = { x: lx + 210, y: FLOOR, s, dir: -1, ramp: 'open', hair: 'long', pose: { ...POSES.idle(T + 2.2), lean: 9, tilt: 24 } };
-    const sh1 = shoulderW(K1), sh2 = shoulderW(K2);
-    armTo(P1, [sh1[0] - 4, sh1[1] - 2]);
-    armTo(P2, [sh2[0] + 4, sh2[1] - 2]);
-    return (
-      <g>
-        <Room r={r} lx={lx} idx={idx} />
-        <g opacity="0.75" filter="url(#fuGradeFg-red)">{posts(swarm(T, lx, 300, 4, 260, 9, 0.7, 0.5), true)}</g>
-        <Bean f={P1} k={k} id={11} lights={L} />
-        <Bean f={P2} k={k} id={12} lights={L} />
-        <Bean f={K1} k={k} id={13} lights={L} />
-        <Bean f={K2} k={k} id={14} lights={L} />
-        <g filter="url(#fuGradeFg-red)">{posts([post], false)}</g>
-        <Loupe hand={handW(K1)} at={[post.x, post.y]} R={R} />
-        <Loupe hand={handW(K2)} at={[post.x, post.y]} R={R} />
-      </g>
-    );
-  }
-  // one curator, alone in a wide pool of light: hand to head, looking round
-  const s = 0.82;
-  const look = osc(T, 3.6) > 0 ? 0.8 : -0.8;
-  const pose = { lean: -4 + 2 * osc(T, 3.3), tilt: 12 + 3 * osc(T, 2.7), look: [lerp(-0.8, 0.8, (osc(T, 3.6) + 1) / 2), -0.2], legL: [5, 2], legR: [3, 2], armL: [10, 14] };
-  const FR = frontRig({ ...pose, armL: [10, 14], armR: [10, 14] }, 1);
-  pose.armR = { to: [FR.Hc[0] + 20, FR.Hc[1] - 4 + 2 * osc(T, 0.4)] };
-  return (
-    <g>
-      <Room r={r} lx={lx} pool={1.35} idx={idx} />
-      <g opacity="0.75" filter="url(#fuGradeFg-red)">{posts(swarm(T, lx - 40, 300, 5, 330, 21, 0.6, 0.45), true)}</g>
-      <ToneBean x={lx - 30} y={FLOOR + 10} s={s} view="front" pose={pose} ramp="cur" hair="none" lights={L} amb={0.3} id={21} bf={k.bf} amp={k.amp} />
-      {look && null}
+      <defs><clipPath id={id}><circle cx={lc[0]} cy={lc[1]} r={lensR * 0.9} /></clipPath></defs>
+      <g filter="url(#fuGradeFg-red)"><g clipPath={`url(#${id})`}><circle cx={lc[0]} cy={lc[1]} r={lensR} fill={v(0.3)} /><PostValue x={oq[0]} y={oq[1]} s={s * 1.7} rot={p.rot} flip={p.flip} kind={p.kind} /></g></g>
+      <line x1={rim[0]} y1={rim[1]} x2={hand[0]} y2={hand[1]} stroke={R[1]} strokeWidth={6 * s} strokeLinecap="round" />
+      <circle cx={lc[0]} cy={lc[1]} r={lensR} fill={R[6]} fillOpacity="0.08" stroke={R[2]} strokeWidth={4.5 * s} />
+      <path d={`M ${lc[0] - lensR * 0.55} ${lc[1] - lensR * 0.35} A ${lensR * 0.7} ${lensR * 0.7} 0 0 1 ${lc[0] - lensR * 0.05} ${lc[1] - lensR * 0.66}`} fill="none" stroke={R[6]} strokeOpacity="0.7" strokeWidth={1.6 * s} strokeLinecap="round" />
     </g>
   );
 }
 function Triptych({ k }) {
+  const { T } = k;
+  const z = glide(T, 0, 10, 1, 1.03);
+  const CAM = `translate(960 540) scale(${z}) translate(-960 -540)`;
+  const L = (i) => [{ x: WIN(i)[0], y: WIN(i)[1], i: 0.9, reach: 720 }, { dir: [0.4, 1], i: 0.08 }];
+  const out = [[], [], []], top = [[], [], []];
+
+  // blue: three friends in a huddle away from the window, talking; the red posts by the window behind them
+  {
+    const A = { x: 150, y: FLOOR, s: GS, dir: 1, ramp: 'wd', hair: HAIR.wd, pose: { ...POSES.talk(T), tilt: -4 + 3 * osc(T, 1.1) } };
+    const Bq = { x: 330, y: FLOOR, s: GS, dir: -1, ramp: 'wd', hair: 'beanie', pose: { ...POSES.idle(T + 0.6), tilt: -2 + 2 * osc(T, 1.7), armN: FOLD_N, armF: FOLD_F } };
+    const Cp = { lean: 2 * osc(T, 3.1), tilt: 6 + 3 * osc(T, 1.9), look: [-0.75, 0.1], legL: [4, 2], legR: [4, 2], armL: [14, 18], armR: [10, 12] };
+    const posts = Array.from({ length: 6 }, (_, j) => {
+      const h = (n) => hash(j * 7.3 + n * 3.1 + 11);
+      return { x: 420 + 170 * h(1) + 8 * osc(T, 1.3, h(2)), y: 330 + 330 * h(3) + 8 * osc(T, 0.9, h(4)), rot: -10 + 20 * h(5) + 5 * osc(T, 2.1, h(6)), flip: 0.8 + 0.12 * osc(T, 1.6 + h(7), h(8)), s: 1.15 + 0.3 * h(9), kind: POST_KINDS[(j * 2 + 1) % POST_KINDS.length] };
+    });
+    out[0].push(<ToneBean key="c" x={240} y={FLOOR - 26} s={GS * 0.92} view="front" pose={Cp} ramp="wd" hair="none" lights={L(0)} id={3} bf={k.bf} amp={k.amp} />);
+    out[0].push(<Bean key="a" f={A} k={k} id={1} lights={L(0)} />);
+    out[0].push(<Bean key="b" f={Bq} k={k} id={2} lights={L(0)} />);
+    top[0].push(<g key="p" filter="url(#fuGradeFg-red)">{posts.map((p, i) => post(p, i))}</g>);
+  }
+  // teal: a family. The kids study one post through loupes; a parent's hand on each kid's shoulder
+  {
+    const x0 = TW, cx = x0 + 320;
+    const p = { x: cx + 6 * osc(T, 2.6), y: FLOOR - 236 + 6 * osc(T, 1.9, 0.3), rot: -6 + 4 * osc(T, 2.1, 0.4), s: 1.7, flip: 0.9 + 0.06 * osc(T, 1.7), kind: 'chart' };
+    const kid = (x, dir, ph, hair) => ({ x, y: FLOOR, s: GS * KS, dir, ramp: 'open', hair, headScale: 1.3, pose: { ...POSES.idle(T + ph), lean: 4, tilt: -14 + 2 * osc(T, 1.9, ph) } });
+    const K1 = kid(cx - 118, 1, 0.3, 'long'), K2 = kid(cx + 120, -1, 1.6, 'none');
+    // each lens sits on the line from the kid's eye to the post; the hand holds the handle just below it
+    const lens = [K1, K2].map((K) => { const hd = headW(K), lc = lerp2(hd, [p.x, p.y], 0.42); armTo(K, [lc[0] - K.dir * 6, lc[1] + 30 * GS * 0.8]); return lc; });
+    const P1 = { x: cx - 230, y: FLOOR, s: GS, dir: 1, ramp: 'open', hair: HAIR.open, pose: { ...POSES.idle(T + 0.9), lean: 12, tilt: 20 + 2 * osc(T, 2.4) } };
+    const P2 = { x: cx + 236, y: FLOOR, s: GS, dir: -1, ramp: 'open', hair: 'long', pose: { ...POSES.idle(T + 2.2), lean: 11, tilt: 22 + 2 * osc(T, 2.2, 0.3) } };
+    const s1 = shoulderW(K1), s2 = shoulderW(K2);
+    armTo(P1, [s1[0] - 2, s1[1] - 4]);
+    armTo(P2, [s2[0] + 2, s2[1] - 4]);
+    out[1].push(<Bean key="p1" f={P1} k={k} id={11} lights={L(1)} />, <Bean key="p2" f={P2} k={k} id={12} lights={L(1)} />);
+    out[1].push(<Bean key="k1" f={K1} k={k} id={13} lights={L(1)} />, <Bean key="k2" f={K2} k={k} id={14} lights={L(1)} />);
+    top[1].push(<g key="p" filter="url(#fuGradeFg-red)">{post(p, 0)}</g>);
+    top[1].push(<Loupe key="l1" hand={handW(K1)} lc={lens[0]} post={p} s={GS * 0.8} />, <Loupe key="l2" hand={handW(K2)} lc={lens[1]} post={p} s={GS * 0.8} />);
+  }
+  // orange: the curator alone in the room, hand to head, eyes going from side to side; their comfort cards in the other hand
+  {
+    const x0 = 2 * TW;
+    const pose = { lean: -3 + 2 * osc(T, 3.3), tilt: 10 + 3 * osc(T, 2.7), look: [0.8 * Math.sin(T * 1.6), -0.15], legL: [5, 2], legR: [3, 2], armL: [12, 30] };
+    const FR = frontRig({ ...pose, armL: [12, 30], armR: [10, 14] }, 1);
+    pose.armR = { to: [FR.Hc[0] + 22, FR.Hc[1] - 6 + 2 * osc(T, 0.5)] };
+    const fx = x0 + 250;
+    const hl = frontRig(pose, 1).armL[2];
+    out[2].push(<ToneBean key="o" x={fx} y={FLOOR} s={GS} view="front" pose={pose} ramp="cur" hair={HAIR.cur} lights={L(2)} id={21} bf={k.bf} amp={k.amp} />);
+    top[2].push(<g key="w" filter="url(#ccWarm)"><WarmPost x={fx + GS * hl[0] - 4} y={FLOOR + GS * hl[1] + 4} s={GS * 0.85} rot={-14 + 3 * osc(T, 2.3)} flip={1} kind="cat" /></g>);
+  }
   return (
     <g>
-      <rect width={W} height={H} fill="#0e0e0e" />
-      {[0, 1, 2].map((i) => (
-        <g key={i} transform={`translate(${i * (PWT + SEP)} 0)`}>
-          <clipPath id={`ccClip${i}`}><rect width={PWT} height={H} /></clipPath>
-          <g clipPath={`url(#ccClip${i})`}><Panel idx={i} k={k} /></g>
+      <rect width={W} height={H} fill="#0b0c0c" />
+      <defs>{GROUPS.map((g, i) => <clipPath key={g} id={'ccPanel' + i}><rect x={i * TW + 6} y="6" width={TW - 12} height="1068" /></clipPath>)}</defs>
+      {GROUPS.map((g, i) => (
+        <g key={g} clipPath={`url(#ccPanel${i})`}>
+          <g transform={CAM}>
+            <Room i={i} />
+            <g filter={`url(#fuGradeFg-${g})`}><ellipse cx={i * TW + 300} cy="925" rx="260" ry="30" fill="url(#fuPool)" opacity="0.6" /></g>
+            {out[i]}
+            {top[i]}
+          </g>
         </g>
       ))}
     </g>
@@ -255,16 +222,18 @@ function Piece({ concept, guide, boil, boilAmp }) {
     { at: q.X + 0.04, until: CUES.Tail + 2, text: 'what do people have to resist with?' },
   ];
   const amp = boil ? boilAmp : 0, bf = Math.floor(T * 8);
-  const k = { T, bf, amp, J: jitter(bf, amp) };
+  const k = { T, bf, amp };
   const label = concept === 'triptych' ? '2 · Triptych' : '1 · Pillars';
   return (
-    <div data-screen-label={`${label} · ${T.toFixed(1)}s`} style={{ position: 'absolute', left: 0, top: 0, width: W, height: H, overflow: 'hidden', background: NEUTRAL, transform: `scale(${OUT_W / W})`, transformOrigin: '0 0' }}>
+    <div data-screen-label={`${label} · ${T.toFixed(1)}s`} style={{ position: 'absolute', left: 0, top: 0, width: W, height: H, overflow: 'hidden', background: NEUT[1], transform: `scale(${OUT_W / W})`, transformOrigin: '0 0' }}>
       <svg width={W} height={H} style={{ position: 'absolute', left: 0, top: 0 }}>
-        <rect width={W} height={H} fill={NEUTRAL} />
-        <LookDefs ramps={RK} bf={bf} amp={amp} />
+        <rect width={W} height={H} fill={NEUT[1]} />
+        <LookDefs ramps={GROUPS} bf={bf} amp={amp} />
         <defs>
-          {RK.map((r) => <ToneFilter key={r} id={`ccHair-${r}`} ramp={r} edge={5} depth={0.12} grain={0} soft={1.2} bf={bf} amp={amp} />)}
-          <filter id="ccSoft" x="-10%" y="-50%" width="120%" height="200%"><feGaussianBlur stdDeviation="7" /></filter>
+          <GradeFilter id="ccBack" ramp={NEUT} blur={14} region={[-400, -400, 2720, 1880]} />
+          <GradeFilter id="ccWarm" ramp="cur" poster gain={1.18} />
+          <linearGradient id="ccCone" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor={v(0.9)} stopOpacity="0.45" /><stop offset="1" stopColor={v(0.7)} stopOpacity="0.1" /></linearGradient>
+          <linearGradient id="ccPlinth" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor={v(0.63)} /><stop offset="1" stopColor={v(0.46)} /></linearGradient>
         </defs>
         {concept === 'triptych' ? <Triptych k={k} /> : <Pillars k={k} />}
       </svg>
@@ -282,16 +251,16 @@ function FUCopingConcepts() {
   const [t, setTweak] = useTweaks(window.TWEAK_DEFAULTS || { concept: 'pillars', referenceOverlay: true, lineBoil: true, boilAmp: 0.5 });
   return (
     <React.Fragment>
-      <CompositionStage width={OUT_W} height={OUT_H} scenes={window.OM_SCENES} playback={window.OM_PLAYBACK} bg={NEUTRAL}>
+      <CompositionStage width={OUT_W} height={OUT_H} scenes={window.OM_SCENES} playback={window.OM_PLAYBACK} bg={NEUT[1]}>
         <Piece concept={t.concept || 'pillars'} guide={t.referenceOverlay} boil={t.lineBoil} boilAmp={t.boilAmp ?? 0.5} />
       </CompositionStage>
       <TweaksPanel>
         <TweakSection label="Concept" />
-        <TweakSelect label="Concept" value={t.concept || 'pillars'} options={[{ value: 'pillars', label: '1 · Pillars (the bar plot)' }, { value: 'triptych', label: '2 · Triptych (groups)' }]} onChange={(v) => setTweak('concept', v)} />
+        <TweakSelect label="Concept" value={t.concept || 'pillars'} options={[{ value: 'pillars', label: '1 · Pillars (the bars, stripped)' }, { value: 'triptych', label: '2 · Triptych (as groups)' }]} onChange={(x) => setTweak('concept', x)} />
         <TweakSection label="Preview" />
-        <TweakToggle label="Label + narration guide" value={t.referenceOverlay} onChange={(v) => setTweak('referenceOverlay', v)} />
-        <TweakToggle label="Line boil (8 fps)" value={t.lineBoil} onChange={(v) => setTweak('lineBoil', v)} />
-        <TweakSlider label="Boil amplitude" value={t.boilAmp ?? 0.5} min={0} max={3} step={0.1} unit="px" onChange={(v) => setTweak('boilAmp', v)} />
+        <TweakToggle label="Label + narration guide" value={t.referenceOverlay} onChange={(x) => setTweak('referenceOverlay', x)} />
+        <TweakToggle label="Line boil (8 fps)" value={t.lineBoil} onChange={(x) => setTweak('lineBoil', x)} />
+        <TweakSlider label="Boil amplitude" value={t.boilAmp ?? 0.5} min={0} max={3} step={0.1} unit="px" onChange={(x) => setTweak('boilAmp', x)} />
       </TweaksPanel>
     </React.Fragment>
   );
