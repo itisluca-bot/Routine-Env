@@ -217,7 +217,7 @@ function deco(i, a) {
 // comparison view can place several copies of panel 0.
 function Panel({ f, ba, CAM, lab }) {
   const { g, i, a } = f;
-  const L = a.light ?? 1;
+  const intro = f.intro ?? 1, L = (a.light ?? 1) * lerp(0.35, 1, intro);
   const toW = (p) => [f.x + f.dir * f.s * p[0], f.y + f.s * p[1]];   // the figure's frame (flips and walks with them)
   const toP = (p) => [f.hx0 + f.s * p[0], f.y + f.s * p[1]];         // the post frame
   const clip = (el) => <g clipPath={`url(#tgPanel${i})`}>{el}</g>;
@@ -253,7 +253,7 @@ function Panel({ f, ba, CAM, lab }) {
     </g>
   ), 'deco'));
   // the label: there the whole time, at the top of the panel, behind the figure and the cards
-  out.push(lay(null, <Lbl x={X0[i] + PW / 2} y={LABEL_Y} size={LABEL_SIZE} spacing={0.2} weight={500} text={LABEL[g]} fill={RAMPS[g][6]} />, 'label'));
+  out.push(lay(null, <Lbl x={X0[i] + PW / 2} y={LABEL_Y} size={LABEL_SIZE} spacing={0.2} weight={500} text={LABEL[g]} fill={RAMPS[g][6]} a={intro} dy={12 * (1 - intro)} />, 'label'));
   out.push(lay('fuGradeFg-' + g, <ellipse cx={X0[i] + 280} cy="925" rx="230" ry="30" fill="url(#fuPool)" opacity={0.6 * L} />, 'pool'));
   if (a.cord) out.push(lay('fuGradeFg-' + g, <g><line x1={a.cord.x} y1={wy - 108} x2={a.cord.x} y2={a.cord.y1} stroke={v(0.5)} strokeWidth="2.5" /><circle cx={a.cord.x} cy={a.cord.y1 + 6} r="7" fill={v(0.7)} /></g>, 'cord'));
   out.push(<g key="fig" transform={CAM}>{clip(<ToneBean {...ba} id={i + 1} x={f.x} y={f.y} s={f.s} dir={f.dir} pose={a.pose} ramp={g} hair={HAIR[g]} lights={f.lights} />)}</g>);
@@ -272,21 +272,24 @@ function Panel({ f, ba, CAM, lab }) {
       </g>
     ), 'loupe'));
   }
+  // the intro: the panel starts in its own dark tone (not black) with the light low, and comes up
+  if (intro < 1) out.push(lay(null, <rect x={X0[i]} y="0" width={PW} height="1080" fill={RAMPS[g][0]} opacity={0.8 * (1 - intro)} />, 'intro'));
   return <g>{out}</g>;
 }
-function figOf(i, a) {
+function figOf(i, a, intro = 1) {
   // the turn stays wide for most of its time and passes edge-on in about a frame (a slow turn otherwise shows a sliver)
   const c = Math.cos(Math.PI * a.turn);
   let dir = Math.sign(c) * Math.pow(Math.abs(c), 0.3);
   if (Math.abs(dir) < 0.03) dir = dir < 0 ? -0.03 : 0.03;
-  const hx0 = X0[i] + 240, L = a.light ?? 1;
-  return { g: GROUPS[i], i, a, hx0, x: hx0 + FIG_S * (a.dx || 0), y: FLOOR, s: FIG_S, dir, lights: [{ x: WIN(i)[0], y: WIN(i)[1], i: 0.9 * L, reach: 720 }, { dir: [0.4, 1], i: 0.08 }] };
+  const hx0 = X0[i] + 240, L = (a.light ?? 1) * lerp(0.35, 1, intro);
+  return { g: GROUPS[i], i, a, intro, hx0, x: hx0 + FIG_S * (a.dx || 0), y: FLOOR, s: FIG_S, dir, lights: [{ x: WIN(i)[0], y: WIN(i)[1], i: 0.9 * L, reach: 720 }, { dir: [0.4, 1], i: 0.08 }] };
 }
 
 function Piece({ guide, boil, boilAmp, wd, cur, view }) {
   const { T, CUES } = useComposition();
   const bf = Math.floor(T * 8), amp = boil ? boilAmp : 0, ba = { bf, amp };
   const b = { wd: CUES.Withdrawal, open: CUES.Open, cur: CUES.Curation };
+  const intro = GROUPS.map((g, i) => glide(T, 0.15 + 0.5 * i, 0.85 + 0.5 * i, 0, 1));   // the panels come up one after another
   const z = glide(T, 0, 7, 1, 1.03);
   const CAM = `translate(960 540) scale(${z}) translate(-960 -540)`;
   const lab = GROUPS.map((g) => { const a = glide(T, b[g] - 0.15, b[g] + 0.45, 0, 1); return { a, dy: 14 * (1 - a) }; });
@@ -300,10 +303,10 @@ function Piece({ guide, boil, boilAmp, wd, cur, view }) {
           {GROUPS.map((g, i) => <clipPath key={g} id={'tgPanel' + i}><rect x={X0[i] + 6} y="6" width={PW - 12} height="1068" /></clipPath>)}
           <GradeFilter id="tgWarm" ramp="cur" poster gain={1.18} />
         </defs>
-        {!compare && [withdrawal(T, b.wd, wd), openEng(T, b.open), curation(T, b.cur, cur)].map((a, i) => <Panel key={i} f={figOf(i, a)} ba={ba} CAM={CAM} lab={lab[i]} />)}
+        {!compare && [withdrawal(T, b.wd, wd), openEng(T, b.open), curation(T, b.cur, cur)].map((a, i) => <Panel key={i} f={figOf(i, a, intro[i])} ba={ba} CAM={CAM} lab={lab[i]} />)}
         {compare && keys.map((k, n) => (
           <g key={k}>
-            <g transform={`translate(${n * 480} 150) scale(0.75)`}><Panel f={figOf(0, withdrawal(T, b.wd, k))} ba={ba} CAM={CAM} lab={lab[0]} /></g>
+            <g transform={`translate(${n * 480} 150) scale(0.75)`}><Panel f={figOf(0, withdrawal(T, b.wd, k), intro[0])} ba={ba} CAM={CAM} lab={lab[0]} /></g>
             <text x={n * 480 + 240} y="110" fill="#e8e8e4" fontFamily="Inter, sans-serif" fontWeight={600} fontSize="26" textAnchor="middle">{`${n + 1} · ${WD_OPTIONS[k].split(':')[0]}`}</text>
           </g>
         ))}
