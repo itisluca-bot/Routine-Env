@@ -12,20 +12,20 @@ const { glide } = MOTION;
 const LABEL = '#a8a8a5', MUTE = '#9a9a97';
 const ST = { ...TYPES.title, label: { ...TYPES.title.label, weight: 700 }, note: { ...TYPES.title.note, weight: 400 } };
 
-// the layout: one left column under the title, the funders on the right. Title cap top ~182, disclaimer descenders ~898:
-// equal margins; title → first label 130, rows 140 apart, last name → rule 126
+// the layout: one left column under the title, the funders on the right. Title cap top ~164, disclaimer descenders ~945;
+// title → first label 145, rows 165 apart, last name → rule 126
 const X = 180;
-const TITLE = { y: 218, len: 960 };
-const LABEL_Y = [348, 488, 628], NAME_Y = LABEL_Y.map((y) => y + 56);
+const TITLE = { y: 200, len: 960 };
+const LABEL_Y = [345, 510, 675], NAME_Y = LABEL_Y.map((y) => y + 56);
 // the funders' column: a label level with a row label on the left, the logo under it. Logos are alpha-only PNGs,
 // tinted in the page: assets/rug-arts-logo.png from the user's black-on-white file, and assets/nwo-logo.png, the user's
 // NWO logo exactly as given: a white sheet with the emblem and "NWO" cut out (the cuts at the sheet's edges are the
 // logo's design); its cut-outs show the dark red behind it.
-const RULE = { y: 810, w: 300 }, NOTE_Y = [858, 893];
+const RULE = { y: 857, w: 300 }, NOTE_Y = [905, 940];
 const FX = 1340;
-const ARTS_W = 220, ARTS_BASE = 1049 / 1000;   // the "faculty of arts" baseline, in logo widths from its top
+const ARTS_W = 250, ARTS_BASE = 1049 / 1000;   // the "faculty of arts" baseline, in logo widths from its top
 const FUNDERS = [
-  { label: 'NWO OPEN COMPETITION SSH-XS', y: LABEL_Y[0], src: 'assets/nwo-logo.png', w: 125, aspect: 957 / 591, nwo: true },
+  { label: 'NWO OPEN COMPETITION SSH-XS', y: LABEL_Y[0], src: 'assets/nwo-logo.png', w: 145, aspect: 957 / 591, nwo: true },
   { label: 'IMPACT GRANT', y: NOTE_Y[1] - ARTS_BASE * ARTS_W - 18, src: 'assets/rug-arts-logo.png', w: ARTS_W, aspect: 1070 / 1000, rug: true },
 ];
 // an alpha-only logo filled with one colour
@@ -44,8 +44,9 @@ const DOT = { x: X + TITLE.len - 25 + 5, y: TITLE.y - 37, r: 6.2 };
 // carry a slow travelling wave and the 8 fps boil, and slide in from the right at the start. The dot is in the same red
 // family, a step lighter so it reads on the near-black
 const RED = { outer: '#a32e11', inner: '#6e1d0c', dot: '#d03c1e', label: '#efc3b0' };   // label: the funders' labels, on the red
-// lifted at the top so the dark band clears the funders' column (labels and logos) with a margin
-const EDGE = [[650, 1110], [890, 560], [980, 60], [1990, 10]];
+// nearly upright from the bottom (no empty red corner bottom left), then over the top, lifted so the dark band clears
+// the funders' column (labels and logos) with a margin
+const EDGE = [[1000, 1110], [950, 560], [930, 0], [1990, -20]];
 const EDGE_PTS = (() => {
   const pts = [];
   for (let i = 0; i <= 120; i++) {
