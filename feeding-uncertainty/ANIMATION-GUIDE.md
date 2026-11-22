@@ -313,3 +313,13 @@ The user: too much noise on the bars; plinths not yet revealed wiggled (by the p
 - **The end:** the curators' wiggle runs 2.25 cycles, so it ends at "more" and stays (it no longer drops back through "less" and climbs again, which read as a reset). At "less" two posts always stay (less exposure is not none). Then a 7% ease-in-out push anchored on the curator (11.0–13.2 s).
 - **Type and the push:** the axis and the slider sit outside the push. The plaques are drawn outside it too, at their pushed place but never scaled, with the text snapped to whole 4K pixels (`px4k`): scaled or fractionally placed type stepped and jittered sideways by about a pixel (measured on the curation plaque); now it moves in one-pixel steps one way.
 
+### Round 5 (solid coupling, 16:9 framing, a real camera, a hard baseline)
+
+The user: withdrawal and open looked uncoupled from the slider toward the end, and plinths moved before the slider did; the coupling has to be solid. The plaques were inconsistent (over the shadow side's edge, wider than the plinth, smaller than it); the framing wasted space; the zoom was not a camera move (some assets scaled, the labels stayed); the soft pool under each plinth made no sense: use a hard white line, it is a graph.
+
+- **Coupling:** a plinth's height is a pure function of the slider (checked frame by frame: no plinth changes height while the slider is still, outside the split). The grey plinth is there from the first frame (no rise). The one move that is not the slider's is the split, while the slider rests at the middle: the grey plinth parts into three and each settles to its own height at average exposure. A reveal only changes colour; a plinth not yet revealed holds still. Each wiggle starts 0.35 s after its reveal.
+- **The camera** (the push toward the curator, 6%, 11.15–13.35 s) holds everything: set, plinths, figures, axes, labels and slider. Type moves with it smoothly at 4K (the Curation label: eased vertical motion, under a pixel of sideways noise).
+- **Graph:** a hard white baseline (`#e9e7e1`, 4 px, boiling) that the plinths stand on, and a white y axis with its arrow; no floor pools. Labels are group names under the baseline, centred on each plinth (Futura Bold 30, lifted group colours), "Everyone" in white before the split.
+- **Framing:** y axis at x 230; plinths 280 wide (lid overhang 10, shadow side 56) at 590, 1050, 1510; figures at 1.5; 15 px per point; the slider row along the bottom (title, less, track, more).
+- **Split:** the inner shadow sides grow in width instead of fading in (a part-opacity flat tone banded when posterized).
+
