@@ -400,6 +400,13 @@ The user: flicker in the POV; the people on the TV should be beanoids; swap the 
 - **Less curvature:** the reflection bows at K 0.25 (was 0.55).
 - **Head boil:** the band boil on the close-up head is 0.012 × amp (the rig's 0.035 × amp made whole bands crawl at 8 fps at this scale).
 
+### Round 3 (closer, clean band edges)
+
+The user: crop in further so the eye is bigger; the band edge round the highlight was noisy, wandering and jagged.
+
+- **Closer:** the head is now 80 × the rig (eye radius 304, was 213), the eye locked at (1290, 540); the room still shows in a strip past the profile.
+- **Clean bands:** the head is toned in JS (`headImage`): the value field (ambient, the lights, the circle's edge falloff, low-frequency noise fixed to the head so it turns with it, a faint 8 fps boil at 0.0025 × amp) is computed in floating point on a grid, posterized to the curator ramp on a canvas, and each band edge is antialiased over one pixel from the field's own gradient; the image is cut to the head's crisp outline. The SVG filter did the same in 8 bits: on a gentle light gradient the 8-bit steps made the edges stair-step (about every 13 px) and wander with the noise.
+
 ## 21. The last shot: round 1 (concept stills)
 
 The user is replacing the second alley shot (Resistance, §13) with a last shot on the same line: "Coping is a form of resistance. The question is, what do people have to resist with?" The first alley is being reworked as the eye shot (§19–20). Brief: all three groups visible again, zooming out a bit on "coping". Two ideas, each built on a shot the audience has already seen. `Coping Concepts.dc.html` + `coping-concepts.jsx` (loads `curator-phone-kit.jsx` for `WarmPost`), on the Resistance timing (10.00 s: Resistance, Question, With, Tail, Hold). Stills at frame 150 (6.0 s).

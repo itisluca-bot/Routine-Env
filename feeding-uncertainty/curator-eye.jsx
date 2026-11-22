@@ -253,7 +253,7 @@ const HAND_AT = [960, 560];
 // the TV in front (to the left).
 // When the eyes go up the head tilts back about the neck, as the rig does; the camera stays locked on the eye, so the
 // head turns round it and the room behind slides past (at 0.6 of the camera's move: it is further away).
-const S_HEAD = 56, EYE_AT = [1180, 540];
+const S_HEAD = 80, EYE_AT = [1290, 540];
 // A displacement map that bows the POV like a convex mirror: a point at radius r from the centre shows the POV at
 // r·(1 + K·ρ²), ρ = r / RC. Baked once on a canvas. It covers the region MAP (POV coordinates).
 const RC_EYE = 600, K_EYE = 0.25, S_EYE = 560, MAP = [-200, -460, 2320, 2000];
@@ -280,62 +280,74 @@ function eyeLocal(pose) {
   return [R.Hc[0] + R.fh[0] * R.r * 0.52 + R.uh[0] * R.r * 0.12, R.Hc[1] + R.fh[1] * R.r * 0.52 + R.uh[1] * R.r * 0.12];
 }
 const toW = (pl) => [-S_HEAD * pl[0], S_HEAD * pl[1]];   // rig frame → world (figure at the origin, facing left)
-// value noise for the band edges, baked once: a fine grain and four boil frames (8 fps)
-const bakeNoise = (seed, cells) => {
-  let st = seed >>> 0; const rnd = () => (st = (st * 1664525 + 1013904223) >>> 0) / 4294967296;
-  const a = document.createElement('canvas'); a.width = a.height = cells;
-  const g = a.getContext('2d'), im = g.createImageData(cells, cells);
-  for (let i = 0; i < im.data.length; i += 4) { const x = rnd() * 255; im.data[i] = im.data[i + 1] = im.data[i + 2] = x; im.data[i + 3] = 255; }
-  g.putImageData(im, 0, 0);
-  const b = document.createElement('canvas'); b.width = b.height = 256;
-  const bg = b.getContext('2d'); bg.imageSmoothingEnabled = true; bg.imageSmoothingQuality = 'high'; bg.filter = `blur(${(256 / cells) * 0.35}px)`;
-  bg.drawImage(a, -1, -1, 258, 258);
-  return b.toDataURL('image/png');
+// The head in close-up, toned in JS: the value field (ambient, the lights, the edge falloff, a little low-frequency
+// noise fixed to the head and a faint boil) is computed in floating point and posterized to the curator ramp on a
+// canvas, with each band edge antialiased from the field's own gradient. An SVG filter did the same in 8 bits: on a
+// gentle light gradient the 8-bit steps made the band edges stair-step and wander.
+const HM_W = 1920, HM_H = 1080, HM_G = 4;   // canvas size (design px) and the field's grid step
+const HM_RGB = RC.map((hx) => [1, 3, 5].map((i) => parseInt(hx.slice(i, i + 2), 16)));
+const hmHash = (x, y, sd) => { const h = Math.sin(x * 127.1 + y * 311.7 + sd * 74.7) * 43758.5453; return h - Math.floor(h); };
+function hmNoise(x, y, sd) {   // smooth value noise, cells of 1
+  const xi = Math.floor(x), yi = Math.floor(y), xf = x - xi, yf = y - yi;
+  const u = xf * xf * (3 - 2 * xf), w = yf * yf * (3 - 2 * yf);
+  const a = hmHash(xi, yi, sd), b = hmHash(xi + 1, yi, sd), c = hmHash(xi, yi + 1, sd), d = hmHash(xi + 1, yi + 1, sd);
+  return a + (b - a) * u + (c - a) * w + (a - b - c + d) * u * w - 0.5;
+}
+const hmEdge = (rho) => {   // the edge field of a circle: darker toward the outline
+  const S = [[0.3, 0], [0.62, 0.16], [0.86, 0.36], [1, 0.56]];
+  if (rho <= S[0][0]) return 0;
+  for (let i = 1; i < S.length; i++) if (rho <= S[i][0]) return S[i - 1][1] + ((rho - S[i - 1][0]) / (S[i][0] - S[i - 1][0])) * (S[i][1] - S[i - 1][1]);
+  return S[S.length - 1][1];
 };
-const HEAD_NOISE = { grain: bakeNoise(17, 7), boil: [23, 35, 47, 59].map((sd) => bakeNoise(sd, 12)) };
-// the head in close-up: value art (ambient, the lights, the edge falloff) → noise → posterized to the curator ramp
-function HeadMacro({ pose, lights, region, bf, amp }) {
-  const R = window.FU_BEAN.rig(pose), C = toW(R.Hc), r = R.r * S_HEAD;
-  const lit = lights.map((L, i) => {
+const hmLight = (t) => (t >= 1 ? 0 : t < 0.45 ? 1 - (0.3 * t) / 0.45 : 0.7 * (1 - (t - 0.45) / 0.55));
+function headImage(C, r, ang, lit, bf, amp) {
+  const gw = Math.ceil(HM_W / HM_G) + 2, gh = Math.ceil(HM_H / HM_G) + 2, F = new Float32Array(gw * gh);
+  const ca = Math.cos(-ang), sa = Math.sin(-ang), cell = 0.18 * r, bcell = 0.09 * r, ba = 0.0025 * amp;
+  for (let j = 0; j < gh; j++) for (let i = 0; i < gw; i++) {
+    const x = (i - 1) * HM_G, y = (j - 1) * HM_G, dx = x - C[0], dy = y - C[1];
+    const rho = Math.hypot(dx, dy) / r;
+    let keep = 1;
+    for (const L of lit) keep *= 1 - L.f * hmLight(Math.hypot(x - L.c[0], y - L.c[1]) / L.R);
+    const hx = dx * ca - dy * sa, hy = dx * sa + dy * ca;   // noise fixed to the head, so it turns with it
+    F[j * gw + i] = (1 - 0.66 * keep) * (1 - hmEdge(rho)) + 0.022 * hmNoise(hx / cell, hy / cell, 3) + ba * hmNoise(hx / bcell, hy / bcell, 11 + (bf % 4) * 7);
+  }
+  const cv = document.createElement('canvas'); cv.width = HM_W; cv.height = HM_H;
+  const g = cv.getContext('2d'), im = g.createImageData(HM_W, HM_H), D = im.data, N = 7;
+  for (let y = 0; y < HM_H; y++) {
+    const gy = y / HM_G + 1, j0 = Math.floor(gy), fy = gy - j0;
+    for (let x = 0; x < HM_W; x++) {
+      const gx = x / HM_G + 1, i0 = Math.floor(gx), fx = gx - i0, o = j0 * gw + i0;
+      const a = F[o], b = F[o + 1], c = F[o + gw], d = F[o + gw + 1];
+      const val = a + (b - a) * fx + (c - a) * fy + (a - b - c + d) * fx * fy;
+      const gxv = ((b - a) + (d - c - b + a) * fy) / HM_G, gyv = ((c - a) + (d - c - b + a) * fx) / HM_G;
+      const grad = Math.hypot(gxv, gyv) + 1e-6, k = clamp(val * N, 0, N - 1e-4), band = Math.floor(k);
+      // distance (px) to the nearest threshold; blend across it over one pixel
+      const up = (band + 1 - k) / N / grad, dn = (k - band) / N / grad;
+      let c0 = HM_RGB[band], c1 = c0, t = 0;
+      if (up < 0.5 && band < N - 1) { c1 = HM_RGB[band + 1]; t = 0.5 - up; }
+      else if (dn < 0.5 && band > 0) { c1 = HM_RGB[band - 1]; t = 0.5 - dn; }
+      const q = (y * HM_W + x) * 4;
+      D[q] = c0[0] + (c1[0] - c0[0]) * t; D[q + 1] = c0[1] + (c1[1] - c0[1]) * t; D[q + 2] = c0[2] + (c1[2] - c0[2]) * t; D[q + 3] = 255;
+    }
+  }
+  g.putImageData(im, 0, 0);
+  return cv.toDataURL('image/png');
+}
+// the head (in screen coordinates: C is the head's centre on screen), cut to its crisp outline
+function HeadMacro({ pose, lights, cam, bf, amp }) {
+  const R = window.FU_BEAN.rig(pose), Cw = toW(R.Hc), r = R.r * S_HEAD, C = [Cw[0] + cam[0], Cw[1] + cam[1]];
+  const ang = -((pose.lean + pose.tilt) * Math.PI) / 180;   // the head's turn on screen (the figure faces left)
+  const lit = lights.map((L) => {
     let u, f;
     if (L.dir) { const n = Math.hypot(L.dir[0], L.dir[1]); u = [-L.dir[0] / n, -L.dir[1] / n]; f = L.i; }
-    else { const d = [L.x - C[0], L.y - C[1]], n = Math.hypot(d[0], d[1]) || 1; u = [d[0] / n, d[1] / n]; f = L.i / (1 + Math.pow(Math.max(0, n - r) / L.reach, 2)); }
-    return { u, f, i };
+    else { const d = [L.x - Cw[0], L.y - Cw[1]], n = Math.hypot(d[0], d[1]) || 1; u = [d[0] / n, d[1] / n]; f = L.i / (1 + Math.pow(Math.max(0, n - r) / L.reach, 2)); }
+    return { c: [C[0] + u[0] * r * 0.85, C[1] + u[1] * r * 0.85], R: r * 1.9, f: clamp(f, 0, 1) };
   });
-  const img = (href, res) => <feImage href={href} x={region[0]} y={region[1]} width={region[2]} height={region[3]} preserveAspectRatio="none" result={res} />;
-  const b = 0.012 * amp;   // band boil: at this scale the rig's amount made the bands crawl visibly at 8 fps
+  const href = headImage(C, r, ang, lit, bf, amp);
   return (
     <g>
-      <defs>
-        <clipPath id="hmClip"><circle cx={C[0]} cy={C[1]} r={r} /></clipPath>
-        {lit.map((L) => (
-          <radialGradient key={L.i} id={'hmL' + L.i} gradientUnits="userSpaceOnUse" cx={C[0] + L.u[0] * r * 0.85} cy={C[1] + L.u[1] * r * 0.85} r={r * 1.9}>
-            <stop offset="0" stopColor="#fff" stopOpacity={clamp(L.f, 0, 1)} /><stop offset="0.45" stopColor="#fff" stopOpacity={clamp(L.f * 0.7, 0, 1)} /><stop offset="1" stopColor="#fff" stopOpacity="0" />
-          </radialGradient>
-        ))}
-        <radialGradient id="hmEdge" gradientUnits="userSpaceOnUse" cx={C[0]} cy={C[1]} r={r}>
-          <stop offset="0.3" stopColor="#000" stopOpacity="0" /><stop offset="0.62" stopColor="#000" stopOpacity="0.16" /><stop offset="0.86" stopColor="#000" stopOpacity="0.36" /><stop offset="1" stopColor="#000" stopOpacity="0.56" />
-        </radialGradient>
-        <filter id="hmTone" filterUnits="userSpaceOnUse" x={region[0]} y={region[1]} width={region[2]} height={region[3]} colorInterpolationFilters="sRGB">
-          <feColorMatrix in="SourceGraphic" type="matrix" values="0.2126 0.7152 0.0722 0 0  0.2126 0.7152 0.0722 0 0  0.2126 0.7152 0.0722 0 0  0 0 0 1 0" result="l" />
-          {img(HEAD_NOISE.grain, 'n')}
-          <feComposite in="l" in2="n" operator="arithmetic" k1="0" k2="1" k3="0.035" k4="-0.0175" result="ln" />
-          {img(HEAD_NOISE.boil[bf % 4], 'nb')}
-          <feComposite in="ln" in2="nb" operator="arithmetic" k1="0" k2="1" k3={b} k4={-b / 2} result="lb" />
-          <feGaussianBlur in="lb" stdDeviation="16" result="s" />
-          <feComponentTransfer in="s">
-            {['R', 'G', 'B'].map((ch, j) => React.createElement('feFunc' + ch, { key: ch, type: 'discrete', tableValues: RC.map((hx) => (parseInt(hx.slice(1 + 2 * j, 3 + 2 * j), 16) / 255).toFixed(4)).join(' ') }))}
-            <feFuncA type="linear" slope="0" intercept="1" />
-          </feComponentTransfer>
-        </filter>
-      </defs>
-      <g clipPath="url(#hmClip)">
-        <g filter="url(#hmTone)">
-          <circle cx={C[0]} cy={C[1]} r={r + 80} fill={v(0.34)} />
-          {lit.map((L) => <circle key={L.i} cx={C[0]} cy={C[1]} r={r + 80} fill={`url(#hmL${L.i})`} />)}
-          <circle cx={C[0]} cy={C[1]} r={r + 1} fill="url(#hmEdge)" />
-        </g>
-      </g>
+      <clipPath id="hmClip"><circle cx={C[0]} cy={C[1]} r={r} /></clipPath>
+      <image href={href} x="0" y="0" width={HM_W} height={HM_H} clipPath="url(#hmClip)" preserveAspectRatio="none" />
     </g>
   );
 }
@@ -378,9 +390,7 @@ function EyeView({ T, k, look }) {
         </g>
       </g>
       {/* the head, toned, lit by the phone and the TV */}
-      <g transform={`translate(${c[0].toFixed(2)} ${c[1].toFixed(2)})`}>
-        <HeadMacro pose={pose} lights={lights} region={[-c[0] - 60, -c[1] - 60, 2040, 1200]} bf={k.bf} amp={k.amp} />
-      </g>
+      <HeadMacro pose={pose} lights={lights} cam={c} bf={k.bf} amp={k.amp} />
       {/* the eye: a crisp dark disc in the rig's proportion; in it, the POV, mirrored and bowed */}
       <circle cx={E[0]} cy={E[1]} r={er} fill={RC[0]} />
       <g clipPath="url(#eyeClip)">
