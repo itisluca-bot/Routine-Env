@@ -21,7 +21,7 @@ const NOTE_T = 5.5;                 // the notification lights the phone
 const CUT_T = 4.84;                 // the news cuts from the podium to the anchor and the chart
 
 // ── the camera: pitch from the phone (down) to the TV ──
-const F = 1000, PITCH_PHONE = -0.64, PITCH_TV = 0.06;
+const F = 1000, PITCH_PHONE = -0.64, PITCH_TV = 0.0;
 const Yp = (e, p) => 540 - F * Math.tan(clamp(e - p, -1.35, 1.35));
 const span = (e0, e1, p) => { const a = Yp(e1, p), b = Yp(e0, p); return [a, b - a]; };   // [top y, height] of e0..e1
 function lookAt(T) {   // 0 on the phone, 1 on the TV; head moves overshoot a little and settle
@@ -134,7 +134,7 @@ function POV({ T, k, look }) {
   const far = mixRamp('cur', 'red', 0.1 * foc);
   // the phone, held at the lap; it drops a little when the eyes leave it, and buzzes with the notification
   const buzz = (T > NOTE_T ? Math.exp(-(T - NOTE_T) * 6) : 0) * Math.sin((T - NOTE_T) * 90);
-  const ePh = PITCH_PHONE + 0.012 - 0.05 * look;
+  const ePh = PITCH_PHONE + 0.012 - 0.03 * look;   // its top stays in the bottom of the frame on the TV
   const P = { x: 962 + 7 * osc(T, 4.1) + 5 * buzz, y: Yp(ePh, p) + 4 * osc(T, 3.3, 0.2), s: 0.92, rot: -3 + 1.1 * osc(T, 5.2) + 2.4 * buzz };
   const L = feedLayout(ITEMS, feedScroll(T), T), fc = feedCards(L, { dots: true });
   const bn = banner(T);
@@ -170,7 +170,7 @@ function POV({ T, k, look }) {
         <GradeBlur id="povMid" ramp="cur" blur={midBlur} />
         <GradeBlur id="povNearSet" ramp="cur" poster={false} blur={18} />
         <GradeBlur id="povTV" ramp="red" blur={farBlur} />
-        <Blur id="povNear" s={nearBlur} />
+        <Blur id="povNear" s={nearBlur} region={[P.x - 700, P.y - 640, 1400, 1500]} />
       </defs>
       {/* far: the wall, the window, a picture, the sideboard, the TV's glow */}
       <g filter="url(#povFar)">
@@ -212,7 +212,8 @@ function POV({ T, k, look }) {
         <path d={`M -400 ${Yp(-0.42, p)} Q 120 ${Yp(-0.44, p)} 170 ${Yp(-0.6, p)} L 140 ${Yp(-1.2, p)} L -400 ${Yp(-1.2, p)} Z`} fill={v(0.2)} />
         <path d={`M 2320 ${Yp(-0.42, p)} Q 1800 ${Yp(-0.44, p)} 1750 ${Yp(-0.6, p)} L 1780 ${Yp(-1.2, p)} L 2320 ${Yp(-1.2, p)} Z`} fill={v(0.17)} />
       </g>
-      {/* the phone and the hands (the curator phone shot's mitt), soft while the eyes are on the TV */}
+      {/* the phone and the hands (the curator phone shot's mitt), soft while the eyes are on the TV. The blur's region
+          hugs the phone and hands: with the frame-wide region a black smudge appeared in the top-left corner */}
       <g filter={nearBlur > 0.3 ? 'url(#povNear)' : undefined}>
         <PhoneDefs light={HAND_AT} reach={(640 + 80 * (shine - 1)) * 0.92} handRamp="cur" bf={k.bf} amp={k.amp} handAmp={k.amp * 0.35} region={[-400, -700, 2720, 2500]} />
         <g transform={handT}><g filter="url(#phTone)"><Mitt P={PH} tip={tipW} layer="back" /></g></g>
