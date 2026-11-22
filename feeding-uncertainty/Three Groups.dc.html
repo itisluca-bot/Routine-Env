@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>html,body{margin:0;height:100%;background:#0a0a0a;overflow:hidden}</style>
+<script>window.OM_SCENES = '[{"name":"Meet","dur":1.4,"desc":"Three panels, each in its group ramp: the three groups side by side, idle."},{"name":"Withdrawal","dur":1.6,"desc":"withdrawal: a post drops in at blue; they dismiss it (wave-off or flick) and stand with their back to it, arms folded, chin up."},{"name":"Open","dur":1.6,"desc":"open engagement: a post drops in at teal; the hand comes up and a loupe appears in it; they lean in."},{"name":"Curation","dur":1.8,"desc":"curation: orange takes a card, recoils from a red one that darts at them, keeps an eye on it, takes another."},{"name":"Together","dur":0.36,"desc":"All three in their end states."},{"name":"Hold","dur":0.24,"desc":"Six frames (25 fps) of idle: only the boil and small sways move."}]';</script>
+<script>window.OM_PLAYBACK = '{"mode":"loop"}';</script>
+<script>window.TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
+  "wd": "wave",
+  "cur": "warm",
+  "referenceOverlay": false,
+  "lineBoil": true,
+  "boilAmp": 0.5
+}/*EDITMODE-END*/;</script>
+</helmet>
+<div style="position:fixed; inset:0; background:#0a0a0a;">
+  <x-import component-from-global-scope="FUThreeGroups" from="./animations-v3.jsx ./tweaks-panel.jsx ./rigs/bean-rig.jsx ./open-engagers-concepts.jsx ./rigs/fu-look.jsx ./curator-phone-kit.jsx ./three-groups.jsx" hint-size="100%,100%" style="position:absolute; inset:0;"></x-import>
+</div>
+</x-dc>
+</body>
+</html>

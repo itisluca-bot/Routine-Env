@@ -51,6 +51,7 @@ This is the working guide for a new Claude session. Read it together with `CLAUD
 | `Curator Phone.dc.html` + `curator-phone.jsx` | **The current phone shot** (concept A, §12). `--set variant=two` (default) or `one` |
 | `Resistance.dc.html` + `resistance.jsx` | **The resistance shot** (§13). `--set camera=track` (chosen), `look=toned` (default) or `old` |
 | `Three Groups Concepts.dc.html` + `three-groups-concepts.jsx` | Round-1 layout concepts for the three groups side by side (§16) |
+| `Three Groups.dc.html` + `three-groups.jsx` | **The three groups shot** (concept F, §17). `--set wd=wave|flick,cur=warm|red` |
 | `tools/render.mjs` | Headless renderer (§6) |
 
 Load order in a page: `./animations-v3.jsx ./tweaks-panel.jsx ./rigs/bean-rig.jsx ./open-engagers-concepts.jsx ./your-shot.jsx`.
@@ -107,7 +108,7 @@ node tools/render.mjs "<page>" --frames 0,120,300 --half --guide                
 5. **Curators on the phone** (`timing_0.srt`, 9s4f = 9.16 s). Round-1 concepts (§11); the user chose **A · Long press** (§12). Exported at 4K (variant `two`).
 6. **Resistance** (`resistance.jsx`, `timing_4.srt`, not in the repo; 10.00 s). Built in another session; moved to the toned look in October 2026 (§13).
 7. **End credits** (12.00 s, silent for now). Round-1 concepts A–H (§14); the user chose H's look, made simple and clean (§15).
-8. **The three groups side by side** (7.00 s, no SRT yet). Round-1 layout concepts A–H (§16).
+8. **The three groups side by side** (7.00 s, no SRT yet). Round-1 layout concepts A–H (§16); the user chose **F · Triptych** (§17).
 4. **Vulnerability** (5.00 s, no SRT yet). Round 1, the city of apartment blocks (`vulnerability.jsx`, variant 1), was exported at 4K; the user then found it too busy. Round 2 is the alley (`vulnerability-alley.jsx`, §10).
 
 ## 8. Open engagers shot: what is approved
@@ -250,3 +251,12 @@ Line: "Coping is a form of resistance. The question is, what do people have to r
 | H | Lamps | three hanging lamps in the dark (the Open Engagers opening, one per group); labels on the floor |
 
 Render one: `node tools/render.mjs "Three Groups Concepts.dc.html" --set concept=C --half --guide --preview`.
+
+## 17. The three groups side by side: round 2 (F · Triptych)
+
+`Three Groups.dc.html` + `three-groups.jsx` (loads `curator-phone-kit.jsx` for `WarmPost`). The user chose the triptych and asked for better actions: withdrawal more dismissive; the loupe only appears when the hand comes up; curation without a loupe, more selective (taking some cards, scared of others). Same beats as §16.
+
+- **Withdrawal** (`wd` tweak; two readings of "more dismissive"): `wave` (default) glances up, swats the post with a backhand, turns on their heel (flip through edge-on) and stands with their back to it, arms folded, chin up; the post tumbles out of the panel. `flick` turns their back as the post arrives, then flicks it away over the shoulder without looking, arms folded, chin up.
+- **Open engagement:** idle with no loupe until the hand comes up; the loupe pops in (a small overshoot) as it rises; they lean in, and the post turns its face to the lens.
+- **Curation** (`cur` tweak): no loupe. Takes a card that floats into reach and holds it close; a red post darts at their face and they flinch (lean back, a quick duck, head down, a half step back); it backs off and hovers, and they keep an eye on it; they take a second card, fanned with the first. `warm` (default): the cards they take are comfort posts (`WarmPost`, cat and sun, through `tgWarm`, the orange ramp lifted); `red`: every card is a red post.
+- **Set:** three panels with 6 px dark gutters, each its group's ramp (wall, a window light with blinds / bare / half-curtained, floor), out of focus; figures `ToneBean` at 1.9, lit by their window; captions in each ramp's palest tone at the bottom, fading in on their beat. A 3% push over the shot.
