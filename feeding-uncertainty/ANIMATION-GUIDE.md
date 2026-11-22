@@ -278,3 +278,13 @@ Render one: `node tools/render.mjs "Three Groups Concepts.dc.html" --set concept
 - **Not carried over from the scatter:** no "exposure slider" (bars compare people, never one person changing), and the dots are gone, so the synthetic-data note no longer applies to this shot. Still open from the handoff: confirm with Qinfeng that the outcome measure is the likelihood of voting for a populist radical party (the paper's pages call it "political extremism").
 - **Render:** `node tools/render.mjs "Crisis Bars.dc.html"` (4K PNG sequence, about 0.25 s a frame at half size).
 
+### Round 2 (three bars, texture, slider)
+
+The user: "should be only three bars, also the bar needs some texture, and then maybe a slider for crisis exposure that shows only the orange bar reacting."
+
+- **Three bars**, one per group (Withdrawal, Open Engagement, Curation), 190 wide. The opening is one grey "Everyone" bar with all three figures on it; it splits into the three on "looked closer".
+- **Slider:** under the chart, "Crisis exposure on social media", from less to more (1 point below to 1 point above average). Its fill is the crisis red; red posts gather over the chart as it rises (post j arrives once the slider passes j / 12) and leave as it comes back. In the opening it slides to "more" and the Everyone bar barely moves; it slides back on "looked closer"; on "the curators!" (after orange's bar has risen at "less") it sweeps to "more" and only the orange bar climbs, 16.8 → 26.6, while the three figures do their triptych actions. The other two dim a little (to 70%).
+- **Only orange reacts** (`others` tweak): `flat` (default) holds withdrawal and open at their level at average exposure (25.7, 28.2), since their slopes are not significant; `data` gives their small dips (−1.06, −1.54 per point).
+- **Texture:** bars are toned like the people: value art lit from the upper left, darker toward the floor, through a `ToneFilter` in the group's ramp (edge 12, depth 0.45, grain 0.13), so they carry flat, irregular bands parallel to their outline. Each bar's filter region is a fixed box round it (moving sideways with it, fixed to the floor), so the bands keep one scale and hold still while the bar rises. The grey bar is toned as one shape with one light gradient across it, so it has no seams.
+- **Data honesty:** the handoff had rejected an exposure slider in the scatter because moving dots implied one person's exposure changing. Here the slider compares people who saw less with people who saw more; the narration should not say a person's vote likelihood rises as they see more.
+
