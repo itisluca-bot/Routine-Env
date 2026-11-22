@@ -335,3 +335,5 @@ function FUThreeGroups() {
 }
 
 window.FUThreeGroups = FUThreeGroups;
+// The characters' actions, shared with other shots that reuse them (the crisis bar chart).
+window.FU_THREE_GROUPS = { withdrawal, openEng, curation, HAIR, backOut };
