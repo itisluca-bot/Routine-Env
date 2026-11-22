@@ -121,7 +121,7 @@ function withdrawal(T, t0, mode) {
     posts.forEach((q, j) => {
       const h = q.P.h, gather = glide(T, t0 + 1.0 + 0.1 * j, t0 + 1.9 + 0.1 * j, 0, 1);   // they drift round to the back
       q.p = lerp2(q.p, add(add(Hc0, [46 + 56 * h(6), -26 + 110 * h(7)]), hover(T, q.P.ph * 5)), gather);   // below the label
-      if (j % 2 === 0) { const leave = glide(T, t0 + 1.8 + 0.3 * j, t0 + 3.2 + 0.3 * j, 0, 1); q.p = add(q.p, [280 * leave, -200 * leave]); }
+      if (j % 2 === 0) { const leave = glide(T, t0 + 1.8 + 0.3 * j, t0 + 3.2 + 0.3 * j, 0, 1); q.p = add(q.p, [190 * leave, -720 * leave]); /* up and out of the top of the frame */ }
     });
   }
   // they watch the first ones come; then aloof: chin up, leaning back a little; arms folded
@@ -215,13 +215,17 @@ function deco(i, a) {
 
 // one panel, all its layers. f: { g, i, a, x, hx0, y, s, dir, lights }. Drawn in the panel's own coordinates, so the
 // comparison view can place several copies of panel 0.
-function Panel({ f, ba, CAM, lab }) {
+// part 'base': the room, label, light and figure, clipped to the panel. part 'cards': the cards and the loupe, drawn
+// after every panel's base and not clipped, so they fly freely across the borders (clipCards keeps them in, for the
+// comparison view).
+function Panel({ f, ba, CAM, part = 'base', clipCards = false }) {
   const { g, i, a } = f;
   const intro = f.intro ?? 1, L = (a.light ?? 1) * lerp(0.35, 1, intro);
   const toW = (p) => [f.x + f.dir * f.s * p[0], f.y + f.s * p[1]];   // the figure's frame (flips and walks with them)
   const toP = (p) => [f.hx0 + f.s * p[0], f.y + f.s * p[1]];         // the post frame
   const clip = (el) => <g clipPath={`url(#tgPanel${i})`}>{el}</g>;
-  const lay = (filter, content, key) => <g key={key} filter={filter ? `url(#${filter})` : undefined}><g transform={CAM}>{clip(content)}</g></g>;
+  const lay = (filter, content, key, free) => <g key={key} filter={filter ? `url(#${filter})` : undefined}><g transform={CAM}>{free ? content : clip(content)}</g></g>;
+  const free = !clipCards;
   const card = (c, k) => {
     if (c.on === false) return null;
     const p = toP(c.p), s = f.s * c.s, d = c.dark || 0;
@@ -258,24 +262,26 @@ function Panel({ f, ba, CAM, lab }) {
   out.push(lay('fuGradeFg-' + g, <ellipse cx={X0[i] + 280} cy="925" rx="230" ry="30" fill="url(#fuPool)" opacity={0.6 * L} />, 'pool'));
   if (a.cord) out.push(lay('fuGradeFg-' + g, <g><line x1={a.cord.x} y1={wy - 108} x2={a.cord.x} y2={a.cord.y1} stroke={v(0.5)} strokeWidth="2.5" /><circle cx={a.cord.x} cy={a.cord.y1 + 6} r="7" fill={v(0.7)} /></g>, 'cord'));
   out.push(<g key="fig" transform={CAM}>{clip(<ToneBean {...ba} id={i + 1} x={f.x} y={f.y} s={f.s} dir={f.dir} pose={a.pose} ramp={g} hair={HAIR[g]} lights={f.lights} />)}</g>);
-  out.push(lay('fuGradeFg-red', a.cards.filter((c) => c.red).map(card), 'red'));
-  out.push(lay('tgWarm', a.cards.filter((c) => !c.red).map(card), 'warm'));
+  // the intro: the panel starts in its own dark tone (not black) with the light low, and comes up
+  if (intro < 1) out.push(lay(null, <rect x={X0[i]} y="0" width={PW} height="1080" fill={RAMPS[g][0]} opacity={0.8 * (1 - intro)} />, 'intro'));
+  if (part === 'base') return <g>{out}</g>;
+  const top = [];
+  top.push(lay('fuGradeFg-red', a.cards.filter((c) => c.red).map(card), 'red', free));
+  top.push(lay('tgWarm', a.cards.filter((c) => !c.red).map(card), 'warm', free));
   if (a.ls > 0.02) {   // the loupe: the lens shows the post larger
     const lensR = 20 * f.s * a.ls, lc = toW(a.lens), oh = toW(a.hand), oc = a.cards[0], oq = lerp2(lc, toP(oc.p), 0.3);
     const R = RAMPS.open, d = [oh[0] - lc[0], oh[1] - lc[1]], n = Math.hypot(d[0], d[1]) || 1, rim = [lc[0] + (d[0] / n) * lensR, lc[1] + (d[1] / n) * lensR];
-    out.push(<defs key="ld"><clipPath id="tgLens"><circle cx={lc[0]} cy={lc[1]} r={lensR * 0.9} /></clipPath></defs>);
-    out.push(lay('fuGradeFg-red', <g clipPath="url(#tgLens)"><circle cx={lc[0]} cy={lc[1]} r={lensR} fill={v(0.3)} /><PostValue x={oq[0]} y={oq[1]} s={f.s * 1.7} rot={oc.rot} flip={oc.flip} kind={oc.kind} /></g>, 'lens'));
-    out.push(lay(null, (
+    top.push(<defs key="ld"><clipPath id="tgLens"><circle cx={lc[0]} cy={lc[1]} r={lensR * 0.9} /></clipPath></defs>);
+    top.push(lay('fuGradeFg-red', <g clipPath="url(#tgLens)"><circle cx={lc[0]} cy={lc[1]} r={lensR} fill={v(0.3)} /><PostValue x={oq[0]} y={oq[1]} s={f.s * 1.7} rot={oc.rot} flip={oc.flip} kind={oc.kind} /></g>, 'lens', free));
+    top.push(lay(null, (
       <g>
         <line x1={rim[0]} y1={rim[1]} x2={oh[0] + (d[0] / n) * 6 * f.s * a.ls} y2={oh[1] + (d[1] / n) * 6 * f.s * a.ls} stroke={R[1]} strokeWidth={6 * f.s * Math.min(1, a.ls)} strokeLinecap="round" />
         <circle cx={lc[0]} cy={lc[1]} r={lensR} fill={R[6]} fillOpacity="0.08" stroke={R[2]} strokeWidth={4.5 * f.s * Math.min(1, a.ls)} />
         <path d={`M ${lc[0] - lensR * 0.55} ${lc[1] - lensR * 0.35} A ${lensR * 0.7} ${lensR * 0.7} 0 0 1 ${lc[0] - lensR * 0.05} ${lc[1] - lensR * 0.66}`} fill="none" stroke={R[6]} strokeOpacity="0.7" strokeWidth={1.6 * f.s} strokeLinecap="round" />
       </g>
-    ), 'loupe'));
+    ), 'loupe', free));
   }
-  // the intro: the panel starts in its own dark tone (not black) with the light low, and comes up
-  if (intro < 1) out.push(lay(null, <rect x={X0[i]} y="0" width={PW} height="1080" fill={RAMPS[g][0]} opacity={0.8 * (1 - intro)} />, 'intro'));
-  return <g>{out}</g>;
+  return <g>{top}</g>;
 }
 function figOf(i, a, intro = 1) {
   // the turn stays wide for most of its time and passes edge-on in about a frame (a slow turn otherwise shows a sliver)
@@ -304,10 +310,13 @@ function Piece({ guide, boil, boilAmp, wd, cur, view }) {
           {GROUPS.map((g, i) => <clipPath key={g} id={'tgPanel' + i}><rect x={X0[i] + 6} y="6" width={PW - 12} height="1068" /></clipPath>)}
           <GradeFilter id="tgWarm" ramp="cur" poster gain={1.18} />
         </defs>
-        {!compare && [withdrawal(T, b.wd, wd), openEng(T, b.open), curation(T, b.cur, cur)].map((a, i) => <Panel key={i} f={figOf(i, a, intro[i])} ba={ba} CAM={CAM} lab={lab[i]} />)}
+        {!compare && (() => {
+          const figs = [withdrawal(T, b.wd, wd), openEng(T, b.open), curation(T, b.cur, cur)].map((a, i) => figOf(i, a, intro[i]));
+          return [...figs.map((f, i) => <Panel key={'b' + i} f={f} ba={ba} CAM={CAM} />), ...figs.map((f, i) => <Panel key={'c' + i} f={f} ba={ba} CAM={CAM} part="cards" />)];
+        })()}
         {compare && keys.map((k, n) => (
           <g key={k}>
-            <g transform={`translate(${n * 480} 150) scale(0.75)`}><Panel f={figOf(0, withdrawal(T, b.wd, k), intro[0])} ba={ba} CAM={CAM} lab={lab[0]} /></g>
+            <g transform={`translate(${n * 480} 150) scale(0.75)`}>{(() => { const f = figOf(0, withdrawal(T, b.wd, k), intro[0]); return <g><Panel f={f} ba={ba} CAM={CAM} /><Panel f={f} ba={ba} CAM={CAM} part="cards" clipCards /></g>; })()}</g>
             <text x={n * 480 + 240} y="110" fill="#e8e8e4" fontFamily="Inter, sans-serif" fontWeight={600} fontSize="26" textAnchor="middle">{`${n + 1} · ${WD_OPTIONS[k].split(':')[0]}`}</text>
           </g>
         ))}
