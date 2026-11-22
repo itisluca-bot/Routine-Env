@@ -7,8 +7,8 @@
 //     outlines in the dark and the ones outside as shadows on the blind; then they turn their back on it. 'shoo': two
 //     slow, lazy waves that push the posts aside, then they turn away, arms folded.
 //   open engagement (teal): the loupe only appears as the hand comes up; the lens shows the post larger.
-//   curation (orange): no loupe; selective. Takes a card, recoils from a red one that darts at them, keeps an eye on it,
-//     takes another. `cur` = 'warm': the cards they take are comfort posts (the phone shot's WarmPost) in their ramp;
+//   curation (orange): no loupe; selective. Takes a card, dodges a red one flying past (a slight lean back), takes
+//     another. `cur` = 'warm': the cards they take are comfort posts (the phone shot's WarmPost) in their ramp;
 //     'red': every card is a red post.
 // Every frame is a pure function of T.
 const { W, H, OUT_W, OUT_H, MOTION, osc, lerp, lerp2, hash } = window.FU_RIG;
@@ -165,23 +165,21 @@ function curation(T, t0, mode) {
   const Hc0 = rig(pose).Hc;
   const RA = add(Hc0, [62, 58]), RB = add(Hc0, [66, 30]), CH = add(Hc0, [30, 70]), CH2 = add(Hc0, [22, 64]);
   const HOLD = [4, -6], HOLD_B = [12, -16];
-  // the red one: hovers out front, darts at their face, backs off and keeps hovering
-  const rArr = glide(T, t0 + 0.2, t0 + 0.85, 0, 1);
-  const dart = hit(T, t0 + 1.0, t0 + 1.14, 0, 1), retreat = glide(T, t0 + 1.25, t0 + 1.8, 0, 1);
-  const pR = add(lerp2(lerp2(lerp2([300, -470], add(Hc0, [150, -36]), rArr), add(Hc0, [58, -8]), dart), add(Hc0, [146, -52]), retreat), hover(T, 0.8, rArr));
-  // flinch: lean back, head down and away, the far arm up as a shield, a half step back
-  const fl = hit(T, t0 + 1.02, t0 + 1.2, 0, 1) * (1 - glide(T, t0 + 1.45, t0 + 2.0, 0, 1));
-  const wary = glide(T, t0 + 1.45, t0 + 1.9, 0, 1);
-  pose.lean += -17 * fl - 3 * wary;
-  pose.hx += -16 * fl;
-  pose.tilt += 24 * fl - 6 * wary + 8 * glide(T, t0 + 0.3, t0 + 0.5, 0, 1) * (1 - glide(T, t0 + 0.75, t0 + 0.95, 0, 1)) + 4 * glide(T, t0 + 1.55, t0 + 1.75, 0, 1);
-  pose.armF = mixA(pose.armF, [150, 40], fl);
-  pose.legN = [pose.legN[0] + 30 * fl, pose.legN[1] + 58 * fl];   // a quick duck
-  pose.legF = [pose.legF[0] + 26 * fl, pose.legF[1] + 54 * fl];
+  // the red one flies past: in from the front, just over and in front of their head, off behind them. They dodge it
+  // with a slight lean back and a tip of the head, timed to when it is closest (t0 + 1.2).
+  const R0 = [235, -250], R1 = add(Hc0, [34, -52]), R2 = [-210, -440], RC = [2 * R1[0] - (R0[0] + R2[0]) / 2, 2 * R1[1] - (R0[1] + R2[1]) / 2];
+  const ru = clampN((T - (t0 + 0.5)) / 1.4, 0, 1), rk = 0.5 - 0.5 * Math.cos(Math.PI * ru) * 0.35 - 0.5 * (1 - 2 * ru) * 0.65;   // nearly even speed
+  const bz = (k) => [(1 - k) * (1 - k) * R0[0] + 2 * (1 - k) * k * RC[0] + k * k * R2[0], (1 - k) * (1 - k) * R0[1] + 2 * (1 - k) * k * RC[1] + k * k * R2[1]];
+  const pR = add(bz(rk), [0, 6 * osc(T, 0.7)]);
+  const redOn = T > t0 + 0.48 && ru < 1;
+  const dodge = Math.pow(Math.sin(Math.PI * clampN((T - (t0 + 0.88)) / 0.64, 0, 1)), 2);
+  pose.lean += -7 * dodge;
+  pose.hx += -5 * dodge;
+  pose.tilt += 9 * dodge + 8 * glide(T, t0 + 0.3, t0 + 0.5, 0, 1) * (1 - glide(T, t0 + 0.75, t0 + 0.95, 0, 1)) + 4 * glide(T, t0 + 1.55, t0 + 1.75, 0, 1);
   // the near hand: reach for A, bring it in, clutch during the flinch, reach for B, bring both in
   const use = glide(T, t0 + 0.3, t0 + 0.5, 0, 1);
-  const target = track2(T, [[t0 + 0.3, add(rig(pose).armN[2], [0, 0])], [t0 + 0.6, add(RA, [-HOLD[0], -HOLD[1]])], [t0 + 0.92, CH], [t0 + 1.02, CH], [t0 + 1.18, CH2],
-    [t0 + 1.5, CH2], [t0 + 1.62, CH], [t0 + 1.82, add(RB, [-HOLD_B[0], -HOLD_B[1]])], [t0 + 2.08, CH]]);
+  const target = track2(T, [[t0 + 0.3, add(rig(pose).armN[2], [0, 0])], [t0 + 0.6, add(RA, [-HOLD[0], -HOLD[1]])], [t0 + 0.92, CH], [t0 + 1.0, CH], [t0 + 1.15, CH2],
+    [t0 + 1.35, CH2], [t0 + 1.55, CH], [t0 + 1.82, add(RB, [-HOLD_B[0], -HOLD_B[1]])], [t0 + 2.08, CH]]);
   if (use > 0) pose.armN = mixA(pose.armN, ikArm(pose, target), use);
   const hand = rig(pose).armN[2];
   // A arrives in reach and is taken at t0 + 0.6; B floats in later and is taken at t0 + 1.82
@@ -191,7 +189,7 @@ function curation(T, t0, mode) {
   const pA = takenA ? add(hand, HOLD) : add(lerp2([250, -430], RA, aArr), hover(T, 0.6, aArr * (1 - glide(T, t0 + 0.45, t0 + 0.6, 0, 1))));
   const pB = takenB ? add(hand, HOLD_B) : add(lerp2([330, -60], RB, bArr), hover(T, 0.9, bArr * (1 - glide(T, t0 + 1.65, t0 + 1.82, 0, 1))));
   const cards = [
-    { p: pR, rot: lerp(25 * Math.sin(T * 1.7 + 4), -10 + 5 * osc(T, 1.1, 0.3) + 14 * dart * (1 - retreat), rArr), flip: lerp(flutter(T, 0.8), 0.85 + 0.1 * osc(T, 0.6), rArr), s: 1.2, kind: 'alert', red: true },
+    { p: pR, rot: -20 + 200 * ru + 6 * osc(T, 0.9), flip: Math.cos(T * 7 + 1.3), s: 1.2, kind: 'alert', red: true, on: redOn },
     { p: pB, rot: takenB ? 12 : lerp(20 * Math.sin(T * 1.5 + 1), 6 * osc(T, 2.4), bArr), flip: takenB ? 1 : lerp(flutter(T, 0.9), 0.9, bArr), s: takenB ? 1.0 : 1.2, kind: warm ? 'sun' : 'image', red: !warm, on: T > t0 + 1.0 },
     { p: pA, rot: takenA ? -8 : lerp(20 * Math.sin(T * 1.5), -4 + 5 * osc(T, 2.2), aArr), flip: takenA ? 1 : lerp(flutter(T, 0.6), 0.9, aArr), s: takenA ? 1.0 : 1.2, kind: warm ? 'cat' : 'text', red: !warm },
   ];
