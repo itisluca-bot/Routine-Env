@@ -358,3 +358,10 @@ Sheet: `curator-weight-concepts-sheet.png`. Render one: `node tools/render.mjs "
 
 Build notes: front-view sitters on a sofa (`couchSitter`) sink into the seat cushion and the seat front covers their legs; lying figures are drawn upright and rotated, with their lights given in the unrotated frame (`unrot` in F); TV content is clipped to its screen per instance (`TVNews id`).
 
+### Round 7 (a bolder fader, smaller dips)
+
+The user: the slider is easy to miss, make it thicker and more dominant; halve the blue and teal range again.
+
+- **Fader:** track 24 px (was 9), red fill `RED[4]`, knob radius 36 with an 8 px `RED[3]` ring, title 34 px and "more" / "less" 28 px in white. At x 1715 (was 1760), so the push at the end does not crop its title.
+- **Dips** (`soft`, default): −0.25 and −0.35 per point, so withdrawal and open swing 7.5 and 10.5 px across the slider (orange 147 px). About a quarter of their estimated slopes (−1.06, −1.54), which are not significant; `data` keeps the estimates.
+

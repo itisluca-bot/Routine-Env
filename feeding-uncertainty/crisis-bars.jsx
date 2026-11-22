@@ -33,13 +33,13 @@ const GROUPS = ['wd', 'open', 'cur'];
 const NAME = { wd: 'Withdrawal', open: 'Open Engagement', cur: 'Curation' };
 const TXT = { wd: '#8ea6b6', open: '#8cc2b8', cur: '#e0a165' };   // the group colours lifted for type on the dark
 const LINE = { wd: [25.7, -1.06], open: [28.2, -1.54], cur: [21.7, 4.91] }, POOL = [25.92, -0.24];
-// `others` = 'soft' (default, the user's call): withdrawal and open dip at about half their estimated slopes, so they swing
-// 15 and 21 px across the slider (orange 147 px); their slopes are small and not significant. 'data': the full estimates.
-const SOFT = { wd: -0.5, open: -0.7 };
+// `others` = 'soft' (default, the user's call): withdrawal and open dip at about a quarter of their estimated slopes, so
+// they swing 7.5 and 10.5 px across the slider (orange 147 px); their slopes are small and not significant. 'data': the full estimates.
+const SOFT = { wd: -0.25, open: -0.35 };
 const PW = 280, SIDE = 56, LID = 18, OVER = 10;             // plinth width, shadow side, lid height, lid overhang
 const SPACE = 440, CX = 930, BASE = 980, U = 15, FS = 1.3;
 const AX = 200, TOP = 150, XR = 1580;                       // y axis, baseline's right end
-const SL = { x: 1760, y0: 840, y1: 340 };                   // the slider: a vertical fader on the right, "less" at the bottom
+const SL = { x: 1715, y0: 860, y1: 350 };   // x leaves room for the push at the end (it grows round the bean)                   // the slider: a vertical fader on the right, "less" at the bottom
 const NEUT = ['#121413', '#1a1d1c', '#232725', '#2e3330', '#444a46', '#666c67', '#a3a69e'];   // the room outside the light
 const LINE_W = '#e9e7e1', MUTED = '#8c8c90', INK = '#d6d6d8';
 const FONT = "'FU Futura', 'Jost', 'Inter', sans-serif";
@@ -218,15 +218,15 @@ function Piece({ guide, boil, boilAmp, wd, cur, others }) {
           <g filter="url(#cbWarm)">{figs.flatMap((f) => f.a.cards.filter((c) => !c.red).map((c, k) => card(f, c, `${f.n}-${k}`)))}</g>
           {loupeOf && loupeOf.a.ls > 0.02 && <Loupe f={loupeOf} />}
 
-          {/* the exposure slider: a vertical fader on the right, filling red from "less" up to the knob */}
+          {/* the exposure slider: a bold vertical fader on the right, filling red from "less" up to the knob */}
           <g opacity={ui}>
-            <Txt x={SL.x} y={SL.y1 - 124} size={28} fill={INK}>Crisis exposure</Txt>
-            <Txt x={SL.x} y={SL.y1 - 90} size={28} fill={INK}>on social media</Txt>
-            <Txt x={SL.x} y={SL.y1 - 34} size={24} fill={MUTED}>more</Txt>
-            <Txt x={SL.x} y={SL.y0 + 52} size={24} fill={MUTED}>less</Txt>
-            <BoilLine x1={SL.x} y1={SL.y0} x2={SL.x} y2={SL.y1} stroke={NEUT[4]} w={9} bf={bf} amp={amp} seed={3} />
-            {sy < SL.y0 - 1 && <BoilLine x1={SL.x} y1={SL.y0} x2={SL.x} y2={sy} stroke={RED[3]} w={9} bf={bf} amp={amp} seed={4} />}
-            <circle cx={SL.x + jit(5, bf, 1, amp)} cy={sy + jit(5, bf, 2, amp)} r="19" fill={RED[6]} stroke={RED[4]} strokeWidth="4" />
+            <Txt x={SL.x} y={SL.y1 - 150} size={34} fill={INK}>Crisis exposure</Txt>
+            <Txt x={SL.x} y={SL.y1 - 110} size={34} fill={INK}>on social media</Txt>
+            <Txt x={SL.x} y={SL.y1 - 54} size={28} fill={INK}>more</Txt>
+            <Txt x={SL.x} y={SL.y0 + 76} size={28} fill={INK}>less</Txt>
+            <BoilLine x1={SL.x} y1={SL.y0} x2={SL.x} y2={SL.y1} stroke={NEUT[4]} w={24} bf={bf} amp={amp} seed={3} />
+            {sy < SL.y0 - 1 && <BoilLine x1={SL.x} y1={SL.y0} x2={SL.x} y2={sy} stroke={RED[4]} w={24} bf={bf} amp={amp} seed={4} />}
+            <circle cx={SL.x + jit(5, bf, 1, amp)} cy={sy + jit(5, bf, 2, amp)} r="36" fill={RED[6]} stroke={RED[3]} strokeWidth="8" />
           </g>
         </g>
       </svg>
@@ -262,7 +262,7 @@ function FUCrisisBars() {
       </CompositionStage>
       <TweaksPanel>
         <TweakSection label="Data" />
-        <TweakSelect label="Withdrawal and open" value={t.others || 'soft'} options={[{ value: 'soft', label: 'Small dips, softened (15 / 21 px)' }, { value: 'data', label: 'Their full estimates (30 / 43 px)' }, { value: 'flat', label: 'Hold still' }]} onChange={(x) => setTweak('others', x)} />
+        <TweakSelect label="Withdrawal and open" value={t.others || 'soft'} options={[{ value: 'soft', label: 'Small dips, softened (7.5 / 10.5 px)' }, { value: 'data', label: 'Their full estimates (30 / 43 px)' }, { value: 'flat', label: 'Hold still' }]} onChange={(x) => setTweak('others', x)} />
         <TweakSection label="Actions (from the triptych)" />
         <TweakSelect label="Withdrawal" value={t.wd} options={[{ value: 'turn', label: 'Turns their back' }, { value: 'shoo', label: 'Shoo, then turns away' }, { value: 'walk', label: 'Walks off' }]} onChange={(x) => setTweak('wd', x)} />
         <TweakSelect label="Curation" value={t.cur} options={[{ value: 'warm', label: 'Takes comfort posts, recoils from red' }, { value: 'red', label: 'All red' }]} onChange={(x) => setTweak('cur', x)} />
