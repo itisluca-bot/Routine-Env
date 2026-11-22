@@ -19,10 +19,11 @@ const { glide, hit } = MOTION;
 
 const GROUPS = ['wd', 'open', 'cur'];
 const LABEL = { wd: 'withdrawal', open: 'open engagement', cur: 'curation' };
-const HAIR = { wd: 'none', open: 'beanie', cur: 'long' };
+const HAIR = { wd: 'long', open: 'beanie', cur: 'none' };
 const PW = 640, FIG_S = 1.9, FLOOR = 920;
 const X0 = GROUPS.map((_, i) => i * PW);
 const WIN = (i) => [X0[i] + 470, 300];
+const LABEL_Y = 392;   // the labels' baseline, above the heads
 
 // ── helpers ───────────────────────────────────────────────────────────────────
 const clampN = (x, a, b) => Math.min(b, Math.max(a, x));
@@ -270,7 +271,8 @@ function Panel({ f, ba, CAM, lab }) {
       </g>
     ), 'loupe'));
   }
-  out.push(lay(null, <Lbl x={X0[i] + PW / 2} y={1030} text={LABEL[g]} fill={RAMPS[g][6]} a={lab.a} dy={lab.dy * 0.4} />, 'label'));
+  // the label: there the whole time, above the character
+  out.push(lay(null, <Lbl x={f.hx0 + 22} y={LABEL_Y} size={26} text={LABEL[g]} fill={RAMPS[g][6]} />, 'label'));
   return <g>{out}</g>;
 }
 function figOf(i, a) {
