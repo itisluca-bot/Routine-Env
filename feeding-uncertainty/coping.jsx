@@ -24,13 +24,13 @@ const backOut = (t) => { const c = 1.9; t = clampN(t, 0, 1) - 1; return 1 + (c +
 const mixA = (a, b, t) => [lerp(a[0], b[0], t), lerp(a[1], b[1], t)];
 
 // ── the house in section (world units; the camera slides along it) ─────────────
-const RW = 720, WT = 34;                         // room width, cut wall thickness
+const RW = 720, WT = 22;                         // room width, cut wall thickness
 const RX = [0, RW + WT, 2 * (RW + WT)];          // each room's left edge
 const WORLD = RX[2] + RW;                        // 2228
 const CEIL = 34, WALLB = 884, FLOOR = 936, SLAB = 1036;   // ceiling cut, foot of the back wall, where people stand, floor cut
 const GS = 1.35, KS = 0.62;                      // adult scale, child scale (of GS)
-const WIN = [[RX[0] + 500, 330], [RX[1] + 470, 330], [RX[2] + 540, 330]];
-const CUT = '#151716', CUT_EDGE = '#262a28';     // the cut walls and slabs: neutral, untinted
+const WIN = [[RX[0] + 500, 380], [RX[1] + 470, 380], [RX[2] + 540, 380]];
+const CUT = '#2c302e', CUT_EDGE = '#2c302e';     // the cut walls and slabs: neutral, untinted, close to the rooms' darks
 const lightsOf = (i, k = 1) => [{ x: WIN[i][0], y: WIN[i][1], i: 0.9 * k, reach: 760 }, { dir: [0.4, 1], i: 0.08 }];
 
 // ── Bean helpers ──────────────────────────────────────────────────────────────
@@ -164,18 +164,18 @@ function RoomBack({ i }) {
   const x0 = RX[i], [wx, wy] = WIN[i];
   return (
     <g>
-      <rect x={x0 - 20} y="0" width={RW + 40} height={WALLB} fill={v(0.22)} />
-      <ellipse cx={wx - 60} cy="440" rx="380" ry="380" fill="url(#fuPool)" opacity="0.6" />
-      <rect x={x0 - 20} y={CEIL + 6} width={RW + 40} height="14" fill={v(0.3)} />
+      <rect x={x0 - 80} y="0" width={RW + 160} height={WALLB} fill={v(0.22)} />
+      <ellipse cx={wx - 60} cy="490" rx="380" ry="380" fill="url(#fuPool)" opacity="0.6" />
+      <rect x={x0 - 80} y={CEIL + 6} width={RW + 160} height="14" fill={v(0.3)} />
       <rect x={wx - 92} y={wy - 122} width="184" height="244" fill={v(0.4)} />
       <rect x={wx - 80} y={wy - 110} width="160" height="220" fill={v(0.85)} />
       <rect x={wx - 100} y={wy + 116} width="200" height="12" fill={v(0.48)} />
       {i === 0 && <Picture x={x0 + 120} y={470} w={150} h={110} />}
-      {i === 1 && <rect x={x0 + 40} y={290} width="200" height="10" fill={v(0.3)} />}
-      {i === 2 && <Picture x={x0 + 110} y={420} w={90} h={120} />}
-      <rect x={x0 - 20} y={WALLB - 22} width={RW + 40} height="22" fill={v(0.3)} />
-      <rect x={x0 - 20} y={WALLB} width={RW + 40} height={SLAB - WALLB} fill={v(0.16)} />
-      {[0, 1, 2, 3].map((n) => <rect key={n} x={x0 - 20} y={WALLB + 18 + n * n * 9} width={RW + 40} height="2" fill={v(0.2)} />)}
+      {i === 1 && <rect x={x0 + 40} y={330} width="200" height="10" fill={v(0.3)} />}
+      {i === 2 && <Picture x={x0 + 110} y={460} w={90} h={120} />}
+      <rect x={x0 - 80} y={WALLB - 22} width={RW + 160} height="22" fill={v(0.3)} />
+      <rect x={x0 - 80} y={WALLB} width={RW + 160} height={SLAB - WALLB + 80} fill={v(0.16)} />
+      {[0, 1, 2, 3].map((n) => <rect key={n} x={x0 - 80} y={WALLB + 18 + n * n * 9} width={RW + 160} height="2" fill={v(0.2)} />)}
     </g>
   );
 }
@@ -213,11 +213,12 @@ function blue(T, w) {
   const C = { lean: 2 * osc(T, 3.1) + 3 * (sB - 0.5), tilt: 4 + 4 * Math.max(0, osc(T, 1.4)) * (0.5 + 0.5 * osc(T, 4.2)), look: [lookX, 0.1], legL: [4, 2], legR: [4, 2], armL: [14, 18], armR: [10, 12] };
   // red posts slip in through the blinds one by one and gather behind them, by the window
   const [wx, wy] = WIN[0];
-  const posts = Array.from({ length: 7 }, (_, j) => {
+  const posts = Array.from({ length: 12 }, (_, j) => {
     const h = (n) => hash(j * 7.3 + n * 3.1 + 11);
-    const ta = 0.4 + 1.05 * j, arr = glide(T, ta, ta + 1.4, 0, 1);
+    const ta = 0.2 + 0.7 * j, arr = glide(T, ta, ta + 1.4, 0, 1);
     if (T < ta) return null;
-    const rest = [x0 + 450 + 190 * h(1), 380 + 340 * h(3)];
+    const a = (T - ta) * (0.25 + 0.2 * h(10)) * (h(11) > 0.5 ? 1 : -1);   // a slow drift round where they settle
+    const rest = [x0 + 470 + 170 * h(1) + 40 * Math.cos(a + 6 * h(12)), 420 + 320 * h(3) + 30 * Math.sin(a + 6 * h(12))];
     return { x: lerp(wx - 40 + 80 * h(2), rest[0], arr) + 8 * osc(T, 1.3, h(2)) * arr, y: lerp(wy - 60 + 120 * h(4), rest[1], arr) + 8 * osc(T, 0.9, h(4)) * arr,
       rot: lerp(30 * Math.sin(T * 1.7 + 6 * h(5)), -10 + 20 * h(5) + 5 * osc(T, 2.1, h(6)), arr), flip: lerp(Math.cos(T * 5 + 9 * h(7)), 0.8 + 0.12 * osc(T, 1.6 + h(7), h(8)), arr),
       s: lerp(0.45, 1.1 + 0.3 * h(9), arr), op: glide(T, ta, ta + 0.25, 0, 1), kind: POST_KINDS[(j * 2 + 1) % POST_KINDS.length] };
@@ -227,30 +228,35 @@ function blue(T, w) {
     figs: [{ f: A, id: 1 }, { f: Bq, id: 2 }], posts,
   };
 }
+const MAG = 1.7;                                  // the loupe's magnification
 function teal(T, w) {
   const x0 = RX[1], cx = x0 + 330;
   const [wx, wy] = WIN[1];
-  // the post comes in through the window and settles between the kids, then turns its face to the lenses
-  const arr = glide(T, 0.3, 1.9, 0, 1);
-  const rest = [cx + 6 * osc(T, 2.6), FLOOR - 250 + 6 * osc(T, 1.9, 0.3)];
-  const p = { x: lerp(wx, rest[0], arr), y: lerp(wy, rest[1], arr), rot: lerp(30 * Math.sin(T * 1.6 + 2), -6 + 4 * osc(T, 2.1, 0.4), arr), s: lerp(0.5, 1.7, arr),
-    flip: lerp(Math.cos(T * 5 + 1), 0.86 + 0.08 * glide(T, 2.4, 3.0, 0, 1) + 0.05 * osc(T, 1.7), arr), kind: 'chart', op: glide(T, 0.3, 0.5, 0, 1) };
+  // the post comes in through the window and settles between the kids at their eye height; once the loupes are on it,
+  // it hardly moves
+  const arr = glide(T, 0.3, 1.9, 0, 1), held = glide(T, 1.6, 2.4, 0, 1);
+  const rest = [cx + lerp(6, 2, held) * osc(T, 2.6), FLOOR - 205 + lerp(6, 2, held) * osc(T, 1.9, 0.3)];
+  const p = { x: lerp(wx, rest[0], arr), y: lerp(wy, rest[1], arr), rot: lerp(30 * Math.sin(T * 1.6 + 2), -4 + lerp(4, 1.5, held) * osc(T, 2.1, 0.4), arr), s: lerp(0.5, 2.3, arr),
+    flip: lerp(Math.cos(T * 5 + 1), 0.97 + 0.02 * osc(T, 1.7), arr), kind: 'chart', op: glide(T, 0.3, 0.5, 0, 1) };
   const kid = (x, dir, ph, hair) => ({ x, y: FLOOR, s: GS * KS, dir, ramp: 'open', hair, headScale: 1.3, pose: { ...POSES.idle(T + ph) } });
-  const K1 = kid(cx - 124, 1, 0.3, 'long'), K2 = kid(cx + 126, -1, 1.6, 'none');
+  const K1 = kid(cx - 86, 1, 0.3, 'long'), K2 = kid(cx + 88, -1, 1.6, 'none');
   const loupe = [];
-  [[K1, 1.35], [K2, 1.6]].forEach(([K, t0], n) => {
-    const notice = glide(T, 0.9 + 0.2 * n, 1.5 + 0.2 * n, 0, 1), lo = glide(T, t0, t0 + 0.55, 0, 1);
-    // looking up at the post as it comes, then leaning in to it
-    K.pose = { ...K.pose, lean: K.pose.lean + 4 * lo, tilt: K.pose.tilt - 18 * notice * (1 - lo) - 14 * lo + 2 * osc(T, 1.9, n) * lo };
+  const LR = 20;                                   // lens radius (world)
+  // each lens lies over its own part of the post: one kid's on the upper left, the other's on the lower right
+  [[K1, 1.35, [-17, -22]], [K2, 1.6, [17, 22]]].forEach(([K, t0, off], n) => {
+    const notice = glide(T, 0.9 + 0.2 * n, 1.5 + 0.2 * n, 0, 1), lo = glide(T, t0, t0 + 0.6, 0, 1);
+    K.pose = { ...K.pose, lean: K.pose.lean + 4 * lo, tilt: K.pose.tilt - 14 * notice * (1 - lo) - 4 * lo + 2 * osc(T, 1.9, n) * lo };
     // one kid looks up at their parent on "people", and back
     if (n === 0) { const up = glide(T, w.people, w.people + 0.4, 0, 1) * (1 - glide(T, w.with + 0.2, w.with + 0.7, 0, 1)); K.pose.tilt -= 22 * up; K.pose.lean -= 6 * up; }
-    const hd = headW(K), lc = lerp2(hd, [rest[0], rest[1]], 0.42);
-    armTo(K, [lc[0] - K.dir * 6, lc[1] + 30 * GS * 0.8], lo);
-    const hw = handW(K);   // the lens rides on the hand, just above it (on the eye-to-post line once the hand is up)
-    loupe.push({ hand: hw, lc: [hw[0] + K.dir * 6, hw[1] - 30 * GS * 0.8], ls: backOut((T - (t0 + 0.12)) / 0.32), lo });
+    // the handle runs from the lens down toward the kid; the hand holds its end
+    const hv = [-K.dir * 0.55 * (LR + 18), 0.85 * (LR + 18)];
+    const lcT = [rest[0] + off[0], rest[1] + off[1]];
+    armTo(K, [lcT[0] + hv[0], lcT[1] + hv[1]], lo);
+    const hw = handW(K);
+    loupe.push({ hand: hw, lc: [hw[0] - hv[0], hw[1] - hv[1]], r: LR, ls: backOut((T - (t0 + 0.1)) / 0.32) });
   });
-  const P1 = { x: cx - 240, y: FLOOR, s: GS, dir: 1, ramp: 'open', hair: 'beanie', pose: { ...POSES.idle(T + 0.9) } };
-  const P2 = { x: cx + 246, y: FLOOR, s: GS, dir: -1, ramp: 'open', hair: 'long', pose: { ...POSES.idle(T + 2.2) } };
+  const P1 = { x: cx - 182, y: FLOOR, s: GS, dir: 1, ramp: 'open', hair: 'beanie', pose: { ...POSES.idle(T + 0.9) } };
+  const P2 = { x: cx + 186, y: FLOOR, s: GS, dir: -1, ramp: 'open', hair: 'long', pose: { ...POSES.idle(T + 2.2) } };
   [[P1, K1, w.resistance - 0.1, -1], [P2, K2, w.resistance + 0.25, 1]].forEach(([P, K, t0, sx]) => {
     const go = glide(T, t0, t0 + 0.6, 0, 1);
     P.pose = { ...P.pose, lean: P.pose.lean + 10 * go, tilt: P.pose.tilt + 8 + 12 * go + 2 * osc(T, 2.4) * go };
@@ -260,16 +266,26 @@ function teal(T, w) {
   // the parent nods back when the kid looks up
   const nod = glide(T, w.people + 0.2, w.people + 0.5, 0, 1) * (1 - glide(T, w.with, w.with + 0.5, 0, 1));
   P1.pose.tilt += 8 * nod * (0.6 + 0.4 * osc(T, 0.6));
-  return { figs: [{ f: P1, id: 11 }, { f: P2, id: 12 }, { f: K1, id: 13 }, { f: K2, id: 14 }], post: p, loupe };
+  // a few more posts in the room, drifting slowly round the window
+  const room = Array.from({ length: 4 }, (_, j) => {
+    const h = (n) => hash(j * 5.1 + n * 2.7 + 31);
+    const a = T * (0.3 + 0.2 * h(1)) * (h(2) > 0.5 ? 1 : -1) + 6.28 * h(3);
+    return { x: wx - 20 + (120 + 70 * h(4)) * Math.cos(a), y: wy + 10 + (90 + 50 * h(5)) * Math.sin(a), rot: -20 + 40 * h(6) + 10 * osc(T, 1.8, h(7)),
+      flip: 0.75 + 0.22 * Math.cos(T * 2.2 + 9 * h(8)), s: 0.9 + 0.3 * h(9), kind: POST_KINDS[(j * 3 + 2) % POST_KINDS.length], op: glide(T, 0.2 + 0.6 * j, 0.6 + 0.6 * j, 0, 1) };
+  });
+  return { figs: [{ f: P1, id: 11 }, { f: P2, id: 12 }, { f: K1, id: 13 }, { f: K2, id: 14 }], post: p, loupe, room };
 }
 function orange(T, w) {
   const x0 = RX[2], fx = x0 + 410;
   const [wx, wy] = WIN[2];
   // red posts outside, passing behind the curtain, out of focus
-  const outside = Array.from({ length: 4 }, (_, j) => {
-    const t0 = 5.2 + 0.45 * j, u = (T - t0) / 2.6;
+  // only seen through the glass (clipped to it); the curtain hides the left half
+  const outside = Array.from({ length: 11 }, (_, j) => {
+    const h = (n) => hash(j * 6.1 + n * 2.9 + 51);
+    const t0 = 2.6 + 0.62 * j + 0.3 * h(1), u = (T - t0) / (1.6 + 0.6 * h(2));
     if (u < 0 || u > 1) return null;
-    return { x: wx - 140 + 300 * u, y: wy - 70 + 60 * j * 0.5 + 20 * Math.sin(u * 6 + j), rot: 20 * Math.sin(T * 2 + j), flip: Math.cos(T * 4 + j * 2), s: 0.9, kind: POST_KINDS[(j * 3) % POST_KINDS.length] };
+    const dirx = h(3) > 0.3 ? 1 : -1;
+    return { x: wx + dirx * (-130 + 260 * u), y: wy - 80 + 160 * h(4) + 25 * Math.sin(u * 6 + j), rot: 20 * Math.sin(T * 2 + j), flip: Math.cos(T * 4 + j * 2), s: 0.7 + 0.4 * h(5), kind: POST_KINDS[(j * 3) % POST_KINDS.length] };
   }).filter(Boolean);
   const up = glide(T, w.question - 0.25, w.question + 0.35, 0, 1);         // looks up from the card
   const hand = glide(T, w.what - 0.05, w.what + 0.65, 0, 1);              // hand to head
@@ -286,19 +302,20 @@ function orange(T, w) {
 }
 
 // ── the shot ──────────────────────────────────────────────────────────────────
-function Loupe({ hand, lc, post: p, s, ls }) {
+function Loupe({ hand, lc, r, post: p, s, ls }) {
   if (ls <= 0.02) return null;
-  const R = RAMPS.open, lensR = 20 * s * ls, k = Math.min(1, ls);
-  const oq = lerp2(lc, [p.x, p.y], 0.3);
+  const R = RAMPS.open, lensR = r * ls, k = Math.min(1, ls);
+  const m = lerp(1, MAG, k);
+  const q = [lc[0] + (p.x - lc[0]) * m, lc[1] + (p.y - lc[1]) * m];   // the post, magnified about the lens centre
   const d = [hand[0] - lc[0], hand[1] - lc[1]], n = Math.hypot(d[0], d[1]) || 1, rim = [lc[0] + (d[0] / n) * lensR, lc[1] + (d[1] / n) * lensR];
   const id = `cpLens${Math.round(hand[0])}`;
   return (
     <g>
-      <defs><clipPath id={id}><circle cx={lc[0]} cy={lc[1]} r={lensR * 0.9} /></clipPath></defs>
-      <g filter="url(#cpRed)"><g clipPath={`url(#${id})`}><circle cx={lc[0]} cy={lc[1]} r={lensR} fill={v(0.3)} /><PostValue x={oq[0]} y={oq[1]} s={s * 1.7} rot={p.rot} flip={p.flip} kind={p.kind} /></g></g>
+      <defs><clipPath id={id}><circle cx={lc[0]} cy={lc[1]} r={lensR * 0.94} /></clipPath></defs>
+      <g filter="url(#cpRed)"><g clipPath={`url(#${id})`}><PostValue x={q[0]} y={q[1]} s={p.s * m} rot={p.rot} flip={p.flip} kind={p.kind} /></g></g>
       <line x1={rim[0]} y1={rim[1]} x2={hand[0]} y2={hand[1]} stroke={R[1]} strokeWidth={6 * s * k} strokeLinecap="round" />
-      <circle cx={lc[0]} cy={lc[1]} r={lensR} fill={R[6]} fillOpacity="0.08" stroke={R[2]} strokeWidth={4.5 * s * k} />
-      <path d={`M ${lc[0] - lensR * 0.55} ${lc[1] - lensR * 0.35} A ${lensR * 0.7} ${lensR * 0.7} 0 0 1 ${lc[0] - lensR * 0.05} ${lc[1] - lensR * 0.66}`} fill="none" stroke={R[6]} strokeOpacity="0.7" strokeWidth={1.6 * s} strokeLinecap="round" />
+      <circle cx={lc[0]} cy={lc[1]} r={lensR} fill={R[6]} fillOpacity="0.1" stroke={R[2]} strokeWidth={4.5 * s * k} />
+      <path d={`M ${lc[0] - lensR * 0.55} ${lc[1] - lensR * 0.35} A ${lensR * 0.7} ${lensR * 0.7} 0 0 1 ${lc[0] - lensR * 0.05} ${lc[1] - lensR * 0.66}`} fill="none" stroke={R[6]} strokeOpacity="0.75" strokeWidth={1.6 * s} strokeLinecap="round" />
     </g>
   );
 }
@@ -316,30 +333,33 @@ function Piece({ guide, boil, boilAmp }) {
   const amp = boil ? boilAmp : 0, bf = Math.floor(T * 8);
   const k = { bf, amp };
   // the slide: one slow, even move from the left of the house to the right over the whole shot
-  const cx = glide(T, 0, CUES.Hold + 0.24, 960, WORLD - 960);
-  const CAM = `translate(${(960 - cx).toFixed(3)} 0)`;
-  const clip = (i, el) => <g clipPath={`url(#cpRoom${i})`}>{el}</g>;
-  const lay = (filter, content, key) => <g key={key} filter={filter ? `url(#${filter})` : undefined}><g transform={CAM}>{content}</g></g>;
+  const Z = 1.22, hw = 960 / Z;
+  const cx = glide(T, 0, CUES.Hold + 0.24, hw, WORLD - hw);
+  const CAM = `translate(${(960 - cx * Z).toFixed(3)} ${(1080 - 1080 * Z).toFixed(3)}) scale(${Z})`;
+  // rooms are clipped in screen space, outside the grades, so a blurred back wall never pulls in dark at the room's edge
+  const scr = (x, y) => [960 + (x - cx) * Z, 1080 + (y - 1080) * Z];
+  const roomRect = (i) => { const a = scr(RX[i], CEIL), b = scr(RX[i] + RW, SLAB); return { x: a[0], y: a[1], width: b[0] - a[0], height: b[1] - a[1] }; };
+  const lay = (filter, content, key, i) => <g key={key} clipPath={i === undefined ? undefined : `url(#cpRoom${i})`}><g filter={filter ? `url(#${filter})` : undefined}><g transform={CAM}>{content}</g></g></g>;
 
   const B = blue(T, w), Tl = teal(T, w), O = orange(T, w);
   const layers = [];
   GROUPS.forEach((g, i) => {
-    layers.push(lay('fuGradeBg-' + g, clip(i, <RoomBack i={i} />), 'back' + i));
-    if (i === 2 && O.outside.length) layers.push(lay('cpRedBg', clip(i, <g>{O.outside.map((p, j) => <Post key={j} p={p} />)}</g>), 'out'));
-    layers.push(lay('fuGradeBg-' + g, clip(i, windowDeco(i)), 'deco' + i));
-    layers.push(lay('cpMid-' + g, clip(i, <RoomFurniture i={i} />), 'furn' + i));
-    layers.push(lay('fuGradeFg-' + g, clip(i, <ellipse cx={RX[i] + 330} cy={FLOOR + 6} rx="270" ry="30" fill="url(#fuPool)" opacity="0.55" />), 'pool' + i));
+    layers.push(lay('fuGradeBg-' + g, <RoomBack i={i} />, 'back' + i, i));
+    if (i === 2 && O.outside.length) layers.push(lay('cpRedBg', <g clipPath="url(#cpGlass)">{O.outside.map((p, j) => <Post key={j} p={p} />)}</g>, 'out', i));
+    layers.push(lay('fuGradeBg-' + g, windowDeco(i), 'deco' + i, i));
+    layers.push(lay('cpMid-' + g, <RoomFurniture i={i} />, 'furn' + i, i));
+    layers.push(lay('fuGradeFg-' + g, <ellipse cx={RX[i] + 330} cy={FLOOR + 6} rx="270" ry="30" fill="url(#fuPool)" opacity="0.55" />, 'pool' + i, i));
   });
   // people (ToneBeans carry their own filters), each kept inside their room
   const bean = (f, id, i) => <Bean key={id} f={f} k={k} id={id} lights={lightsOf(i)} />;
-  layers.push(<g key="people" transform={CAM}>
-    {clip(0, <g>{React.cloneElement(B.back, { bf, amp })}{B.figs.map(({ f, id }) => bean(f, id, 0))}</g>)}
-    {clip(1, <g>{Tl.figs.map(({ f, id }) => bean(f, id, 1))}</g>)}
-    {clip(2, <ToneBean x={O.x} y={FLOOR} s={GS} view="front" pose={O.pose} ramp="cur" hair="none" lights={lightsOf(2)} id={21} bf={bf} amp={amp} />)}
-  </g>);
-  layers.push(lay('cpRed', <g>{clip(0, <g>{B.posts.map((p, j) => <Post key={j} p={p} />)}</g>)}{clip(1, <Post p={Tl.post} />)}</g>, 'red'));
-  layers.push(<g key="loupes" transform={CAM}>{clip(1, <g>{Tl.loupe.map((L, n) => <Loupe key={n} hand={L.hand} lc={L.lc} post={Tl.post} s={GS * 0.8} ls={L.ls} />)}</g>)}</g>);
-  layers.push(lay('cpWarm', clip(2, <WarmPost x={O.card.x} y={O.card.y} s={O.card.s} rot={O.card.rot} flip={1} kind={O.card.kind} />), 'warm'));
+  const inRoom = (i, key, el) => <g key={key} clipPath={`url(#cpRoom${i})`}><g transform={CAM}>{el}</g></g>;
+  layers.push(inRoom(0, 'people0', <g>{React.cloneElement(B.back, { bf, amp })}{B.figs.map(({ f, id }) => bean(f, id, 0))}</g>));
+  layers.push(inRoom(1, 'people1', <g>{Tl.figs.map(({ f, id }) => bean(f, id, 1))}</g>));
+  layers.push(inRoom(2, 'people2', <ToneBean x={O.x} y={FLOOR} s={GS} view="front" pose={O.pose} ramp="cur" hair="none" lights={lightsOf(2)} id={21} bf={bf} amp={amp} />));
+  layers.push(lay('cpRed', <g>{B.posts.map((p, j) => <Post key={j} p={p} />)}</g>, 'red0', 0));
+  layers.push(lay('cpRed', <g>{Tl.room.map((p, j) => <Post key={j} p={p} />)}<Post p={Tl.post} /></g>, 'red1', 1));
+  layers.push(inRoom(1, 'loupes', <g>{Tl.loupe.map((L, n) => <Loupe key={n} hand={L.hand} lc={L.lc} r={L.r} post={Tl.post} s={GS * 0.75} ls={L.ls} />)}</g>));
+  layers.push(lay('cpWarm', <WarmPost x={O.card.x} y={O.card.y} s={O.card.s} rot={O.card.rot} flip={1} kind={O.card.kind} />, 'warm', 2));
   layers.push(<g key="cuts" transform={CAM}><Cuts /></g>);
 
   return (
@@ -350,9 +370,10 @@ function Piece({ guide, boil, boilAmp }) {
         <defs>
           {GROUPS.map((g) => <GradeFilter key={g} id={'cpMid-' + g} ramp={g} poster blur={2.2} />)}
           <GradeFilter id="cpRed" ramp="red" poster />
-          <GradeFilter id="cpRedBg" ramp="red" blur={9} />
+          <GradeFilter id="cpRedBg" ramp="red" blur={4.5} />
           <GradeFilter id="cpWarm" ramp="cur" poster gain={1.18} />
-          {GROUPS.map((g, i) => <clipPath key={g} id={'cpRoom' + i}><rect x={RX[i]} y={CEIL} width={RW} height={SLAB - CEIL} /></clipPath>)}
+          {GROUPS.map((g, i) => <clipPath key={g} id={'cpRoom' + i}><rect {...roomRect(i)} /></clipPath>)}
+          <clipPath id="cpGlass"><rect x={WIN[2][0] - 80} y={WIN[2][1] - 110} width="160" height="220" /></clipPath>
         </defs>
         {layers}
       </svg>
