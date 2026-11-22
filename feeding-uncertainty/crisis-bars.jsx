@@ -7,8 +7,8 @@
 // spot, posterized into its group's ramp (two bands, a light lid, a flat shadow side), standing on a hard white baseline.
 // A plinth's height is the likelihood of voting for a populist radical party. On each stands one of the triptych's
 // beanoids (three-groups.jsx, shared through window.FU_THREE_GROUPS, so they stay as designed there).
-// A slider under the chart sets crisis exposure on social media; it rests at the middle (average) and wiggles twice on
-// every beat. Red posts pop in over the plinths as it rises and go as it falls.
+// A vertical fader on the right sets crisis exposure on social media ("more" at the top); it rests at the middle (average)
+// and wiggles twice on every beat. Red posts pop in over the plinths as it rises and go as it falls.
 //
 // Coupling: a plinth's height is a pure function of the slider. The one exception is the split, where the slider rests at
 // the middle: the grey plinth parts into three, and each settles to its own group's height at average exposure.
@@ -17,12 +17,10 @@
 //   Withdrawal / Open / Curators: the group's spot, plinth and label take its colour (height unchanged); the slider
 //     wiggles; the figure does its triptych action. Plinths already revealed follow the slider by their own line; the
 //     ones still to come hold still. The curators' wiggle ends at "more" and stays; then a short, slight camera push
-//     toward the curator (the whole frame, type included).
+//     toward the orange bean, anchored on them (the whole frame, type included).
 //
 // Values. The slider runs from 1 point below to 1 point above the average on the mean-centred exposure scale.
-// Curators: 21.7 + 4.91·x (Table 4 slope, Figure 3 level), 16.8 → 26.6. Withdrawal and open: `others` tweak. 'data'
-// (default) gives their own small, non-significant dips (25.7 − 1.06·x and 28.2 − 1.54·x); 'flat' holds them at their
-// level at average exposure. Everyone: the pooled synthetic sample, 25.9 − 0.24·x.
+// Curators: 21.7 + 4.91·x (Table 4 slope, Figure 3 level), 16.8 → 26.6. Withdrawal and open: `others` tweak (see SOFT). Everyone: the pooled synthetic sample, 25.9 − 0.24·x.
 // Every frame is a pure function of T.
 const { W, H, OUT_W, OUT_H, MOTION, osc, lerp, lerp2, mix, hash } = window.FU_RIG;
 const { RAMPS, v, LookDefs, ToneBean, PostValue, POST_KINDS, GradeFilter } = window.FU_LOOK;
@@ -35,10 +33,13 @@ const GROUPS = ['wd', 'open', 'cur'];
 const NAME = { wd: 'Withdrawal', open: 'Open Engagement', cur: 'Curation' };
 const TXT = { wd: '#8ea6b6', open: '#8cc2b8', cur: '#e0a165' };   // the group colours lifted for type on the dark
 const LINE = { wd: [25.7, -1.06], open: [28.2, -1.54], cur: [21.7, 4.91] }, POOL = [25.92, -0.24];
+// `others` = 'soft' (default, the user's call): withdrawal and open dip at about half their estimated slopes, so they swing
+// 15 and 21 px across the slider (orange 147 px); their slopes are small and not significant. 'data': the full estimates.
+const SOFT = { wd: -0.5, open: -0.7 };
 const PW = 280, SIDE = 56, LID = 18, OVER = 10;             // plinth width, shadow side, lid height, lid overhang
-const SPACE = 460, CX = 1050, BASE = 862, U = 15, FS = 1.5;
-const AX = 230, TOP = 100, XR = 1840;                       // y axis, baseline's right end
-const SL = { x0: 760, x1: 1340, y: 1000 };                  // the slider's track
+const SPACE = 440, CX = 930, BASE = 980, U = 15, FS = 1.3;
+const AX = 200, TOP = 150, XR = 1580;                       // y axis, baseline's right end
+const SL = { x: 1760, y0: 840, y1: 340 };                   // the slider: a vertical fader on the right, "less" at the bottom
 const NEUT = ['#121413', '#1a1d1c', '#232725', '#2e3330', '#444a46', '#666c67', '#a3a69e'];   // the room outside the light
 const LINE_W = '#e9e7e1', MUTED = '#8c8c90', INK = '#d6d6d8';
 const FONT = "'FU Futura', 'Jost', 'Inter', sans-serif";
@@ -69,7 +70,7 @@ function plinth(T, B, k, e, others) {
   const split = glide(T, B.tS + 0.05, B.tS + 0.55, 0, 1);
   const revealed = T >= B.reveal[g];
   const tint = glide(T, B.reveal[g], B.reveal[g] + 0.35, 0, 1);
-  const line = g === 'cur' || others === 'data' ? LINE[g] : [LINE[g][0], 0];
+  const line = g === 'cur' || others === 'data' ? LINE[g] : others === 'soft' ? [LINE[g][0], SOFT[g]] : [LINE[g][0], 0];
   // pooled line until the split; at the split (slider at rest) each settles to its own height at average exposure;
   // from its reveal on it follows the slider by its own line. A plinth not yet revealed holds still.
   const val = T < B.tS ? valueAt(POOL, e) : lerp(valueAt(POOL, 0.5), valueAt(line, revealed ? e : 0.5), split);
@@ -123,7 +124,7 @@ function facing(turn) {   // as in the triptych: wide for most of a turn, edge-o
 const SWARM_N = 12, SWARM_MIN = 2;
 const SWARM = Array.from({ length: SWARM_N }, (_, j) => {
   const h = (n) => hash(j * 9.7 + n * 4.3 + 3);
-  return { j, kind: POST_KINDS[(j * 4 + 1) % POST_KINDS.length], h, x: 380 + 1380 * ((j * 0.618 + h(3) * 0.3) % 1), y: 50 + 150 * h(4), s: 1.15 + 0.4 * h(6) };
+  return { j, kind: POST_KINDS[(j * 4 + 1) % POST_KINDS.length], h, x: 320 + 1260 * ((j * 0.618 + h(3) * 0.3) % 1), y: 60 + 160 * h(4), s: 1.15 + 0.4 * h(6) };
 });
 function swarm(T, e) {
   return SWARM.map((P) => {
@@ -145,8 +146,7 @@ function Piece({ guide, boil, boilAmp, wd, cur, others }) {
   const ps = GROUPS.map((_, k) => plinth(T, B, k, e, others));
   const lightOn = glide(T, 0.0, 0.6, 0, 1);
   // the camera: at the end a short, slight push toward the curator, anchored on them. Everything is inside it.
-  const z = glide(T, B.zoom[0], B.zoom[1], 1, 1.06), anchor = [CX + SPACE, 560];
-  const CAM = `translate(${anchor[0]} ${anchor[1]}) scale(${z}) translate(${-anchor[0]} ${-anchor[1]})`;
+  const z = glide(T, B.zoom[0], B.zoom[1], 1, 1.06);
 
   const figs = ps.map((p, n) => {
     const a = figure(T, B, p.k, wd, cur);
@@ -154,8 +154,11 @@ function Piece({ guide, boil, boilAmp, wd, cur, others }) {
     const pop = glide(T, t0, t0 + 0.2, 0, 1), drop = backOut((T - t0) / 0.42);
     return { ...p, a, y: p.top - LID - 38 * (1 - Math.min(1, drop)), op: pop * dimOf(p.g), dir: facing(a.turn || 0), n, lights: [{ x: p.x - 50, y: -80, i: 1, reach: 820 }, { dir: [0.3, 1], i: 0.08 }] };
   });
+  // anchored on the orange bean (the middle of their body; the slider holds at "more" through the push, so they stand still)
+  const anchor = [figs[2].x, figs[2].y - 117];
+  const CAM = `translate(${anchor[0]} ${anchor[1]}) scale(${z}) translate(${-anchor[0]} ${-anchor[1]})`;
   const posts = swarm(T, e);
-  const sx = lerp(SL.x0, SL.x1, e);
+  const sy = lerp(SL.y0, SL.y1, e);
 
   const card = (f, c, k) => {
     if (c.on === false) return null;
@@ -203,8 +206,8 @@ function Piece({ guide, boil, boilAmp, wd, cur, others }) {
           </g>
 
           {/* labels under the baseline, centred on each plinth */}
-          <Txt x={CX} y={BASE + 48} size={30} fill={INK} a={ui * everyoneA}>Everyone</Txt>
-          {ps.map((p) => <Txt key={'l' + p.k} x={p.x} y={BASE + 48} size={30} fill={TXT[p.g]} a={p.tint * dimOf(p.g)}>{NAME[p.g]}</Txt>)}
+          <Txt x={CX} y={BASE + 44} size={30} fill={INK} a={ui * everyoneA}>Everyone</Txt>
+          {ps.map((p) => <Txt key={'l' + p.k} x={p.x} y={BASE + 44} size={30} fill={TXT[p.g]} a={p.tint * dimOf(p.g)}>{NAME[p.g]}</Txt>)}
 
           {/* the posts that come with exposure */}
           <g filter="url(#fuGradeFg-red)">{posts.map((q, k) => <PostValue key={k} x={q.p[0]} y={q.p[1]} s={q.s} rot={q.rot} flip={q.flip} kind={q.kind} op={q.op * ui} />)}</g>
@@ -215,14 +218,15 @@ function Piece({ guide, boil, boilAmp, wd, cur, others }) {
           <g filter="url(#cbWarm)">{figs.flatMap((f) => f.a.cards.filter((c) => !c.red).map((c, k) => card(f, c, `${f.n}-${k}`)))}</g>
           {loupeOf && loupeOf.a.ls > 0.02 && <Loupe f={loupeOf} />}
 
-          {/* the exposure slider */}
+          {/* the exposure slider: a vertical fader on the right, filling red from "less" up to the knob */}
           <g opacity={ui}>
-            <Txt x={SL.x0 - 110} y={SL.y + 9} size={28} fill={INK} anchor="end">Crisis exposure on social media</Txt>
-            <Txt x={SL.x0 - 28} y={SL.y + 8} size={24} fill={MUTED} anchor="end">less</Txt>
-            <Txt x={SL.x1 + 28} y={SL.y + 8} size={24} fill={MUTED} anchor="start">more</Txt>
-            <BoilLine x1={SL.x0} y1={SL.y} x2={SL.x1} y2={SL.y} stroke={NEUT[4]} w={9} bf={bf} amp={amp} seed={3} />
-            {sx > SL.x0 + 1 && <BoilLine x1={SL.x0} y1={SL.y} x2={sx} y2={SL.y} stroke={RED[3]} w={9} bf={bf} amp={amp} seed={4} />}
-            <circle cx={sx + jit(5, bf, 1, amp)} cy={SL.y + jit(5, bf, 2, amp)} r="19" fill={RED[6]} stroke={RED[4]} strokeWidth="4" />
+            <Txt x={SL.x} y={SL.y1 - 124} size={28} fill={INK}>Crisis exposure</Txt>
+            <Txt x={SL.x} y={SL.y1 - 90} size={28} fill={INK}>on social media</Txt>
+            <Txt x={SL.x} y={SL.y1 - 34} size={24} fill={MUTED}>more</Txt>
+            <Txt x={SL.x} y={SL.y0 + 52} size={24} fill={MUTED}>less</Txt>
+            <BoilLine x1={SL.x} y1={SL.y0} x2={SL.x} y2={SL.y1} stroke={NEUT[4]} w={9} bf={bf} amp={amp} seed={3} />
+            {sy < SL.y0 - 1 && <BoilLine x1={SL.x} y1={SL.y0} x2={SL.x} y2={sy} stroke={RED[3]} w={9} bf={bf} amp={amp} seed={4} />}
+            <circle cx={SL.x + jit(5, bf, 1, amp)} cy={sy + jit(5, bf, 2, amp)} r="19" fill={RED[6]} stroke={RED[4]} strokeWidth="4" />
           </g>
         </g>
       </svg>
@@ -250,15 +254,15 @@ function Loupe({ f }) {
 }
 
 function FUCrisisBars() {
-  const [t, setTweak] = useTweaks(window.TWEAK_DEFAULTS || { wd: 'turn', cur: 'warm', others: 'data', referenceOverlay: false, lineBoil: true, boilAmp: 0.5 });
+  const [t, setTweak] = useTweaks(window.TWEAK_DEFAULTS || { wd: 'turn', cur: 'warm', others: 'soft', referenceOverlay: false, lineBoil: true, boilAmp: 0.5 });
   return (
     <React.Fragment>
       <CompositionStage width={OUT_W} height={OUT_H} scenes={window.OM_SCENES} playback={window.OM_PLAYBACK} bg={NEUT[1]} autoplay={false}>
-        <Piece guide={t.referenceOverlay} boil={t.lineBoil} boilAmp={t.boilAmp ?? 0.5} wd={t.wd} cur={t.cur} others={t.others || 'data'} />
+        <Piece guide={t.referenceOverlay} boil={t.lineBoil} boilAmp={t.boilAmp ?? 0.5} wd={t.wd} cur={t.cur} others={t.others || 'soft'} />
       </CompositionStage>
       <TweaksPanel>
         <TweakSection label="Data" />
-        <TweakSelect label="Withdrawal and open" value={t.others || 'data'} options={[{ value: 'data', label: 'Their own data (small dips)' }, { value: 'flat', label: 'Hold still' }]} onChange={(x) => setTweak('others', x)} />
+        <TweakSelect label="Withdrawal and open" value={t.others || 'soft'} options={[{ value: 'soft', label: 'Small dips, softened (15 / 21 px)' }, { value: 'data', label: 'Their full estimates (30 / 43 px)' }, { value: 'flat', label: 'Hold still' }]} onChange={(x) => setTweak('others', x)} />
         <TweakSection label="Actions (from the triptych)" />
         <TweakSelect label="Withdrawal" value={t.wd} options={[{ value: 'turn', label: 'Turns their back' }, { value: 'shoo', label: 'Shoo, then turns away' }, { value: 'walk', label: 'Walks off' }]} onChange={(x) => setTweak('wd', x)} />
         <TweakSelect label="Curation" value={t.cur} options={[{ value: 'warm', label: 'Takes comfort posts, recoils from red' }, { value: 'red', label: 'All red' }]} onChange={(x) => setTweak('cur', x)} />

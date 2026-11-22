@@ -326,3 +326,12 @@ The user: withdrawal and open looked uncoupled from the slider toward the end, a
 - **Framing:** y axis at x 230; plinths 280 wide (lid overhang 10, shadow side 56) at 590, 1050, 1510; figures at 1.5; 15 px per point; the slider row along the bottom (title, less, track, more).
 - **Split:** the inner shadow sides grow in width instead of fading in (a part-opacity flat tone banded when posterized).
 
+### Round 6 (headroom, the fader on the right, softer dips, push on the bean)
+
+The user: not enough headroom; the slider on the right, not at the bottom; blue's swing 15 px and teal's 21 px, orange unchanged; anchor the push on the orange bean.
+
+- **Fader:** the slider is a vertical fader on the right (x 1760, "less" at the bottom 840, "more" at the top 340), filling red from the bottom to the knob, titled "Crisis exposure / on social media" above it. It is inside the camera like everything else.
+- **Layout:** baseline at y 980, labels at 1024; plinths at 490, 930, 1370 (baseline 200–1580); figures at 1.3 (were 1.5). The scale is unchanged (15 px per point), so orange still swings 147 px.
+- **Softer dips** (`others` = `soft`, default): withdrawal and open dip at about half their estimated slopes (−0.5 and −0.7 per point instead of −1.06 and −1.54), so they swing 15 and 21 px. `data` keeps the full estimates (30 / 43 px), `flat` holds them still. The narration should not quote their size; their slopes are not significant either way.
+- **Push:** anchored on the orange bean (the middle of their body); the slider holds at "more" through the push, so the bean stands still on screen while the frame grows round them.
+
