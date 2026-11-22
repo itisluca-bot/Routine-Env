@@ -19,6 +19,7 @@ Read `HANDOFF.md` first. It covers the film, the standing rules, every concept, 
 | `Vulnerability Alley.dc.html` + `vulnerability-alley.jsx` | Round 2 of the vulnerability line: one alley of terrace houses at night under streetlights. Blue and teal glow behind shutters; orange curators peek from behind curtains and duck as swarms of red posts pass, drawn to each light. Render with `--settle 60` |
 | `Credits.dc.html` + `credits.jsx` | **The end credits** (12 s): concept H's look made simple and clean, the opening title's dot over the Y, no palette colours, lines fading in on their beats. `--set logo=red` for the red logo |
 | `Credits Concepts.dc.html` + `credits-concepts.jsx` | End credits (12 s), round-1 concepts A–H on shared beats, plus `draft` (the endcard draft, static) and `S` (beats). Needs the licensed Futura in `fonts/` (git-ignored; see ANIMATION-GUIDE §14) |
+| `Three Groups Concepts.dc.html` + `three-groups-concepts.jsx` | The three groups side by side (7 s, no SRT yet): round-1 layout concepts A–H (plinths, dollhouse, swivel chairs, bus stop, islands, triptych, seesaw, lamps), picked with `--set concept=C`. See ANIMATION-GUIDE §16 |
 | `animations-v3.jsx`, `tweaks-panel.jsx`, `support.js` | Engine, tweak panel, Design Component runtime |
 | `archive/` | Round 1 and round 2 concepts, with their own copy of the runtime |
 | `reference/` | `timing_0.srt`, `timing_1.srt`, `timing_2.srt`. The reference stills live here locally but are not committed |

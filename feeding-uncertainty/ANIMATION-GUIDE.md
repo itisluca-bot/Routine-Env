@@ -50,6 +50,7 @@ This is the working guide for a new Claude session. Read it together with `CLAUD
 | `Curator Phone Concepts.dc.html` + `curator-phone-concepts.jsx` | Round-1 ideation for the phone shot (§11) |
 | `Curator Phone.dc.html` + `curator-phone.jsx` | **The current phone shot** (concept A, §12). `--set variant=two` (default) or `one` |
 | `Resistance.dc.html` + `resistance.jsx` | **The resistance shot** (§13). `--set camera=track` (chosen), `look=toned` (default) or `old` |
+| `Three Groups Concepts.dc.html` + `three-groups-concepts.jsx` | Round-1 layout concepts for the three groups side by side (§16) |
 | `tools/render.mjs` | Headless renderer (§6) |
 
 Load order in a page: `./animations-v3.jsx ./tweaks-panel.jsx ./rigs/bean-rig.jsx ./open-engagers-concepts.jsx ./your-shot.jsx`.
@@ -106,6 +107,7 @@ node tools/render.mjs "<page>" --frames 0,120,300 --half --guide                
 5. **Curators on the phone** (`timing_0.srt`, 9s4f = 9.16 s). Round-1 concepts (§11); the user chose **A · Long press** (§12). Exported at 4K (variant `two`).
 6. **Resistance** (`resistance.jsx`, `timing_4.srt`, not in the repo; 10.00 s). Built in another session; moved to the toned look in October 2026 (§13).
 7. **End credits** (12.00 s, silent for now). Round-1 concepts A–H (§14); the user chose H's look, made simple and clean (§15).
+8. **The three groups side by side** (7.00 s, no SRT yet). Round-1 layout concepts A–H (§16).
 4. **Vulnerability** (5.00 s, no SRT yet). Round 1, the city of apartment blocks (`vulnerability.jsx`, variant 1), was exported at 4K; the user then found it too busy. Round 2 is the alley (`vulnerability-alley.jsx`, §10).
 
 ## 8. Open engagers shot: what is approved
@@ -227,3 +229,24 @@ Line: "Coping is a form of resistance. The question is, what do people have to r
 - **Render:** `node tools/render.mjs "Credits.dc.html"` (4K PNG sequence; add `--set logo=red` for the red logo).
 - **Exported at 4K** (October 2026): white logo, PNG sequence and ProRes 4444, pop check clean (the only flagged step is the faint grid's fade-in moving one 8-bit grey level).
 
+
+## 16. The three groups side by side: round 1 (layout concepts)
+
+`Three Groups Concepts.dc.html` + `three-groups-concepts.jsx`. An early shot, 7.00 s, no SRT yet (word times are estimates): an overview of the three coping groups next to each other, each in its colour, labelled **withdrawal**, **open engagement**, **curation**. The user asked for layout ideas first (what they sit or stand on, the background), slightly playful, rough, not developed.
+
+- **Beats:** Meet 0–1.40, Withdrawal 1.40–3.00, Open 3.00–4.60, Curation 4.60–6.40, Together 6.40–6.76, Hold to 7.00. Each label fades in with a small rise on its group's beat.
+- **Actions (shared by every concept, `actor`):** a red post drops in at each person on their beat. Blue looks up at it, turns away (a flip through edge-on) and hunches. Teal raises a loupe and leans in; the lens shows the post larger. Orange looks through the loupe at arm's length, the post darts in, they turn away and keep the loupe pointed back at it over their shoulder ("a bit of both"). Teal and orange hold their loupes low from the start.
+- **Look:** mixed beat, so the world outside the light is a neutral night (`NEUT`) and each group's light is in its own ramp (as in the alley's AE). People are `ToneBean`s lit by their own light; hair: blue none, teal beanie, orange long. Labels use the opening title's type (Inter Light, widely spaced caps), in each ramp's palest tone, except where the layout makes them a plaque or sign.
+
+| | Concept | Layout |
+|---|---|---|
+| A | Plinths | three exhibits on plinths of different heights in a gallery, a ceiling spot each; labels are museum plaques |
+| B | Dollhouse | one house in section, a room each with a ceiling lamp; labels on the cut floor slab |
+| C | Swivel chairs | a talk-show stage, three swivel chairs under spots; blue swivels away, chair and all |
+| D | Bus stop | one bench across three bays of a shelter, a strip light each; labels are the stop signs |
+| E | Islands | three floating islands at different heights, bobbing, a lamp and a signpost each |
+| F | Triptych | three panels, each its own ramp world with a window light (like three testimony portraits); captions below |
+| G | Seesaw | blue and teal at the ends of a plank, orange balancing on the pivot; the plank tips toward whoever acts |
+| H | Lamps | three hanging lamps in the dark (the Open Engagers opening, one per group); labels on the floor |
+
+Render one: `node tools/render.mjs "Three Groups Concepts.dc.html" --set concept=C --half --guide --preview`.
