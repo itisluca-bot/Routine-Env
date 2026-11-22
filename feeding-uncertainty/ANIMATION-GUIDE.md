@@ -50,10 +50,12 @@ This is the working guide for a new Claude session. Read it together with `CLAUD
 | `Curator Phone Concepts.dc.html` + `curator-phone-concepts.jsx` | Round-1 ideation for the phone shot (§11) |
 | `Curator Phone.dc.html` + `curator-phone.jsx` | **The current phone shot** (concept A, §12). `--set variant=two` (default) or `one` |
 | `Resistance.dc.html` + `resistance.jsx` | **The resistance shot** (§13). `--set camera=track` (chosen), `look=toned` (default) or `old` |
+| `Curator Eye.dc.html` + `curator-eye.jsx` | **The curator's weight** (concept D, §20): the POV and its reflection in the eye. Loads `curator-phone-kit.jsx` |
 | `Curator Weight Concepts.dc.html` + `curator-weight-concepts.jsx` | Round-1 concept frames for the curator's weight shot (§19) |
 | `Three Groups Concepts.dc.html` + `three-groups-concepts.jsx` | Round-1 layout concepts for the three groups side by side (§16) |
 | `Three Groups.dc.html` + `three-groups.jsx` | **The three groups shot** (concept F, §17). Exported at 4K. `--set wd=turn|walk|blind|shoo,cur=warm|red`; `view=wd` shows the withdrawal options side by side |
 | `Crisis Bars.dc.html` + `crisis-bars.jsx` | **The crisis finding as a bar chart** (§18), replacing the crisis scatter. Loads `three-groups.jsx` for the characters' actions (`window.FU_THREE_GROUPS`). Needs `fonts/Futura-Bold.ttf` |
+| `Coping Concepts.dc.html` + `coping-concepts.jsx` | The last shot, replacing the Resistance alley: round-1 concepts (§21). `--set concept=pillars` or `triptych` |
 | `tools/render.mjs` | Headless renderer (§6) |
 
 Load order in a page: `./animations-v3.jsx ./tweaks-panel.jsx ./rigs/bean-rig.jsx ./open-engagers-concepts.jsx ./your-shot.jsx`.
@@ -112,6 +114,7 @@ node tools/render.mjs "<page>" --frames 0,120,300 --half --guide                
 7. **End credits** (12.00 s, silent for now). Round-1 concepts A–H (§14); the user chose H's look, made simple and clean (§15).
 8. **The three groups side by side** (7.00 s, no SRT yet). Round-1 layout concepts A–H (§16); the user chose **F · Triptych** (§17).
 9. **The crisis finding** (16.00 s, the crisis scatter's v6 narration timing). The scatter (a separate Python handoff) was found too hard to read; replaced by a bar chart with the triptych's characters (§18).
+10. **The last shot** (same line as Resistance, 10.00 s), replacing the Resistance alley; all three groups in frame again. Round-1 concept stills (§21).
 4. **Vulnerability** (5.00 s, no SRT yet). Round 1, the city of apartment blocks (`vulnerability.jsx`, variant 1), was exported at 4K; the user then found it too busy. Round 2 is the alley (`vulnerability-alley.jsx`, §10).
 
 ## 8. Open engagers shot: what is approved
@@ -337,6 +340,22 @@ The user: not enough headroom; the slider on the right, not at the bottom; blue'
 - **Softer dips** (`others` = `soft`, default): withdrawal and open dip at about half their estimated slopes (−0.5 and −0.7 per point instead of −1.06 and −1.54), so they swing 15 and 21 px. `data` keeps the full estimates (30 / 43 px), `flat` holds them still. The narration should not quote their size; their slopes are not significant either way.
 - **Push:** anchored on the orange bean (the middle of their body); the slider holds at "more" through the push, so the bean stands still on screen while the frame grows round them.
 
+### Round 7 (a bolder fader, smaller dips)
+
+The user: the slider is easy to miss, make it thicker and more dominant; halve the blue and teal range again.
+
+- **Fader:** track 24 px (was 9), red fill `RED[4]`, knob radius 36 with an 8 px `RED[3]` ring, title 34 px and "more" / "less" 28 px in white. At x 1715 (was 1760), so the push at the end does not crop its title.
+- **Dips** (`soft`, default): −0.25 and −0.35 per point, so withdrawal and open swing 7.5 and 10.5 px across the slider (orange 147 px). About a quarter of their estimated slopes (−1.06, −1.54), which are not significant; `data` keeps the estimates.
+
+### Round 8 (the curators end on top, as in the paper's figure)
+
+The user: at maximum exposure teal was still the highest, which does not match the paper's graph, where curation starts much lower and ends slightly higher.
+
+- **Why:** at ±1 point the slider ended where the curators' line crosses open engagement's (x 1.0 in Figure 3), and the softened dips had lifted teal a little at that end.
+- **Range:** the slider now spans 1.5 points either side of average (`X_RANGE`), well inside Figure 3's plotted range (−3.1 to 2.8). Curators 14.3 → 29.1: far below at "less", just above both others at "more" (teal 27.9, blue 25.4 with the softened dips; 25.9 and 24.1 with the full estimates). Orange now swings 221 px (was 147).
+- **Softened dips** rescaled to keep 7.5 and 10.5 px over the wider range: −0.167 and −0.233 per point (about a sixth of the estimates).
+- **Exported at 4K** (round 8): `node tools/render.mjs "Crisis Bars.dc.html" --set referenceOverlay=false --settle 150`, PNG sequence only, 400 frames, about 2 s a frame. The renderer names the folder after the `--set` value (`renders/crisis-bars-false/`); it was renamed to `renders/crisis-bars/crisis-bars_0000.png` … `_0399.png`. Pop check clean (every flagged step is an 8 fps boil step); the first six frames are small files because the shot fades up from the dark.
+
 ## 19. The curator's weight: round 1 (concept frames)
 
 `Curator Weight Concepts.dc.html` + `curator-weight-concepts.jsx` (loads `curator-phone-kit.jsx` for `WarmPost`). A curator shot to replace the Vulnerability alley (found too complex), placed after the curator at the table, as the curators' counterpart of the open engagers' table. Line, for reference only (the user: don't be too literal): "They bear the weight of vulnerability, produced by the ongoing crisis, by platforms built to keep you scrolling, and inequality in who gets heard." No SRT or length yet.
@@ -358,19 +377,30 @@ Sheet: `curator-weight-concepts-sheet.png`. Render one: `node tools/render.mjs "
 
 Build notes: front-view sitters on a sofa (`couchSitter`) sink into the seat cushion and the seat front covers their legs; lying figures are drawn upright and rotated, with their lights given in the unrotated frame (`unrot` in F); TV content is clipped to its screen per instance (`TVNews id`).
 
-### Round 7 (a bolder fader, smaller dips)
+## 20. The curator's weight: round 2 (concept D, the eye)
 
-The user: the slider is easy to miss, make it thicker and more dominant; halve the blue and teal range again.
+The user chose D from §19 and asked for the reflection to start from the curator phone shot's POV (phone and hand), then a glance up to reveal a TV on the wall (still in the reflection), then a glance back to the phone; the camera stays locked on the eye and the reflection follows the look. As the user suggested, the POV is built first as a shot of its own, then mapped into the eye. `Curator Eye.dc.html` + `curator-eye.jsx`; `--set view=pov` shows the POV alone, `view=eye` (default) the eye.
 
-- **Fader:** track 24 px (was 9), red fill `RED[4]`, knob radius 36 with an 8 px `RED[3]` ring, title 34 px and "more" / "less" 28 px in white. At x 1715 (was 1760), so the push at the end does not crop its title.
-- **Dips** (`soft`, default): −0.25 and −0.35 per point, so withdrawal and open swing 7.5 and 10.5 px across the slider (orange 147 px). About a quarter of their estimated slopes (−1.06, −1.54), which are not significant; `data` keeps the estimates.
+- **Timing (estimates, no SRT yet), 9.00 s:** Phone 0–2.92, Up 2.92–3.60, TV 3.60–6.08, Down 6.08–6.80, Phone2 6.80–8.76, Hold to 9.00. The guide captions spread the line over this. Thumb swipes at 0.32, 1.42, 2.36, 7.12, 8.02; the news cuts from the anchor beside a falling chart to the politician at the podium at 4.84 (round 2 swapped them); a notification slides onto the phone at 5.5 (seen at the bottom of the frame while the eyes are on the TV), the phone buzzes; it goes at 7.5.
+- **The POV's camera** is one pitch angle, from -0.64 rad (on the phone) to 0 (on the TV). Every set piece has an elevation e and sits at screen y = 540 - F·tan(e - pitch), F 1000, so the wall compresses toward the frame edges like a lens and nothing slides as a flat layer. Head moves overshoot 3% and settle (`lookAt`). The phone is held by the body, so it drops out of the bottom of the frame when the head goes up (its top stays visible) and dips slightly lower while the eyes are away.
+- **Focus follows the gaze**, a beat after the head (0.12 s): on the phone, the room is soft (blur 9) and the phone sharp; on the TV, the wall and TV sharp and the phone soft (blur 7). Grades posterize first and blur after (`GradeBlur`), so soft areas stay banded. While the eyes are on the TV the wall's ramp drifts 10% toward red.
+- **Set:** the curator phone shot's phone, mitt and feed (`curator-phone-kit.jsx`), a coffee table and rug below, the sofa's arms at the edges (very soft), the wall with the TV (`TVNews`), a sideboard with a plant, a picture, a curtained window; the TV's light breathes on the wall; red posts drift round the TV.
+- **The eye:** the POV is drawn with a margin (it needs more than 1920 × 1080: the eye is round), bowed by a displacement map baked once on a canvas (a point at radius r shows the POV at r·(1 + 0.55·ρ²), ρ = r / 600), mirrored (a reflection), scaled into an eye of radius 360 and darkened toward its rim, with a catchlight. The camera is locked on the eye; as the eye turns up, the face around it moves down 34 px and the light on the skin moves from the phone below toward the TV.
+- **Fixed:** a red-graded group whose posts all lay outside the frame drew a dark square in the top-left corner; only posts inside the frame are drawn now. The phone's focus blur with a frame-wide region left a black smudge in the same corner while the blur grew; its region now hugs the phone and hands.
+### Round 2 (beanoids on the TV, no flicker, the eye rebuilt on the rig)
 
-### Round 8 (the curators end on top, as in the paper's figure)
+The user: flicker in the POV; the people on the TV should be beanoids; swap the two TV shots and give the new second one (the politician) "Trump hair". The eye was too big for the face and too curved; the contours moved during the glances, which made sense but did not read as real, and seemed inverted; add something behind so the camera move reads.
 
-The user: at maximum exposure teal was still the highest, which does not match the paper's graph, where curation starts much lower and ends slightly higher.
+- **Flicker** came from the TV's light flickering in value on posterized layers (the wall glows, the sideboard top, the coffee table): each small value change pushed whole bands across a threshold, so large areas jumped between tones. The light now breathes in size (radius ±5%, slow), never in value; the flash at the cut is gone. The ticker wrapped every 180 px, swapping bars of different widths; it now runs on continuously. The notification's glow grows in size too.
+- **TV people** are beanoids from the front (`TVBean`: the Bean's round head over the top of its egg, eyes at ±0.34 r, lit from the left), in the TV's red grade like the rest of the news. First the anchor beside the falling chart (drawn in as the eyes reach the TV), then the politician at the podium with a swept-over blond hairdo (a high swoop over to the front, comb lines, a side piece) and a long tie.
+- **The eye** is now in the rig's proportion: the head is the Bean's head at 56 × the rig (eye 3.8 : head 26), placed and tilted by `FU_BEAN.rig` (the pose tilts from 20° down on the phone to -4° on the TV, about the neck, as the rig does). The camera is locked on the eye at (1180, 540), so the profile's edge shows on the left with the room behind it.
+- **Bands like the rig's:** darker toward the outline (a radial falloff, which is the edge field of a circle), brighter on the side the lights are on (the phone below and in front, the TV in front), a little noise, posterized to the curator ramp, cut to the crisp outline (`HeadMacro`). The lights stay where they are in the room, so as the head tilts the bands shift a little round it. ToneBean itself cannot run at this scale: its edge blur needs a filter surface of several gigabytes and the page hangs.
+- **Behind the head:** the room in front of the curator, out of focus (a window with bars, the TV's glow, a shelf), moving at 0.6 of the camera's move, so the glance reads as the head tilting while the camera follows the eye.
+- **Less curvature:** the reflection bows at K 0.25 (was 0.55).
 
-- **Why:** at ±1 point the slider ended where the curators' line crosses open engagement's (x 1.0 in Figure 3), and the softened dips had lifted teal a little at that end.
-- **Range:** the slider now spans 1.5 points either side of average (`X_RANGE`), well inside Figure 3's plotted range (−3.1 to 2.8). Curators 14.3 → 29.1: far below at "less", just above both others at "more" (teal 27.9, blue 25.4 with the softened dips; 25.9 and 24.1 with the full estimates). Orange now swings 221 px (was 147).
-- **Softened dips** rescaled to keep 7.5 and 10.5 px over the wider range: −0.167 and −0.233 per point (about a sixth of the estimates).
-- **Exported at 4K** (round 8): `node tools/render.mjs "Crisis Bars.dc.html" --set referenceOverlay=false --settle 150`, PNG sequence only, 400 frames, about 2 s a frame. The renderer names the folder after the `--set` value (`renders/crisis-bars-false/`); it was renamed to `renders/crisis-bars/crisis-bars_0000.png` … `_0399.png`. Pop check clean (every flagged step is an 8 fps boil step); the first six frames are small files because the shot fades up from the dark.
+## 21. The last shot: round 1 (concept stills)
 
+The user is replacing the second alley shot (Resistance, §13) with a last shot on the same line: "Coping is a form of resistance. The question is, what do people have to resist with?" The first alley is being reworked as the eye shot (§19–20). Brief: all three groups visible again, zooming out a bit on "coping". Two ideas, each built on a shot the audience has already seen. `Coping Concepts.dc.html` + `coping-concepts.jsx` (loads `curator-phone-kit.jsx` for `WarmPost`), on the Resistance timing (10.00 s: Resistance, Question, With, Tail, Hold). Stills at frame 150 (6.0 s).
+
+- **1 · Pillars** (`concept=pillars`): Crisis Bars (§18) at its end state, without the axis, labels and slider: the same plinths under their spots, the same heights (slider at "more", curators just on top), the hard white baseline, the same three beanoids (hair as there) at 1.3, now hanging out. Blue sits on the left edge of their plinth, legs dangling, facing away from everyone, chin up, leaning back on a hand. Teal sits on the right edge facing orange, legs dangling, looking up at them, a hand half raised. Orange stands at the outer edge of the highest plinth inside the red swarm and almost falls: leaning out over the drop, looking down, arms windmilling, the back foot lifted. Camera: a zoom out from 1.2 to the whole row over 0.3–3.2 s.
+- **2 · Triptych** (`concept=triptych`): Three Groups (§17): the same three window-lit panels in their ramps, no labels, each now a group, figures at 1.25 (kids 0.62 of that, head 1.3). Blue: three friends in a huddle away from the window, talking (one arms folded), their backs to six red posts by the window. Teal: a family; the two kids study one post through loupes (the triptych's loupe, the lens showing the post larger, each lens on the line from the kid's eye to the post), each parent leans in with a hand on a kid's shoulder (IK). Orange: the curator alone in the empty room (front view), hand to head, eyes going from side to side, a comfort post (cat) in the other hand. A 3% push over the shot.
