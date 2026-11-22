@@ -3,25 +3,31 @@
 // made simple and clean: the dot sits still over the Y as in the opening, the names are not in the group colours,
 // and every line just fades in on its beat. On the right, the funders: the RUG Faculty of Arts (Impact Grant) and
 // NWO (Open Competition SSH-XS), each under a label: the first level with the first row's label, the second level with
-// the last name's baseline. No camera move: a push this slow makes the type step from pixel to
+// the last name's baseline. The card is centred vertically (equal margins top and bottom) with even gaps between
+// blocks; labels and the disclaimer are bold enough to read. No camera move: a push this slow makes the type step from pixel to
 // pixel; the rule and the dot boil at 8 fps instead. The logo is off-white (`logo` tweak: `red` for the RUG red).
 const { W, H, OUT_W, OUT_H, MOTION, hash } = window.FU_RIG;
 const { TYPES, Txt, ROWS, NOTE, beats, ap, brect, OPEN_BG, OPEN_TXT, OPEN_DOT, LOGO_C } = window.FU_CREDITS;
 const { glide } = MOTION;
-const LABEL = '#8a8a88', MUTE = '#7c7c7a';
-const ST = TYPES.title;
+const LABEL = '#a8a8a5', MUTE = '#9a9a97';
+const ST = { ...TYPES.title, label: { ...TYPES.title.label, weight: 700 }, note: { ...TYPES.title.note, weight: 400 } };
 
-// the layout: one left column under the title, the logo on the right, centred on the names
+// the layout: one left column under the title, the funders on the right. Title cap top ~184, disclaimer descenders ~900:
+// equal margins; title → first label 130, rows 140 apart, last name → rule 126
 const X = 180;
-const TITLE = { y: 324, len: 960 };
-const ROW_Y = [0, 1, 2].map((i) => 415 + 135 * i);   // label baseline +26, name baseline +82
+const TITLE = { y: 220, len: 960 };
+const LABEL_Y = [350, 490, 630], NAME_Y = LABEL_Y.map((y) => y + 56);
 // the funders' column: a label level with a row label on the left, the logo under it. Logos are alpha-only PNGs
 // (assets/rug-arts-logo.png from the user's black-on-white file; assets/nwo-logo.png from a white sheet with the logo
-// cut out, cropped tight in the source, so the emblem's outer ring is redrawn and the canvas padded), tinted in the page
+// cut out, cropped tight in the source, so the emblem's outer ring is redrawn and the canvas padded), tinted in the page.
+// `nwo` tweak: the user asked for the logo inverted, then for "NWO" in black. `plate` (chosen): the logo in black on an
+// off-white plate with an even margin (the user's file is a white sheet with the logo cut out, but cropped into the
+// logo, so the plate is drawn here and the logo is the repaired `nwo-logo.png`). `disc` (the emblem as a solid disc,
+// white letters) and `rings` (white rings on the dark, the version before the note) are kept.
 const FX = 1340;
 const FUNDERS = [
-  { label: 'IMPACT GRANT', y: ROW_Y[0] + 26, src: 'assets/rug-arts-logo.png', w: 230, aspect: 1070 / 1000, rug: true },
-  { label: 'NWO OPEN COMPETITION SSH-XS', y: ROW_Y[2] + 82, src: 'assets/nwo-logo.png', w: 110, aspect: 987 / 639 },
+  { label: 'IMPACT GRANT', y: LABEL_Y[0], src: 'assets/rug-arts-logo.png', w: 220, aspect: 1070 / 1000, rug: true },
+  { label: 'NWO OPEN COMPETITION SSH-XS', y: NAME_Y[2], nwo: true, w: 110, aspect: 987 / 639 },
 ];
 // an alpha-only logo filled with one colour
 const Mark = ({ src, x, y, w, aspect, color, id }) => (
@@ -30,7 +36,7 @@ const Mark = ({ src, x, y, w, aspect, color, id }) => (
     <image href={src} x={x} y={y} width={w} height={w * aspect} filter={`url(#${id})`} />
   </g>
 );
-const RULE = { y: 890, w: 300 }, NOTE_Y = [939, 974];
+const RULE = { y: 812, w: 300 }, NOTE_Y = [860, 895];
 // the dot as in the opening: just right of the Y's right arm, level with the cap height. textLength includes the
 // spacing after the last letter (0.5 em), so the Y ends 25 px before X + len
 const DOT = { x: X + TITLE.len - 25 + 5, y: TITLE.y - 37, r: 6.2 };
@@ -41,7 +47,20 @@ const Arrive = ({ T, t0, d = 1.0, rise = 8, children }) => {
   return op > 0.001 ? <g opacity={op} transform={`translate(0 ${glide(T, t0, t0 + d + 0.3, rise, 0)})`}>{children}</g> : null;
 };
 
-function CreditsPiece({ guide, boil, boilAmp, logo }) {
+const NWO_SRC = { disc: 'assets/nwo-logo-disc.png', rings: 'assets/nwo-logo.png' };
+// the NWO logo on its plate: the logo's box in nwo-logo.png (639 × 987), and the plate's margin, in source px
+const NWO_BOX = { x0: 5.4, y0: 19.9, x1: 626.6, y1: 981 }, NWO_PAD = 56;
+function NwoPlate({ x, y, w }) {
+  const B = NWO_BOX, s = w / (B.x1 - B.x0 + 2 * NWO_PAD);
+  return (
+    <g>
+      <rect x={x} y={y} width={w} height={(B.y1 - B.y0 + 2 * NWO_PAD) * s} fill={OPEN_TXT} />
+      <Mark src={NWO_SRC.rings} x={x + (NWO_PAD - B.x0) * s} y={y + (NWO_PAD - B.y0) * s} w={639 * s} aspect={987 / 639} color="#000" id="crNwoPlate" />
+    </g>
+  );
+}
+
+function CreditsPiece({ guide, boil, boilAmp, logo, nwo }) {
   const { T, CUES } = useComposition();
   const bf = Math.floor(T * 8), amp = boil ? boilAmp : 0;
   const b = beats(CUES);
@@ -59,14 +78,15 @@ function CreditsPiece({ guide, boil, boilAmp, logo }) {
           <circle cx={DOT.x} cy={DOT.y} r={DOT.r + (hash(bf * 2.3 + 99) - 0.5) * amp * 0.3} fill={OPEN_DOT} opacity={ap(T, b.title + 0.9, 0.6)} />
           {ROWS.map((r, i) => (
             <Arrive key={i} T={T} t0={b.rows[i]}>
-              <Txt t={r.label} x={X} y={ROW_Y[i] + 26} st={ST.label} fill={LABEL} />
-              <Txt t={r.name} x={X} y={ROW_Y[i] + 82} st={ST.name} fill={OPEN_TXT} />
+              <Txt t={r.label} x={X} y={LABEL_Y[i]} st={ST.label} fill={LABEL} />
+              <Txt t={r.name} x={X} y={NAME_Y[i]} st={ST.name} fill={OPEN_TXT} />
             </Arrive>
           ))}
           {FUNDERS.map((f, i) => (
             <Arrive key={i} T={T} t0={b.logo + 0.7 * i} d={1.1}>
               <Txt t={f.label} x={FX} y={f.y} st={ST.label} fill={LABEL} />
-              <Mark src={f.src} x={FX} y={f.y + 18} w={f.w} aspect={f.aspect} color={f.rug && logo === 'red' ? LOGO_C : OPEN_TXT} id={'crMark' + i} />
+              {f.nwo && !NWO_SRC[nwo] ? <NwoPlate x={FX} y={f.y + 18} w={f.w} />
+                : <Mark src={f.nwo ? NWO_SRC[nwo] : f.src} x={FX} y={f.y + 18} w={f.w} aspect={f.aspect} color={f.rug && logo === 'red' ? LOGO_C : OPEN_TXT} id={'crMark' + i} />}
             </Arrive>
           ))}
           <Arrive T={T} t0={b.note} rise={0}>
@@ -77,23 +97,24 @@ function CreditsPiece({ guide, boil, boilAmp, logo }) {
           </Arrive>
         </g>
       </svg>
-      {guide && <div style={{ position: 'absolute', left: 48, top: 30, font: '600 30px Inter, sans-serif', color: '#fff', textShadow: '0 1px 12px rgba(0,0,0,0.8)' }}>Credits · logo {logo}</div>}
+      {guide && <div style={{ position: 'absolute', left: 48, top: 30, font: '600 30px Inter, sans-serif', color: '#fff', textShadow: '0 1px 12px rgba(0,0,0,0.8)' }}>Credits · logo {logo} · NWO {nwo}</div>}
       {/* keeps the font loading from the first frame */}
-      <div style={{ position: 'absolute', left: -9999, top: 0, fontFamily: 'Inter', fontWeight: 300 }}>a<i>a</i><b style={{ fontWeight: 500 }}>a</b></div>
+      <div style={{ position: 'absolute', left: -9999, top: 0, fontFamily: 'Inter', fontWeight: 300 }}>a<i>a</i><i style={{ fontWeight: 400 }}>a</i><b style={{ fontWeight: 700 }}>a</b></div>
     </div>
   );
 }
 
 function FUCredits() {
-  const [t, setTweak] = useTweaks(window.TWEAK_DEFAULTS || { logo: 'white', referenceOverlay: false, lineBoil: true, boilAmp: 0.5 });
+  const [t, setTweak] = useTweaks(window.TWEAK_DEFAULTS || { logo: 'white', nwo: 'plate', referenceOverlay: false, lineBoil: true, boilAmp: 0.5 });
   return (
     <React.Fragment>
       <CompositionStage width={OUT_W} height={OUT_H} scenes={window.OM_SCENES} playback={window.OM_PLAYBACK} bg={OPEN_BG}>
-        <CreditsPiece logo={t.logo} guide={t.referenceOverlay} boil={t.lineBoil} boilAmp={t.boilAmp ?? 0.5} />
+        <CreditsPiece logo={t.logo} nwo={t.nwo || 'plate'} guide={t.referenceOverlay} boil={t.lineBoil} boilAmp={t.boilAmp ?? 0.5} />
       </CompositionStage>
       <TweaksPanel>
         <TweakSection label="Credits" />
         <TweakRadio label="Logo" value={t.logo} options={[{ value: 'white', label: 'Off-white' }, { value: 'red', label: 'RUG red (Faculty of Arts logo)' }]} onChange={(x) => setTweak('logo', x)} />
+        <TweakSelect label="NWO logo" value={t.nwo || 'plate'} options={[{ value: 'plate', label: 'Black on an off-white plate' }, { value: 'disc', label: 'Solid disc, white letters' }, { value: 'rings', label: 'Before: white rings' }]} onChange={(x) => setTweak('nwo', x)} />
         <TweakSection label="Preview" />
         <TweakToggle label="Label" value={t.referenceOverlay} onChange={(x) => setTweak('referenceOverlay', x)} />
         <TweakToggle label="Line boil (8 fps)" value={t.lineBoil} onChange={(x) => setTweak('lineBoil', x)} />
