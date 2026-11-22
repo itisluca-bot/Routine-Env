@@ -51,7 +51,7 @@ This is the working guide for a new Claude session. Read it together with `CLAUD
 | `Curator Phone.dc.html` + `curator-phone.jsx` | **The current phone shot** (concept A, §12). `--set variant=two` (default) or `one` |
 | `Resistance.dc.html` + `resistance.jsx` | **The resistance shot** (§13). `--set camera=track` (chosen), `look=toned` (default) or `old` |
 | `Three Groups Concepts.dc.html` + `three-groups-concepts.jsx` | Round-1 layout concepts for the three groups side by side (§16) |
-| `Three Groups.dc.html` + `three-groups.jsx` | **The three groups shot** (concept F, §17). `--set wd=turn|walk|blind|shoo,cur=warm|red`; `view=wd` shows the withdrawal options side by side |
+| `Three Groups.dc.html` + `three-groups.jsx` | **The three groups shot** (concept F, §17). Exported at 4K. `--set wd=turn|walk|blind|shoo,cur=warm|red`; `view=wd` shows the withdrawal options side by side |
 | `Crisis Bars.dc.html` + `crisis-bars.jsx` | **The crisis finding as a bar chart** (§18), replacing the crisis scatter. Loads `three-groups.jsx` for the characters' actions (`window.FU_THREE_GROUPS`). Needs `fonts/Futura-Bold.ttf` |
 | `tools/render.mjs` | Headless renderer (§6) |
 
@@ -272,6 +272,7 @@ Render one: `node tools/render.mjs "Three Groups Concepts.dc.html" --set concept
 - **Timing (round 3, user: actions closer together and nearer the end, and an intro):** Intro 0–2.20, Withdrawal 2.20–3.16, Open 3.16–4.36, Curation 4.36–6.40, Together 6.40–6.76, Hold to 7.00. **Intro:** at frame 0 each panel is in its own ramp's darkest tone (an overlay of `RAMPS[g][0]` at 0.8) with the window light at 0.35, never black; the panels come up one after another, left to right (`glide` 0.15–0.85, 0.65–1.35, 1.15–1.85 s): the overlay lifts, the light rises to full and the label fades in with a small rise.
 - **Cards fly freely across the panel borders** (user note): `Panel` draws in two parts, `base` (room, label, light, figure, intro overlay; clipped to the panel) and `cards` (cards and the loupe; not clipped). All three bases are drawn first, then all three card layers, so a card crossing into the next panel stays on top. Blue's posts that drift off leave up and out of the top of the frame. The comparison view (`view=wd`) keeps its cards clipped.
 - **Set:** three panels with 6 px dark gutters, each its group's ramp (wall, a window light with blinds / bare / half-curtained, floor), out of focus; figures `ToneBean` at 1.9, lit by their window; labels in each ramp's palest tone. A 3% push over the shot.
+- **Render:** `node tools/render.mjs "Three Groups.dc.html" --set wd=turn,cur=warm,view=shot,referenceOverlay=false --settle 150 --minSize 0.6`. **Exported at 4K** (November 2026, withdrawal `turn`, curation `warm`): PNG sequence only, 175 frames, pop check clean.
 
 ## 18. The crisis finding as a bar chart
 
