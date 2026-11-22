@@ -50,6 +50,7 @@ This is the working guide for a new Claude session. Read it together with `CLAUD
 | `Curator Phone Concepts.dc.html` + `curator-phone-concepts.jsx` | Round-1 ideation for the phone shot (§11) |
 | `Curator Phone.dc.html` + `curator-phone.jsx` | **The current phone shot** (concept A, §12). `--set variant=two` (default) or `one` |
 | `Resistance.dc.html` + `resistance.jsx` | **The resistance shot** (§13). `--set camera=track` (chosen), `look=toned` (default) or `old` |
+| `Curator Weight Concepts.dc.html` + `curator-weight-concepts.jsx` | Round-1 concept frames for the curator's weight shot (§19) |
 | `Three Groups Concepts.dc.html` + `three-groups-concepts.jsx` | Round-1 layout concepts for the three groups side by side (§16) |
 | `Three Groups.dc.html` + `three-groups.jsx` | **The three groups shot** (concept F, §17). Exported at 4K. `--set wd=turn|walk|blind|shoo,cur=warm|red`; `view=wd` shows the withdrawal options side by side |
 | `Crisis Bars.dc.html` + `crisis-bars.jsx` | **The crisis finding as a bar chart** (§18), replacing the crisis scatter. Loads `three-groups.jsx` for the characters' actions (`window.FU_THREE_GROUPS`). Needs `fonts/Futura-Bold.ttf` |
@@ -335,4 +336,25 @@ The user: not enough headroom; the slider on the right, not at the bottom; blue'
 - **Layout:** baseline at y 980, labels at 1024; plinths at 490, 930, 1370 (baseline 200–1580); figures at 1.3 (were 1.5). The scale is unchanged (15 px per point), so orange still swings 147 px.
 - **Softer dips** (`others` = `soft`, default): withdrawal and open dip at about half their estimated slopes (−0.5 and −0.7 per point instead of −1.06 and −1.54), so they swing 15 and 21 px. `data` keeps the full estimates (30 / 43 px), `flat` holds them still. The narration should not quote their size; their slopes are not significant either way.
 - **Push:** anchored on the orange bean (the middle of their body); the slider holds at "more" through the push, so the bean stands still on screen while the frame grows round them.
+
+## 19. The curator's weight: round 1 (concept frames)
+
+`Curator Weight Concepts.dc.html` + `curator-weight-concepts.jsx` (loads `curator-phone-kit.jsx` for `WarmPost`). A curator shot to replace the Vulnerability alley (found too complex), placed after the curator at the table, as the curators' counterpart of the open engagers' table. Line, for reference only (the user: don't be too literal): "They bear the weight of vulnerability, produced by the ongoing crisis, by platforms built to keep you scrolling, and inequality in who gets heard." No SRT or length yet.
+
+The user asked for still concept frames only, no animation. Each runs on a 4 s clock with small sways; frame 50 is the still. The world is the curator ramp; screens are the lights; red comes in through the posts and the news on the TV.
+
+| | Concept |
+|---|---|
+| A | Over the shoulder: the back of the curator's head above the sofa back, the news on the TV (a politician at a podium, lower third, ticker), the phone's glow spilling over the sofa back; posts come off both screens |
+| B | The family on the couch, front view, the TV where the camera is: four curators side by side, each lit from below by their own phone, each phone throwing its own post up (the table's opposite: everyone alone with their own screen) |
+| C | Black mirror: the TV is off; its dark glass fills the frame and holds the room, the curator lit only by the phone, posts faint round them |
+| D | The eye, macro: the side of the head in bands, the eye a crisp dark disc, the phone's feed reflected in it (warm and red posts), posts sliding round the curve |
+| E | Close-up (`BeanBust`): a small screen with a red bar reflected in each eye, lit from below by the phone and by the TV's flicker; big posts pass out of focus |
+| F | Awake: in bed at night, the phone on the nightstand lights the ceiling; a post hangs in the pool, outlines drift in the dark |
+| G | Surrounded: TV, tablet, laptop, phone, each a light, each sending posts toward the curator |
+| H | Endless scroll: side view on the sofa, the feed rises out of the phone as a ribbon of warm and red cards, out of the frame |
+
+Sheet: `curator-weight-concepts-sheet.png`. Render one: `node tools/render.mjs "Curator Weight Concepts.dc.html" --set concept=D --half --guide --frames 50`.
+
+Build notes: front-view sitters on a sofa (`couchSitter`) sink into the seat cushion and the seat front covers their legs; lying figures are drawn upright and rotated, with their lights given in the unrotated frame (`unrot` in F); TV content is clipped to its screen per instance (`TVNews id`).
 
