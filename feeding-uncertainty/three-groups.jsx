@@ -1,15 +1,19 @@
 // Feeding Uncertainty — the three groups side by side (7.00 s), round 2: concept F (Triptych) chosen.
 // Three panels, each its own ramp world with a window light, captions below. Word times are estimates until the SRT.
-//   withdrawal (blue): dismissive. `wd` = 'wave': glances up, swats the post away with a backhand, turns on their heel,
-//     arms folded, chin up. 'flick': turns their back as it arrives, then flicks it away over the shoulder without looking.
+//   withdrawal (blue): five posts come at them, one after another; every move eases in and out (round 2's snaps were
+//     too jerky). `wd` = 'turn': slowly turns their back, arms folded, chin up; the posts gather behind them and some drift
+//     off. 'walk': turns and walks out of the light into the corner; the posts hang back. 'blind': posts come in through
+//     the window and more gather outside; they pull the roller blind down, the room dims, the posts inside are left as
+//     outlines in the dark and the ones outside as shadows on the blind; then they turn their back on it. 'shoo': two
+//     slow, lazy waves that push the posts aside, then they turn away, arms folded.
 //   open engagement (teal): the loupe only appears as the hand comes up; the lens shows the post larger.
 //   curation (orange): no loupe; selective. Takes a card, recoils from a red one that darts at them, keeps an eye on it,
 //     takes another. `cur` = 'warm': the cards they take are comfort posts (the phone shot's WarmPost) in their ramp;
 //     'red': every card is a red post.
 // Every frame is a pure function of T.
-const { W, H, OUT_W, OUT_H, MOTION, osc, lerp, lerp2 } = window.FU_RIG;
-const { POSES, rig } = window.FU_BEAN;
-const { RAMPS, v, LookDefs, ToneBean, PostValue, GradeFilter } = window.FU_LOOK;
+const { W, H, OUT_W, OUT_H, MOTION, osc, lerp, lerp2, hash } = window.FU_RIG;
+const { POSES, rig, blendPose } = window.FU_BEAN;
+const { RAMPS, v, LookDefs, ToneBean, PostValue, POST_KINDS, GradeFilter } = window.FU_LOOK;
 const { WarmPost } = window.FU_PHONE;
 const { glide, hit } = MOTION;
 
@@ -44,45 +48,93 @@ const flutter = (T, ph) => Math.cos(T * 6 + ph * 9);
 const hover = (T, ph, k = 1) => [3 * k * osc(T, 1.3, ph), 4 * k * osc(T, 0.9, ph)];
 
 // ── withdrawal ────────────────────────────────────────────────────────────────
-// Returns { pose, turn, cards }. Cards are in the post frame (toward the post, which never flips).
+// Returns { pose, turn, dx, light, blind, cord, win, cards }. Cards are in the post frame (from the figure's starting
+// spot, toward the posts; it never flips or walks). dx: how far they have walked, in the post frame.
+const WD_OPTIONS = {
+  turn: 'Back turned: slowly turns their back, arms folded, chin up',
+  walk: 'Walks off: turns and walks out of the light',
+  blind: 'Pulls the blind: shuts the posts out, the room dims',
+  shoo: 'Shoo: two slow waves, then turns away',
+};
+const WD_POSTS = Array.from({ length: 5 }, (_, j) => {
+  const h = (n) => hash(j * 7.3 + n * 3.1 + 11);
+  return { j, ta: -0.25 + 0.27 * j, from: [240 + 70 * h(1), -520 + 160 * h(2)], rest: [74 + 70 * h(3), -110 + 160 * h(4)], kind: POST_KINDS[(j * 2 + 1) % POST_KINDS.length], ph: h(5), h };
+});
+const FOLD_N = [-10, 125], FOLD_F = [-6, 120];
+const WINP = [(WIN(0)[0] - 240) / FIG_S, (WIN(0)[1] - FLOOR) / FIG_S];   // the window, in the post frame
+const CORD_X = WIN(0)[0] - 86;                                           // the blind's pull cord (world x)
 function withdrawal(T, t0, mode) {
   let pose = { ...POSES.idle(T) };
-  const Hc0 = rig(pose).Hc, P0 = add(Hc0, [100, -20]);
-  const arr = glide(T, t0 - 0.1, t0 + 0.6, 0, 1);
-  let p = add(lerp2([230, -440], P0, arr), hover(T, 0.1, arr));
-  let rot = lerp(25 * Math.sin(T * 1.7), -6 + 4 * osc(T, 2.1), arr), flip = lerp(flutter(T, 0.1), 0.85, arr);
-  let turn, k, fold, aloof;
-  if (mode === 'flick') {
-    const g1 = glide(T, t0 + 0.2, t0 + 0.35, 0, 1) * (1 - glide(T, t0 + 0.4, t0 + 0.55, 0, 1));   // one glance
-    turn = glide(T, t0 + 0.38, t0 + 0.7, 0, 1);                                                // turns their back on it
-    aloof = glide(T, t0 + 0.5, t0 + 0.9, 0, 1);
-    // the post follows them round to their back; they flick it away over the shoulder without looking
-    p = add(p, lerp2([0, 0], [-46, 10], glide(T, t0 + 0.55, t0 + 0.95, 0, 1)));
-    const wind = glide(T, t0 + 0.88, t0 + 1.0, 0, 1), fl = hit(T, t0 + 1.0, t0 + 1.12, 0, 1), back = glide(T, t0 + 1.2, t0 + 1.5, 0, 1);
-    pose.armN = mixA(mixA(mixA(pose.armN, [-50, 70], wind), [-100, 6], fl), [-10, 125], back);
-    k = hit(T, t0 + 1.04, t0 + 2.0, 0, 1);
-    fold = back;
-    pose.tilt += -10 * g1;
-  } else {
-    const g1 = glide(T, t0 + 0.3, t0 + 0.48, 0, 1);                                                // looks up at it
-    const up = glide(T, t0 + 0.52, t0 + 0.68, 0, 1), fl = hit(T, t0 + 0.68, t0 + 0.8, 0, 1);       // hand up, then the backhand
-    turn = glide(T, t0 + 0.8, t0 + 1.1, 0, 1);                                                    // turns on their heel
-    const down = glide(T, t0 + 0.95, t0 + 1.3, 0, 1);
-    aloof = glide(T, t0 + 0.7, t0 + 1.1, 0, 1);
-    pose.armN = mixA(mixA(mixA(pose.armN, [70, 100], up), [118, 12], fl), [-10, 125], down);
-    k = hit(T, t0 + 0.74, t0 + 1.7, 0, 1);
+  const Hc0 = rig(pose).Hc;
+  const blindMode = mode === 'blind';
+  const posts = WD_POSTS.map((P) => {
+    const inside = !blindMode || P.j < 2, from = blindMode ? WINP : P.from;
+    const ta = blindMode ? [-0.05, 0.3, -0.3, 0.0, 0.25][P.j] : P.ta;
+    const arr = glide(T, t0 + ta, t0 + ta + (blindMode ? 0.9 : 0.75), 0, 1);
+    return {
+      P, inside, arr, sc: blindMode ? lerp(0.5, 1.2, arr) : 1.2, dark: 0, on: T > t0 + ta - 0.1,
+      p: add(lerp2(from, add(Hc0, P.rest), arr), hover(T, P.ph * 3, arr)),
+      rot: lerp(25 * Math.sin(T * 1.7 + P.ph * 6), -8 + 16 * P.ph + 4 * osc(T, 2.1, P.ph), arr),
+      flip: lerp(flutter(T, P.ph * 3), 0.8 + 0.12 * osc(T, 1.6 + P.ph, P.ph), arr),
+    };
+  });
+  const look = glide(T, t0 - 0.1, t0 + 0.3, 0, 1);
+  let turn = 0, dx = 0, fold = 0, aloof = 0, light = 1, blind = 0, cord = null;
+  if (mode === 'walk') {
+    turn = glide(T, t0 + 0.5, t0 + 1.05, 0, 1);
+    const D = 92, go = glide(T, t0 + 0.85, t0 + 2.1, 0, 1);              // distance walked, eased in and out
+    dx = -D * go;
+    const wk = glide(T, t0 + 0.8, t0 + 1.05, 0, 1) * (1 - glide(T, t0 + 1.85, t0 + 2.15, 0, 1));
+    pose = blendPose(pose, POSES.walk((D * go) / 150), wk);              // the walk cycle runs on the distance: feet stay put
+    fold = glide(T, t0 + 1.95, t0 + 2.45, 0, 1);
+    aloof = 0.7 * glide(T, t0 + 1.9, t0 + 2.6, 0, 1);
+    posts.forEach((q, j) => { q.p = add(q.p, [-34 * go * (0.4 + q.P.ph), 0]); });
+  } else if (mode === 'blind') {
+    const reach = glide(T, t0 + 0.4, t0 + 0.75, 0, 1), pull = glide(T, t0 + 0.75, t0 + 1.35, 0, 1), rel = glide(T, t0 + 1.4, t0 + 1.75, 0, 1);
+    blind = pull; light = 1 - 0.7 * pull;
+    const knobY = 600 + 110 * pull;
+    cord = { x: CORD_X, y1: knobY };
+    pose.armN = mixA(pose.armN, ikArm(pose, [(CORD_X - X0[0] - 240) / FIG_S, (knobY + 4 - FLOOR) / FIG_S]), reach * (1 - rel));
+    pose.tilt += -7 * reach * (1 - rel);
+    turn = glide(T, t0 + 1.5, t0 + 2.1, 0, 1);
+    fold = glide(T, t0 + 1.65, t0 + 2.25, 0, 1);
+    aloof = glide(T, t0 + 1.75, t0 + 2.45, 0, 1);
+    posts.forEach((q) => { q.dark = q.inside ? pull : 0; });
+  } else if (mode === 'shoo') {
+    const up = glide(T, t0 + 0.45, t0 + 0.8, 0, 1), down = glide(T, t0 + 1.8, t0 + 2.2, 0, 1);
+    const sw = T < t0 + 0.75 ? 0 : 0.5 - 0.5 * Math.cos((2 * Math.PI * (T - (t0 + 0.75))) / 0.55);   // two slow waves
+    const arm = [62 + 50 * sw, 80 - 60 * sw];
+    pose.armN = mixA(pose.armN, arm, up * (1 - down));
+    posts.forEach((q, j) => {
+      const push = glide(T, t0 + 0.8 + 0.12 * j, t0 + 1.9 + 0.12 * j, 0, 1), h = q.P.h;
+      q.p = add(q.p, [(120 + 60 * h(6)) * push, -(70 + 110 * h(7)) * push]);
+    });
+    turn = glide(T, t0 + 1.7, t0 + 2.3, 0, 1);
     fold = down;
-    pose.tilt += -10 * g1 * (1 - aloof);
+    aloof = glide(T, t0 + 1.85, t0 + 2.5, 0, 1);
+  } else {   // turn
+    turn = glide(T, t0 + 0.45, t0 + 1.15, 0, 1);
+    fold = glide(T, t0 + 0.75, t0 + 1.35, 0, 1);
+    aloof = glide(T, t0 + 0.8, t0 + 1.5, 0, 1);
+    pose.lean += 4 * Math.sin(Math.PI * turn);   // weight into the turn
+    posts.forEach((q, j) => {
+      const h = q.P.h, gather = glide(T, t0 + 1.0 + 0.1 * j, t0 + 1.9 + 0.1 * j, 0, 1);   // they drift round to the back
+      q.p = lerp2(q.p, add(add(Hc0, [46 + 56 * h(6), -100 + 150 * h(7)]), hover(T, q.P.ph * 5)), gather);
+      if (j % 2 === 0) { const leave = glide(T, t0 + 1.8 + 0.3 * j, t0 + 3.2 + 0.3 * j, 0, 1); q.p = add(q.p, [160 * leave, -320 * leave]); }
+    });
   }
-  // knocked away: off out of the panel, tumbling
-  p = add(p, [360 * k, -220 * k + 40 * k * k]);
-  rot += 300 * k;
-  flip = lerp(flip, Math.cos(T * 14), Math.min(1, k * 3));
-  // aloof: chin up, leaning back a little; arms folded
-  pose.tilt += -13 * aloof + 1.5 * osc(T, 2.3) * aloof;
+  // they watch the first ones come; then aloof: chin up, leaning back a little; arms folded
+  pose.tilt += -8 * look * (1 - Math.min(1, 2 * turn)) - 11 * aloof + 1.5 * osc(T, 2.3) * aloof;
   pose.lean += -3 * aloof;
-  pose.armF = mixA(pose.armF, [-6, 120], fold);
-  return { pose, turn, cards: k < 0.98 ? [{ p, rot, flip, s: 1.2, kind: 'headline', red: true }] : [] };
+  pose.armN = mixA(pose.armN, FOLD_N, fold);
+  pose.armF = mixA(pose.armF, FOLD_F, fold);
+  const cards = posts.filter((q) => q.on && q.inside).map((q) => ({ p: q.p, rot: q.rot, flip: q.flip, s: q.sc, kind: q.P.kind, red: true, dark: q.dark }));
+  // outside the window (blind): approaching the glass, out of focus; shadows on the blind once it is down
+  const win = blindMode ? posts.filter((q) => !q.inside && q.on).map((q) => {
+    const h = q.P.h;
+    return { x: WIN(0)[0] - 52 + 104 * h(6) + 6 * osc(T, 1.4, q.P.ph), y: WIN(0)[1] - 60 + 120 * h(7) + 8 * osc(T, 1.1, q.P.ph), s: lerp(0.4, 1.3, q.arr), rot: q.rot, flip: q.flip, kind: q.P.kind };
+  }) : [];
+  return { pose, turn, dx, light, blind, cord, win, cards };
 }
 
 // ── open engagement ───────────────────────────────────────────────────────────
@@ -150,38 +202,95 @@ function Lbl({ x, y, text, size = 24, fill, a = 1, dy = 0, spacing = 0.32 }) {
   if (a <= 0.01) return null;
   return <text x={x} y={y + dy} fill={fill} opacity={a} fontFamily="Inter, sans-serif" fontWeight={300} fontSize={size} letterSpacing={size * spacing} textAnchor="middle">{text.toUpperCase()}</text>;
 }
-function deco(i) {
+function deco(i, a) {
   const [wx, wy] = WIN(i);
+  if (i === 0 && a && a.cord) {   // the roller blind, coming down
+    const h = 220 * a.blind;
+    return <g><rect x={wx - 80} y={wy - 110} width="160" height={h} fill={v(0.4)} /><rect x={wx - 84} y={wy - 116 + h} width="168" height="10" fill={v(0.26)} /><rect x={wx - 86} y={wy - 124} width="172" height="16" fill={v(0.3)} /></g>;
+  }
   if (i === 0) return Array.from({ length: 9 }, (_, k) => <rect key={k} x={wx - 80} y={wy - 110 + k * 25} width="160" height="13" fill={v(0.3)} />);   // blinds drawn
   if (i === 2) return <path d={`M ${wx - 80} ${wy - 110} L ${wx + 20} ${wy - 110} C ${wx} ${wy}, ${wx + 10} ${wy + 60}, ${wx - 10} ${wy + 110} L ${wx - 80} ${wy + 110} Z`} fill={v(0.42)} />;   // a curtain half across
   return <rect x={wx - 6} y={wy - 110} width="12" height="220" fill={v(0.5)} />;
 }
 
-function Piece({ guide, boil, boilAmp, wd, cur }) {
+// one panel, all its layers. f: { g, i, a, x, hx0, y, s, dir, lights }. Drawn in the panel's own coordinates, so the
+// comparison view can place several copies of panel 0.
+function Panel({ f, ba, CAM, lab }) {
+  const { g, i, a } = f;
+  const L = a.light ?? 1;
+  const toW = (p) => [f.x + f.dir * f.s * p[0], f.y + f.s * p[1]];   // the figure's frame (flips and walks with them)
+  const toP = (p) => [f.hx0 + f.s * p[0], f.y + f.s * p[1]];         // the post frame
+  const clip = (el) => <g clipPath={`url(#tgPanel${i})`}>{el}</g>;
+  const lay = (filter, content, key) => <g key={key} filter={filter ? `url(#${filter})` : undefined}><g transform={CAM}>{clip(content)}</g></g>;
+  const card = (c, k) => {
+    if (c.on === false) return null;
+    const p = toP(c.p), s = f.s * c.s, d = c.dark || 0;
+    if (!c.red) return <WarmPost key={k} x={p[0]} y={p[1]} s={s} rot={c.rot} flip={c.flip} kind={c.kind} />;
+    return (
+      <g key={k}>
+        {d < 1 && <PostValue x={p[0]} y={p[1]} s={s} rot={c.rot} flip={c.flip} kind={c.kind} op={1 - d} />}
+        {d > 0 && <PostValue x={p[0]} y={p[1]} s={s} rot={c.rot} flip={c.flip} kind={c.kind} op={d} outline />}
+      </g>
+    );
+  };
+  const [wx, wy] = WIN(i);
+  const out = [];
+  out.push(lay('fuGradeBg-' + g, (
+    <g>
+      <rect x={X0[i]} y="0" width={PW} height="1080" fill={v(0.22)} />
+      <ellipse cx={wx - 60} cy="420" rx="360" ry="360" fill="url(#fuPool)" opacity={0.6 * L} />
+      <rect x={wx - 92} y={wy - 122} width="184" height="244" fill={v(0.4)} />
+      <rect x={wx - 80} y={wy - 110} width="160" height="220" fill={v(0.85)} />
+      <rect x={X0[i]} y="900" width={PW} height="200" fill={v(0.13)} />
+    </g>
+  ), 'bg'));
+  if (a.win && a.win.length) out.push(lay('fuGradeBg-red', <g>{a.win.map((w, k) => <PostValue key={k} x={w.x} y={w.y} s={w.s} rot={w.rot} flip={w.flip} kind={w.kind} />)}</g>, 'winposts'));
+  out.push(lay('fuGradeBg-' + g, (
+    <g>
+      {deco(i, a)}
+      {a.win && a.blind > 0 && a.win.map((w, k) => <rect key={k} x={w.x - 15 * w.s} y={w.y - 20 * w.s} width={30 * w.s} height={40 * w.s} rx={5 * w.s} fill={v(0.12)} opacity={0.6 * a.blind} transform={`rotate(${w.rot} ${w.x} ${w.y})`} />)}
+      {L < 1 && <rect x={X0[i]} y="0" width={PW} height="1080" fill={v(0)} opacity={0.42 * (1 - L) / 0.7} />}
+    </g>
+  ), 'deco'));
+  out.push(lay('fuGradeFg-' + g, <ellipse cx={X0[i] + 280} cy="925" rx="230" ry="30" fill="url(#fuPool)" opacity={0.6 * L} />, 'pool'));
+  if (a.cord) out.push(lay('fuGradeFg-' + g, <g><line x1={a.cord.x} y1={wy - 108} x2={a.cord.x} y2={a.cord.y1} stroke={v(0.5)} strokeWidth="2.5" /><circle cx={a.cord.x} cy={a.cord.y1 + 6} r="7" fill={v(0.7)} /></g>, 'cord'));
+  out.push(<g key="fig" transform={CAM}>{clip(<ToneBean {...ba} id={i + 1} x={f.x} y={f.y} s={f.s} dir={f.dir} pose={a.pose} ramp={g} hair={HAIR[g]} lights={f.lights} />)}</g>);
+  out.push(lay('fuGradeFg-red', a.cards.filter((c) => c.red).map(card), 'red'));
+  out.push(lay('tgWarm', a.cards.filter((c) => !c.red).map(card), 'warm'));
+  if (a.ls > 0.02) {   // the loupe: the lens shows the post larger
+    const lensR = 20 * f.s * a.ls, lc = toW(a.lens), oh = toW(a.hand), oc = a.cards[0], oq = lerp2(lc, toP(oc.p), 0.3);
+    const R = RAMPS.open, d = [oh[0] - lc[0], oh[1] - lc[1]], n = Math.hypot(d[0], d[1]) || 1, rim = [lc[0] + (d[0] / n) * lensR, lc[1] + (d[1] / n) * lensR];
+    out.push(<defs key="ld"><clipPath id="tgLens"><circle cx={lc[0]} cy={lc[1]} r={lensR * 0.9} /></clipPath></defs>);
+    out.push(lay('fuGradeFg-red', <g clipPath="url(#tgLens)"><circle cx={lc[0]} cy={lc[1]} r={lensR} fill={v(0.3)} /><PostValue x={oq[0]} y={oq[1]} s={f.s * 1.7} rot={oc.rot} flip={oc.flip} kind={oc.kind} /></g>, 'lens'));
+    out.push(lay(null, (
+      <g>
+        <line x1={rim[0]} y1={rim[1]} x2={oh[0] + (d[0] / n) * 6 * f.s * a.ls} y2={oh[1] + (d[1] / n) * 6 * f.s * a.ls} stroke={R[1]} strokeWidth={6 * f.s * Math.min(1, a.ls)} strokeLinecap="round" />
+        <circle cx={lc[0]} cy={lc[1]} r={lensR} fill={R[6]} fillOpacity="0.08" stroke={R[2]} strokeWidth={4.5 * f.s * Math.min(1, a.ls)} />
+        <path d={`M ${lc[0] - lensR * 0.55} ${lc[1] - lensR * 0.35} A ${lensR * 0.7} ${lensR * 0.7} 0 0 1 ${lc[0] - lensR * 0.05} ${lc[1] - lensR * 0.66}`} fill="none" stroke={R[6]} strokeOpacity="0.7" strokeWidth={1.6 * f.s} strokeLinecap="round" />
+      </g>
+    ), 'loupe'));
+  }
+  out.push(lay(null, <Lbl x={X0[i] + PW / 2} y={1030} text={LABEL[g]} fill={RAMPS[g][6]} a={lab.a} dy={lab.dy * 0.4} />, 'label'));
+  return <g>{out}</g>;
+}
+function figOf(i, a) {
+  // the turn stays wide for most of its time and passes edge-on in about a frame (a slow turn otherwise shows a sliver)
+  const c = Math.cos(Math.PI * a.turn);
+  let dir = Math.sign(c) * Math.pow(Math.abs(c), 0.3);
+  if (Math.abs(dir) < 0.03) dir = dir < 0 ? -0.03 : 0.03;
+  const hx0 = X0[i] + 240, L = a.light ?? 1;
+  return { g: GROUPS[i], i, a, hx0, x: hx0 + FIG_S * (a.dx || 0), y: FLOOR, s: FIG_S, dir, lights: [{ x: WIN(i)[0], y: WIN(i)[1], i: 0.9 * L, reach: 720 }, { dir: [0.4, 1], i: 0.08 }] };
+}
+
+function Piece({ guide, boil, boilAmp, wd, cur, view }) {
   const { T, CUES } = useComposition();
   const bf = Math.floor(T * 8), amp = boil ? boilAmp : 0, ba = { bf, amp };
   const b = { wd: CUES.Withdrawal, open: CUES.Open, cur: CUES.Curation };
   const z = glide(T, 0, 7, 1, 1.03);
   const CAM = `translate(960 540) scale(${z}) translate(-960 -540)`;
-  const acts = [withdrawal(T, b.wd, wd), openEng(T, b.open), curation(T, b.cur, cur)];
-  const figs = GROUPS.map((g, i) => {
-    const a = acts[i];
-    let dir = Math.cos(Math.PI * a.turn);
-    if (Math.abs(dir) < 0.03) dir = dir < 0 ? -0.03 : 0.03;
-    return { g, i, a, x: X0[i] + 240, y: FLOOR, s: FIG_S, dir, lights: [{ x: WIN(i)[0], y: WIN(i)[1], i: 0.9, reach: 720 }, { dir: [0.4, 1], i: 0.08 }] };
-  });
-  const toW = (f, p) => [f.x + f.dir * f.s * p[0], f.y + f.s * p[1]];   // the figure's frame (flips with them)
-  const toP = (f, p) => [f.x + f.s * p[0], f.y + f.s * p[1]];           // the post frame (never flips)
-  const clip = (i, el, key) => <g key={key} clipPath={`url(#tgPanel${i})`}>{el}</g>;
-  const lay = (filter, content, key) => <g key={key} filter={filter ? `url(#${filter})` : undefined}><g transform={CAM}>{content}</g></g>;
   const lab = GROUPS.map((g) => { const a = glide(T, b[g] - 0.15, b[g] + 0.45, 0, 1); return { a, dy: 14 * (1 - a) }; });
-  const card = (f, c, k) => {
-    if (c.on === false) return null;
-    const p = toP(f, c.p), s = f.s * c.s;
-    return c.red ? <PostValue key={k} x={p[0]} y={p[1]} s={s} rot={c.rot} flip={c.flip} kind={c.kind} /> : <WarmPost key={k} x={p[0]} y={p[1]} s={s} rot={c.rot} flip={c.flip} kind={c.kind} />;
-  };
-  const o = figs[1], oa = o.a, lensR = 20 * o.s * oa.ls, lc = oa.lens ? toW(o, oa.lens) : [0, 0], oh = oa.hand ? toW(o, oa.hand) : [0, 0];
-  const oCard = oa.cards[0], oP = toP(o, oCard.p), oQ = lerp2(lc, oP, 0.3);
+  const compare = view === 'wd';
+  const keys = Object.keys(WD_OPTIONS);
   return (
     <div data-screen-label="Three groups" style={{ position: 'absolute', left: 0, top: 0, width: W, height: H, overflow: 'hidden', background: '#0b0c0c', transform: `scale(${OUT_W / W})`, transformOrigin: '0 0' }}>
       <svg width={W} height={H} style={{ position: 'absolute', left: 0, top: 0 }}>
@@ -189,54 +298,32 @@ function Piece({ guide, boil, boilAmp, wd, cur }) {
         <defs>
           {GROUPS.map((g, i) => <clipPath key={g} id={'tgPanel' + i}><rect x={X0[i] + 6} y="6" width={PW - 12} height="1068" /></clipPath>)}
           <GradeFilter id="tgWarm" ramp="cur" poster gain={1.18} />
-          <clipPath id="tgLens"><circle cx={lc[0]} cy={lc[1]} r={Math.max(0.1, lensR * 0.9)} /></clipPath>
         </defs>
-        {/* the three rooms, out of focus, each in its ramp */}
-        {GROUPS.map((g, i) => lay('fuGradeBg-' + g, clip(i, (
-          <g>
-            <rect x={X0[i]} y="0" width={PW} height="1080" fill={v(0.22)} />
-            <ellipse cx={WIN(i)[0] - 60} cy="420" rx="360" ry="360" fill="url(#fuPool)" opacity="0.6" />
-            <rect x={WIN(i)[0] - 92} y={WIN(i)[1] - 122} width="184" height="244" fill={v(0.4)} />
-            <rect x={WIN(i)[0] - 80} y={WIN(i)[1] - 110} width="160" height="220" fill={v(0.85)} />
-            {deco(i)}
-            <rect x={X0[i]} y="900" width={PW} height="200" fill={v(0.13)} />
+        {!compare && [withdrawal(T, b.wd, wd), openEng(T, b.open), curation(T, b.cur, cur)].map((a, i) => <Panel key={i} f={figOf(i, a)} ba={ba} CAM={CAM} lab={lab[i]} />)}
+        {compare && keys.map((k, n) => (
+          <g key={k}>
+            <g transform={`translate(${n * 480} 150) scale(0.75)`}><Panel f={figOf(0, withdrawal(T, b.wd, k))} ba={ba} CAM={CAM} lab={lab[0]} /></g>
+            <text x={n * 480 + 240} y="110" fill="#e8e8e4" fontFamily="Inter, sans-serif" fontWeight={600} fontSize="26" textAnchor="middle">{`${n + 1} · ${WD_OPTIONS[k].split(':')[0]}`}</text>
           </g>
-        )), 'bg' + g))}
-        {GROUPS.map((g, i) => lay('fuGradeFg-' + g, clip(i, <ellipse cx={X0[i] + 280} cy="925" rx="230" ry="30" fill="url(#fuPool)" opacity="0.6" />), 'pool' + g))}
-        <g transform={CAM}>
-          {figs.map((f) => clip(f.i, <ToneBean {...ba} id={f.i + 1} x={f.x} y={f.y} s={f.s} dir={f.dir} pose={f.a.pose} ramp={f.g} hair={HAIR[f.g]} lights={f.lights} />, 'f' + f.i))}
-        </g>
-        {lay('fuGradeFg-red', figs.map((f) => clip(f.i, f.a.cards.filter((c) => c.red).map((c, k) => card(f, c, k)), 'r' + f.i)), 'red')}
-        {lay('tgWarm', figs.map((f) => clip(f.i, f.a.cards.filter((c) => !c.red).map((c, k) => card(f, c, k)), 'w' + f.i)), 'warm')}
-        {/* the loupe: the lens shows the post larger */}
-        {oa.ls > 0.02 && lay('fuGradeFg-red', clip(1, <g clipPath="url(#tgLens)"><circle cx={lc[0]} cy={lc[1]} r={lensR} fill={v(0.3)} /><PostValue x={oQ[0]} y={oQ[1]} s={o.s * 1.7} rot={oCard.rot} flip={oCard.flip} kind={oCard.kind} /></g>), 'lens')}
-        {oa.ls > 0.02 && lay(null, clip(1, (() => {
-          const R = RAMPS.open, d = [oh[0] - lc[0], oh[1] - lc[1]], n = Math.hypot(d[0], d[1]) || 1, rim = [lc[0] + (d[0] / n) * lensR, lc[1] + (d[1] / n) * lensR];
-          return (
-            <g>
-              <line x1={rim[0]} y1={rim[1]} x2={oh[0] + (d[0] / n) * 6 * o.s * oa.ls} y2={oh[1] + (d[1] / n) * 6 * o.s * oa.ls} stroke={R[1]} strokeWidth={6 * o.s * Math.min(1, oa.ls)} strokeLinecap="round" />
-              <circle cx={lc[0]} cy={lc[1]} r={lensR} fill={R[6]} fillOpacity="0.08" stroke={R[2]} strokeWidth={4.5 * o.s * Math.min(1, oa.ls)} />
-              <path d={`M ${lc[0] - lensR * 0.55} ${lc[1] - lensR * 0.35} A ${lensR * 0.7} ${lensR * 0.7} 0 0 1 ${lc[0] - lensR * 0.05} ${lc[1] - lensR * 0.66}`} fill="none" stroke={R[6]} strokeOpacity="0.7" strokeWidth={1.6 * o.s} strokeLinecap="round" />
-            </g>
-          );
-        })()), 'loupe')}
-        {lay(null, GROUPS.map((g, i) => <Lbl key={g} x={X0[i] + PW / 2} y={1030} text={LABEL[g]} fill={RAMPS[g][6]} a={lab[i].a} dy={lab[i].dy * 0.4} />), 'labels')}
+        ))}
       </svg>
-      {guide && <div style={{ position: 'absolute', left: 40, top: 28, font: '600 28px Inter, sans-serif', color: '#fff', textShadow: '0 1px 12px rgba(0,0,0,0.8)' }}>{`Three groups · withdrawal ${wd} · curation ${cur} · ${T.toFixed(2)} s`}</div>}
+      {guide && <div style={{ position: 'absolute', left: 40, top: 28, font: '600 28px Inter, sans-serif', color: '#fff', textShadow: '0 1px 12px rgba(0,0,0,0.8)' }}>{compare ? `Withdrawal options · ${T.toFixed(2)} s` : `Three groups · withdrawal ${wd} · curation ${cur} · ${T.toFixed(2)} s`}</div>}
     </div>
   );
 }
 
 function FUThreeGroups() {
-  const [t, setTweak] = useTweaks(window.TWEAK_DEFAULTS || { wd: 'wave', cur: 'warm', referenceOverlay: false, lineBoil: true, boilAmp: 0.5 });
+  const [t, setTweak] = useTweaks(window.TWEAK_DEFAULTS || { view: 'shot', wd: 'turn', cur: 'warm', referenceOverlay: false, lineBoil: true, boilAmp: 0.5 });
   return (
     <React.Fragment>
       <CompositionStage width={OUT_W} height={OUT_H} scenes={window.OM_SCENES} playback={window.OM_PLAYBACK} bg="#0b0c0c" autoplay={false}>
-        <Piece guide={t.referenceOverlay} boil={t.lineBoil} boilAmp={t.boilAmp ?? 0.5} wd={t.wd} cur={t.cur} />
+        <Piece guide={t.referenceOverlay} boil={t.lineBoil} boilAmp={t.boilAmp ?? 0.5} wd={t.wd} cur={t.cur} view={t.view} />
       </CompositionStage>
       <TweaksPanel>
+        <TweakSection label="View" />
+        <TweakSelect label="View" value={t.view} options={[{ value: 'shot', label: 'The shot' }, { value: 'wd', label: 'Withdrawal options side by side' }]} onChange={(x) => setTweak('view', x)} />
         <TweakSection label="Actions" />
-        <TweakSelect label="Withdrawal" value={t.wd} options={[{ value: 'wave', label: 'Wave-off: swat, turn on the heel' }, { value: 'flick', label: 'Flick: back turned, flick over the shoulder' }]} onChange={(x) => setTweak('wd', x)} />
+        <TweakSelect label="Withdrawal" value={t.wd} options={Object.keys(WD_OPTIONS).map((k) => ({ value: k, label: WD_OPTIONS[k] }))} onChange={(x) => setTweak('wd', x)} />
         <TweakSelect label="Curation" value={t.cur} options={[{ value: 'warm', label: 'Takes comfort posts, recoils from red' }, { value: 'red', label: 'All red: takes some, recoils from one' }]} onChange={(x) => setTweak('cur', x)} />
         <TweakSection label="Preview" />
         <TweakToggle label="Label" value={t.referenceOverlay} onChange={(x) => setTweak('referenceOverlay', x)} />
