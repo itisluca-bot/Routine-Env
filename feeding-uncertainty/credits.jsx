@@ -1,7 +1,8 @@
 // Feeding Uncertainty — end credits (12 s). The user chose concept H's look from round 1 (credits-concepts.jsx):
 // the opening title's world (near-black, a faint grid, Inter Light in widely spaced caps, the red dot over the Y),
 // made simple and clean: the dot sits still over the Y as in the opening, the names are not in the group colours,
-// and every line just fades in on its beat: the three names together, the disclaimer right after them, the logos at 5 s. On the right, the funders: NWO (Open Competition SSH-XS) and the RUG
+// and every line just fades in on its beat: the three names from 3 s, 0.25 s apart, the disclaimer after them and in
+// before 5 s, the logos at 5 s. On the right, the funders: NWO (Open Competition SSH-XS) and the RUG
 // Faculty of Arts (Impact Grant), each under a label: the first level with the first row's label; the second placed so
 // the logo's "faculty of arts" line sits on the disclaimer's last line. The card is centred vertically (equal margins top and bottom) with even gaps between
 // blocks; labels and the disclaimer are bold enough to read. No camera move: a push this slow makes the type step from
@@ -97,7 +98,7 @@ function CreditsPiece({ guide, boil, boilAmp, logo }) {
           </Arrive>
           <circle cx={DOT.x} cy={DOT.y} r={DOT.r + (hash(bf * 2.3 + 99) - 0.5) * amp * 0.3} fill={RED.dot} opacity={ap(T, b.title + 0.9, 0.6)} />
           {ROWS.map((r, i) => (
-            <Arrive key={i} T={T} t0={b.rows[0]}>
+            <Arrive key={i} T={T} t0={b.rows[0] + 0.25 * i}>
               <Txt t={r.label} x={X} y={LABEL_Y[i]} st={ST.label} fill={LABEL} />
               <Txt t={r.name} x={X} y={NAME_Y[i]} st={ST.name} fill={OPEN_TXT} />
             </Arrive>
