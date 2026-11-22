@@ -251,8 +251,11 @@ const HAND_AT = [960, 560];
 // are on, a little noise, posterized to the ramp, cut to the crisp outline. (ToneBean itself cannot run at this scale:
 // its edge blur needs a filter surface of several gigabytes.) The lights are the scene's: the phone below and in front,
 // the TV in front (to the left).
-// When the eyes go up the head tilts back about the neck, as the rig does; the camera stays locked on the eye, so the
-// head turns round it and the room behind slides past (at 0.6 of the camera's move: it is further away).
+// The camera is fixed to the head, locked on the eye: the face holds still on screen. When the curator looks up, the
+// head turns back by HEAD_TURN, so to the camera the room turns the other way about the eye: the room in front of the
+// face drops, and the lights swing round the face. The TV comes round to the front of the face and lights it more;
+// the phone falls away below. (Round 2 moved the camera with the eye while the head tilted about the neck: the eye
+// swung up and back by nearly 1000 px and the room slid sideways instead of dropping.)
 const S_HEAD = 80, EYE_AT = [1290, 540];
 // A displacement map that bows the POV like a convex mirror: a point at radius r from the centre shows the POV at
 // r·(1 + K·ρ²), ρ = r / RC. Baked once on a canvas. It covers the region MAP (POV coordinates).
@@ -271,9 +274,12 @@ const FISH = (() => {
   g.putImageData(im, 0, 0);
   return c.toDataURL('image/png');
 })();
-// seated, looking down at the phone (look 0) or up at the TV (look 1)
-const headPose = (T, look) => ({ hx: 0, lean: 8 + 0.6 * osc(T, 3.6), tilt: lerp(20, -4, look) + 0.8 * osc(T, 2.9, 0.2),
+// the head as the camera sees it (fixed to the head: only a breath of movement)
+const HEAD_TURN = 26;   // degrees the head turns back from the phone to the TV
+const headPose = (T) => ({ hx: 0, lean: 8 + 0.3 * osc(T, 3.6), tilt: 0 + 0.4 * osc(T, 2.9, 0.2),
   legN: [82, 84], legF: [78, 80], armN: [26, 100], armF: [20, 106], phone: 0 });
+// a light seen from the head: `a` degrees below the gaze (negative: above), intensity i
+const headLight = (pose, a, i) => { const g = ((pose.lean + pose.tilt + a) * Math.PI) / 180; return { u: [-Math.cos(g), Math.sin(g)], i }; };
 // the eye in the rig's own frame (unflipped): the same formula as the rig's side-view eye
 function eyeLocal(pose) {
   const R = window.FU_BEAN.rig(pose);
@@ -294,7 +300,7 @@ function hmNoise(x, y, sd) {   // smooth value noise, cells of 1
   return a + (b - a) * u + (c - a) * w + (a - b - c + d) * u * w - 0.5;
 }
 const hmEdge = (rho) => {   // the edge field of a circle: darker toward the outline
-  const S = [[0.3, 0], [0.62, 0.16], [0.86, 0.36], [1, 0.56]];
+  const S = [[0.5, 0], [0.8, 0.14], [0.95, 0.3], [1, 0.42]];
   if (rho <= S[0][0]) return 0;
   for (let i = 1; i < S.length; i++) if (rho <= S[i][0]) return S[i - 1][1] + ((rho - S[i - 1][0]) / (S[i][0] - S[i - 1][0])) * (S[i][1] - S[i - 1][1]);
   return S[S.length - 1][1];
@@ -337,12 +343,9 @@ function headImage(C, r, ang, lit, bf, amp) {
 function HeadMacro({ pose, lights, cam, bf, amp }) {
   const R = window.FU_BEAN.rig(pose), Cw = toW(R.Hc), r = R.r * S_HEAD, C = [Cw[0] + cam[0], Cw[1] + cam[1]];
   const ang = -((pose.lean + pose.tilt) * Math.PI) / 180;   // the head's turn on screen (the figure faces left)
-  const lit = lights.map((L) => {
-    let u, f;
-    if (L.dir) { const n = Math.hypot(L.dir[0], L.dir[1]); u = [-L.dir[0] / n, -L.dir[1] / n]; f = L.i; }
-    else { const d = [L.x - Cw[0], L.y - Cw[1]], n = Math.hypot(d[0], d[1]) || 1; u = [d[0] / n, d[1] / n]; f = L.i / (1 + Math.pow(Math.max(0, n - r) / L.reach, 2)); }
-    return { c: [C[0] + u[0] * r * 0.85, C[1] + u[1] * r * 0.85], R: r * 1.9, f: clamp(f, 0, 1) };
-  });
+  // lights are directions from the head (u) with an intensity (i)
+  // each light is brightest where the head's surface faces it, and spreads over about a quarter of the head
+  const lit = lights.map((L) => ({ c: [C[0] + L.u[0] * r * 0.98, C[1] + L.u[1] * r * 0.98], R: r * 1.25, f: clamp(L.i, 0, 1) }));
   const href = headImage(C, r, ang, lit, bf, amp);
   return (
     <g>
@@ -352,13 +355,13 @@ function HeadMacro({ pose, lights, cam, bf, amp }) {
   );
 }
 function EyeView({ T, k, look }) {
-  const pose = headPose(T, look), eL = eyeLocal(pose), eW = toW(eL);
+  const pose = headPose(T), eW = toW(eyeLocal(pose));
   const c = [EYE_AT[0] - eW[0], EYE_AT[1] - eW[1]];
-  const eW0 = toW(eyeLocal(headPose(T, 0))), c0 = [EYE_AT[0] - eW0[0], EYE_AT[1] - eW0[1]];
-  const bg = [0.6 * (c[0] - c0[0]), 0.6 * (c[1] - c0[1])];
-  const R0 = window.FU_BEAN.rig(headPose(0, 0));
-  const phoneW = toW([R0.Hc[0] + 44, R0.Hc[1] + 80]);
-  const lights = [{ x: phoneW[0], y: phoneW[1], i: 0.85 - 0.3 * look, reach: 64 * S_HEAD }, { dir: [1, 0.12], i: 0.5 }];
+  const turn = -HEAD_TURN * look;   // the room turns about the eye; negative (anticlockwise): in front of the face it drops
+  // on the phone: the phone just below the gaze, the TV above it; on the TV: the TV straight ahead, the phone far below
+  // one light leads at a time (two equal lights from above and below pinched the bands at eye level): the phone while
+  // they read, the TV once they face it, brighter, so the face is more lit
+  const lights = [headLight(pose, lerp(18, 18 + HEAD_TURN, look), lerp(0.7, 0.28, look)), headLight(pose, lerp(-HEAD_TURN, 0, look), lerp(0.24, 0.92, look))];
   const er = 3.8 * S_HEAD, m = er / RC_EYE, E = EYE_AT;
   return (
     <g>
@@ -376,17 +379,22 @@ function EyeView({ T, k, look }) {
       </defs>
       {/* the room in front of the curator, behind their profile, out of focus */}
       <g filter="url(#eyeRoom)">
-        <g transform={`translate(${bg[0].toFixed(2)} ${bg[1].toFixed(2)})`}>
+        <g transform={`rotate(${turn.toFixed(3)} ${EYE_AT[0]} ${EYE_AT[1]})`}>
+          {/* laid out as seen while looking at the phone. The TV sits where the turn brings it straight ahead of the
+              face (along the gaze, 8° below level) once the eyes are on it; the window and a lamp are above, so they
+              come down into view as the head goes back */}
           <rect x="-400" y="-400" width="2720" height="1880" fill={v(0.15)} />
-          <ellipse cx="-60" cy="620" rx="430" ry="330" fill={v(0.42)} />
-          <rect x="-200" y="470" width="230" height="250" rx="10" fill={v(0.7)} />
-          <rect x="170" y="40" width="290" height="380" fill={v(0.3)} />
-          <rect x="190" y="60" width="250" height="340" fill={v(0.07)} />
-          <rect x="308" y="60" width="14" height="340" fill={v(0.3)} /><rect x="190" y="210" width="250" height="14" fill={v(0.3)} />
-          <rect x="-200" y="820" width="900" height="16" fill={v(0.26)} />
-          <rect x="60" y="760" width="70" height="60" fill={v(0.22)} /><rect x="150" y="740" width="44" height="80" fill={v(0.3)} />
-          <rect x="-200" y="1010" width="900" height="400" fill={v(0.1)} />
-          <rect x="-200" y="-160" width="900" height="16" fill={v(0.22)} />
+          <ellipse cx="147" cy="168" rx="420" ry="320" fill={v(0.4)} />
+          <rect x="-13" y="58" width="320" height="220" rx="10" fill={v(0.68)} />
+          <rect x="-13" y="284" width="320" height="22" fill={v(0.24)} />
+          <rect x="-200" y="560" width="900" height="16" fill={v(0.26)} />
+          <rect x="300" y="500" width="70" height="60" fill={v(0.22)} /><rect x="390" y="480" width="44" height="80" fill={v(0.3)} />
+          <rect x="-200" y="760" width="900" height="600" fill={v(0.1)} />
+          <rect x="380" y="-430" width="290" height="380" fill={v(0.3)} />
+          <rect x="400" y="-410" width="250" height="340" fill={v(0.07)} />
+          <rect x="518" y="-410" width="14" height="340" fill={v(0.3)} /><rect x="400" y="-260" width="250" height="14" fill={v(0.3)} />
+          <ellipse cx="-40" cy="-300" rx="150" ry="110" fill={v(0.55)} />
+          <rect x="-200" y="-400" width="900" height="70" fill={v(0.2)} />
         </g>
       </g>
       {/* the head, toned, lit by the phone and the TV */}
