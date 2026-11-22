@@ -50,6 +50,7 @@ This is the working guide for a new Claude session. Read it together with `CLAUD
 | `Curator Phone Concepts.dc.html` + `curator-phone-concepts.jsx` | Round-1 ideation for the phone shot (§11) |
 | `Curator Phone.dc.html` + `curator-phone.jsx` | **The current phone shot** (concept A, §12). `--set variant=two` (default) or `one` |
 | `Resistance.dc.html` + `resistance.jsx` | **The resistance shot** (§13). `--set camera=track` (chosen), `look=toned` (default) or `old` |
+| `Curator Eye.dc.html` + `curator-eye.jsx` | **The curator's weight** (concept D, §20): the POV and its reflection in the eye. Loads `curator-phone-kit.jsx` |
 | `Curator Weight Concepts.dc.html` + `curator-weight-concepts.jsx` | Round-1 concept frames for the curator's weight shot (§19) |
 | `Three Groups Concepts.dc.html` + `three-groups-concepts.jsx` | Round-1 layout concepts for the three groups side by side (§16) |
 | `Three Groups.dc.html` + `three-groups.jsx` | **The three groups shot** (concept F, §17). Exported at 4K. `--set wd=turn|walk|blind|shoo,cur=warm|red`; `view=wd` shows the withdrawal options side by side |
@@ -337,6 +338,21 @@ The user: not enough headroom; the slider on the right, not at the bottom; blue'
 - **Softer dips** (`others` = `soft`, default): withdrawal and open dip at about half their estimated slopes (−0.5 and −0.7 per point instead of −1.06 and −1.54), so they swing 15 and 21 px. `data` keeps the full estimates (30 / 43 px), `flat` holds them still. The narration should not quote their size; their slopes are not significant either way.
 - **Push:** anchored on the orange bean (the middle of their body); the slider holds at "more" through the push, so the bean stands still on screen while the frame grows round them.
 
+### Round 7 (a bolder fader, smaller dips)
+
+The user: the slider is easy to miss, make it thicker and more dominant; halve the blue and teal range again.
+
+- **Fader:** track 24 px (was 9), red fill `RED[4]`, knob radius 36 with an 8 px `RED[3]` ring, title 34 px and "more" / "less" 28 px in white. At x 1715 (was 1760), so the push at the end does not crop its title.
+- **Dips** (`soft`, default): −0.25 and −0.35 per point, so withdrawal and open swing 7.5 and 10.5 px across the slider (orange 147 px). About a quarter of their estimated slopes (−1.06, −1.54), which are not significant; `data` keeps the estimates.
+
+### Round 8 (the curators end on top, as in the paper's figure)
+
+The user: at maximum exposure teal was still the highest, which does not match the paper's graph, where curation starts much lower and ends slightly higher.
+
+- **Why:** at ±1 point the slider ended where the curators' line crosses open engagement's (x 1.0 in Figure 3), and the softened dips had lifted teal a little at that end.
+- **Range:** the slider now spans 1.5 points either side of average (`X_RANGE`), well inside Figure 3's plotted range (−3.1 to 2.8). Curators 14.3 → 29.1: far below at "less", just above both others at "more" (teal 27.9, blue 25.4 with the softened dips; 25.9 and 24.1 with the full estimates). Orange now swings 221 px (was 147).
+- **Softened dips** rescaled to keep 7.5 and 10.5 px over the wider range: −0.167 and −0.233 per point (about a sixth of the estimates).
+
 ## 19. The curator's weight: round 1 (concept frames)
 
 `Curator Weight Concepts.dc.html` + `curator-weight-concepts.jsx` (loads `curator-phone-kit.jsx` for `WarmPost`). A curator shot to replace the Vulnerability alley (found too complex), placed after the curator at the table, as the curators' counterpart of the open engagers' table. Line, for reference only (the user: don't be too literal): "They bear the weight of vulnerability, produced by the ongoing crisis, by platforms built to keep you scrolling, and inequality in who gets heard." No SRT or length yet.
@@ -358,18 +374,13 @@ Sheet: `curator-weight-concepts-sheet.png`. Render one: `node tools/render.mjs "
 
 Build notes: front-view sitters on a sofa (`couchSitter`) sink into the seat cushion and the seat front covers their legs; lying figures are drawn upright and rotated, with their lights given in the unrotated frame (`unrot` in F); TV content is clipped to its screen per instance (`TVNews id`).
 
-### Round 7 (a bolder fader, smaller dips)
+## 20. The curator's weight: round 2 (concept D, the eye)
 
-The user: the slider is easy to miss, make it thicker and more dominant; halve the blue and teal range again.
+The user chose D from §19 and asked for the reflection to start from the curator phone shot's POV (phone and hand), then a glance up to reveal a TV on the wall (still in the reflection), then a glance back to the phone; the camera stays locked on the eye and the reflection follows the look. As the user suggested, the POV is built first as a shot of its own, then mapped into the eye. `Curator Eye.dc.html` + `curator-eye.jsx`; `--set view=pov` shows the POV alone, `view=eye` (default) the eye.
 
-- **Fader:** track 24 px (was 9), red fill `RED[4]`, knob radius 36 with an 8 px `RED[3]` ring, title 34 px and "more" / "less" 28 px in white. At x 1715 (was 1760), so the push at the end does not crop its title.
-- **Dips** (`soft`, default): −0.25 and −0.35 per point, so withdrawal and open swing 7.5 and 10.5 px across the slider (orange 147 px). About a quarter of their estimated slopes (−1.06, −1.54), which are not significant; `data` keeps the estimates.
-
-### Round 8 (the curators end on top, as in the paper's figure)
-
-The user: at maximum exposure teal was still the highest, which does not match the paper's graph, where curation starts much lower and ends slightly higher.
-
-- **Why:** at ±1 point the slider ended where the curators' line crosses open engagement's (x 1.0 in Figure 3), and the softened dips had lifted teal a little at that end.
-- **Range:** the slider now spans 1.5 points either side of average (`X_RANGE`), well inside Figure 3's plotted range (−3.1 to 2.8). Curators 14.3 → 29.1: far below at "less", just above both others at "more" (teal 27.9, blue 25.4 with the softened dips; 25.9 and 24.1 with the full estimates). Orange now swings 221 px (was 147).
-- **Softened dips** rescaled to keep 7.5 and 10.5 px over the wider range: −0.167 and −0.233 per point (about a sixth of the estimates).
-
+- **Timing (estimates, no SRT yet), 9.00 s:** Phone 0–2.92, Up 2.92–3.60, TV 3.60–6.08, Down 6.08–6.80, Phone2 6.80–8.76, Hold to 9.00. The guide captions spread the line over this. Thumb swipes at 0.32, 1.42, 2.36, 7.12, 8.02; the news cuts from the podium to the anchor and a falling chart at 4.84; a notification slides onto the phone at 5.5 (seen at the bottom of the frame while the eyes are on the TV), the phone buzzes; it goes at 7.5.
+- **The POV's camera** is one pitch angle, from -0.64 rad (on the phone) to 0.06 (on the TV). Every set piece has an elevation e and sits at screen y = 540 - F·tan(e - pitch), F 1000, so the wall compresses toward the frame edges like a lens and nothing slides as a flat layer. Head moves overshoot 3% and settle (`lookAt`). The phone is held by the body, so it drops out of the bottom of the frame when the head goes up (its top stays visible) and dips slightly lower while the eyes are away.
+- **Focus follows the gaze**, a beat after the head (0.12 s): on the phone, the room is soft (blur 9) and the phone sharp; on the TV, the wall and TV sharp and the phone soft (blur 7). Grades posterize first and blur after (`GradeBlur`), so soft areas stay banded. While the eyes are on the TV the wall's ramp drifts 10% toward red.
+- **Set:** the curator phone shot's phone, mitt and feed (`curator-phone-kit.jsx`), a coffee table and rug below, the sofa's arms at the edges (very soft), the wall with the TV (the concepts' `TVNews`), a sideboard with a plant, a picture, a curtained window; the TV's flicker lights the wall; red posts drift round the TV.
+- **The eye:** the POV is drawn with a margin (it needs more than 1920 × 1080: the eye is round), bowed by a displacement map baked once on a canvas (a point at radius r shows the POV at r·(1 + 0.55·ρ²), ρ = r / 600), mirrored (a reflection), scaled into an eye of radius 360 and darkened toward its rim, with a catchlight. The camera is locked on the eye; as the eye turns up, the face around it moves down 34 px and the light on the skin moves from the phone below toward the TV.
+- **Fixed:** a red-graded group whose posts all lay outside the frame drew a dark square in the top-left corner; only posts inside the frame are drawn now.
