@@ -2,8 +2,8 @@
 // the opening title's world (near-black, a faint grid, Inter Light in widely spaced caps, the red dot over the Y),
 // made simple and clean: the dot sits still over the Y as in the opening, the names are not in the group colours,
 // and every line just fades in on its beat. On the right, the funders: NWO (Open Competition SSH-XS) and the RUG
-// Faculty of Arts (Impact Grant), each under a label: the first level with the first row's label, the second level with
-// the last row's label. The card is centred vertically (equal margins top and bottom) with even gaps between
+// Faculty of Arts (Impact Grant), each under a label: the first level with the first row's label; the second placed so
+// the logo's "faculty of arts" line sits on the disclaimer's last line. The card is centred vertically (equal margins top and bottom) with even gaps between
 // blocks; labels and the disclaimer are bold enough to read. No camera move: a push this slow makes the type step from
 // pixel to pixel; the rule and the dot boil at 8 fps instead. The logo is off-white (`logo` tweak: `red` for the RUG red).
 const { W, H, OUT_W, OUT_H, MOTION, hash } = window.FU_RIG;
@@ -21,10 +21,12 @@ const LABEL_Y = [348, 488, 628], NAME_Y = LABEL_Y.map((y) => y + 56);
 // tinted in the page: assets/rug-arts-logo.png from the user's black-on-white file, and assets/nwo-logo.png, the user's
 // NWO logo exactly as given: a white sheet with the emblem and "NWO" cut out (the cuts at the sheet's edges are the
 // logo's design), with black behind it so the cut-outs read black.
+const RULE = { y: 810, w: 300 }, NOTE_Y = [858, 893];
 const FX = 1340;
+const ARTS_W = 220, ARTS_BASE = 1049 / 1000;   // the "faculty of arts" baseline, in logo widths from its top
 const FUNDERS = [
   { label: 'NWO OPEN COMPETITION SSH-XS', y: LABEL_Y[0], src: 'assets/nwo-logo.png', w: 125, aspect: 957 / 591, nwo: true },
-  { label: 'IMPACT GRANT', y: LABEL_Y[2], src: 'assets/rug-arts-logo.png', w: 220, aspect: 1070 / 1000, rug: true },
+  { label: 'IMPACT GRANT', y: NOTE_Y[1] - ARTS_BASE * ARTS_W - 18, src: 'assets/rug-arts-logo.png', w: ARTS_W, aspect: 1070 / 1000, rug: true },
 ];
 // an alpha-only logo filled with one colour
 const Mark = ({ src, x, y, w, aspect, color, id }) => (
@@ -33,7 +35,6 @@ const Mark = ({ src, x, y, w, aspect, color, id }) => (
     <image href={src} x={x} y={y} width={w} height={w * aspect} filter={`url(#${id})`} />
   </g>
 );
-const RULE = { y: 810, w: 300 }, NOTE_Y = [858, 893];
 // the dot as in the opening: just right of the Y's right arm, level with the cap height. textLength includes the
 // spacing after the last letter (0.5 em), so the Y ends 25 px before X + len
 const DOT = { x: X + TITLE.len - 25 + 5, y: TITLE.y - 37, r: 6.2 };
