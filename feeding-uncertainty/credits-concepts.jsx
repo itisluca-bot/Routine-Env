@@ -33,7 +33,7 @@ const rampOf = (r) => (Array.isArray(r) ? r : r === 'weight' ? WEIGHT : RAMPS[r]
 const ROWS = [
   { label: 'A FILM BY', name: 'Luca Lange', g: 'wd' },
   { label: 'RESEARCHER', name: 'Dr. Qinfeng Zhu', g: 'open' },
-  { label: 'RESEARCH ASSISTANT', name: 'Anastasija Zareckyte', g: 'cur' },
+  { label: 'RESEARCH ASSISTANT', name: 'Anastasija Zareckytė', g: 'cur' },
 ];
 const NOTE = ['All imagery in this film is illustrative.', 'No person shown is a participant in the study'];
 
