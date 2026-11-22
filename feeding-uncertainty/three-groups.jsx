@@ -59,7 +59,7 @@ const WD_OPTIONS = {
 };
 const WD_POSTS = Array.from({ length: 5 }, (_, j) => {
   const h = (n) => hash(j * 7.3 + n * 3.1 + 11);
-  return { j, ta: -0.25 + 0.27 * j, from: [240 + 70 * h(1), -520 + 160 * h(2)], rest: [98 + 58 * h(3), -110 + 160 * h(4)], kind: POST_KINDS[(j * 2 + 1) % POST_KINDS.length], ph: h(5), h };
+  return { j, ta: -0.25 + 0.27 * j, from: [240 + 70 * h(1), -600 - 80 * h(2)], rest: [98 + 58 * h(3), -110 + 160 * h(4)], kind: POST_KINDS[(j * 2 + 1) % POST_KINDS.length], ph: h(5), h };
 });
 const FOLD_N = [-10, 125], FOLD_F = [-6, 120];
 const WINP = [(WIN(0)[0] - 240) / FIG_S, (WIN(0)[1] - FLOOR) / FIG_S];   // the window, in the post frame
@@ -153,10 +153,10 @@ function openEng(T, t0) {
   pose.armN = mixA(pose.armN, ikArm(pose, handT), lo);
   const hand = rig(pose).armN[2];
   const lens = add(hand, lerp2([4, -6], [12, -26], ls));
-  const p = add(lerp2([230, -440], add(Hc0, [92, -8]), arr), hover(T, 0.4, arr));
+  const p = add(lerp2([230, -600], add(Hc0, [92, -8]), arr), hover(T, 0.4, arr));   // from above the frame
   // under the loupe the post turns to show its face
   const flip = lerp(flutter(T, 0.4), 0.82 + 0.16 * glide(T, t0 + 0.9, t0 + 1.3, 0, 1) + 0.05 * osc(T, 1.7), arr);
-  return { pose, turn: 0, hand, lens, ls, cards: [{ p, rot: lerp(25 * Math.sin(T * 1.7 + 2), -6 + 4 * osc(T, 2.1, 0.4), arr), flip, s: 1.2, kind: 'chart', red: true }] };
+  return { pose, turn: 0, hand, lens, ls, cards: [{ p, rot: lerp(25 * Math.sin(T * 1.7 + 2), -6 + 4 * osc(T, 2.1, 0.4), arr), flip, s: 1.2, kind: 'chart', red: true, on: T > t0 - 0.12 }] };
 }
 
 // ── curation ──────────────────────────────────────────────────────────────────
