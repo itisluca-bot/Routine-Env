@@ -39,10 +39,12 @@ const Mark = ({ src, x, y, w, aspect, color, id }) => (
 // spacing after the last letter (0.5 em), so the Y ends 25 px before X + len
 const DOT = { x: X + TITLE.len - 25 + 5, y: TITLE.y - 37, r: 6.2 };
 
-// a line arriving: a fade with a small rise
-const Arrive = ({ T, t0, d = 1.0, rise = 8, children }) => {
+// a line arriving: a fade with a small rise. Chromium draws upright type snapped to whole pixels, so a slow rise moves
+// in one-pixel jumps every few frames (jitter). Turned by 0.05° (the smallest angle that switches it to sub-pixel
+// outlines), the type glides; pivoting on the block's own left edge (`px`), the tilt is under a pixel across a line
+const Arrive = ({ T, t0, d = 1.0, rise = 8, px = X, children }) => {
   const op = ap(T, t0, d);
-  return op > 0.001 ? <g opacity={op} transform={`translate(0 ${glide(T, t0, t0 + d + 0.3, rise, 0)})`}>{children}</g> : null;
+  return op > 0.001 ? <g opacity={op} transform={`translate(0 ${glide(T, t0, t0 + d + 0.3, rise, 0)}) rotate(0.05 ${px} 540)`}>{children}</g> : null;
 };
 
 function CreditsPiece({ guide, boil, boilAmp, logo }) {
@@ -68,7 +70,7 @@ function CreditsPiece({ guide, boil, boilAmp, logo }) {
             </Arrive>
           ))}
           {FUNDERS.map((f, i) => (
-            <Arrive key={i} T={T} t0={b.logo + 0.7 * i} d={1.1}>
+            <Arrive key={i} T={T} t0={b.logo + 0.7 * i} d={1.1} px={FX}>
               <Txt t={f.label} x={FX} y={f.y} st={ST.label} fill={LABEL} />
               {f.nwo && <rect x={FX} y={f.y + 18} width={f.w} height={f.w * f.aspect} fill="#000" />}
               <Mark src={f.src} x={FX} y={f.y + 18} w={f.w} aspect={f.aspect} color={f.rug && logo === 'red' ? LOGO_C : OPEN_TXT} id={'crMark' + i} />

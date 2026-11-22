@@ -13,13 +13,14 @@
 //   Sample: one grey "Everyone" plinth under a white spot rises with all three figures; the slider wiggles; it barely moves.
 //   Closer: the grey plinth splits into three (no reset: they keep their height).
 //   Withdrawal / Open / Curators: the group's spot and plinth take its colour and the plinth settles to its own height;
-//     the slider wiggles; the figure does its triptych action. Blue and teal hold still; orange rises and falls with the
-//     slider. After the curators' wiggles the slider goes to "more" and stays.
+//     the slider wiggles; the figure does its triptych action. Only plinths already revealed follow the slider, each by
+//     its own line; the ones still to come hold still. The curators' wiggle ends at "more" and stays; then a short,
+//     slight ease-in push toward the curator.
 //
 // Values. The slider runs from 1 point below to 1 point above the average on the mean-centred exposure scale.
-// Curators: 21.7 + 4.91·x (Table 4 slope, Figure 3 level), 16.8 → 26.6. Withdrawal and open: `others` tweak. 'flat'
-// (default: only the orange plinth reacts; their slopes are not significant) holds them at their level at average
-// exposure, 25.7 and 28.2; 'data' gives their small, non-significant dips (−1.06 and −1.54 per point).
+// Curators: 21.7 + 4.91·x (Table 4 slope, Figure 3 level), 16.8 → 26.6. Withdrawal and open: `others` tweak. 'data'
+// (default) gives their own small, non-significant dips (25.7 − 1.06·x and 28.2 − 1.54·x); 'flat' holds them at their
+// level at average exposure.
 // Everyone: the pooled synthetic sample, 25.9 − 0.24·x (it moves a few px: "barely any effect").
 // Every frame is a pure function of T.
 const { W, H, OUT_W, OUT_H, MOTION, osc, lerp, lerp2, mix, hash } = window.FU_RIG;
@@ -46,16 +47,17 @@ function beats(CUES) {
   return {
     tS, tW, tO, tC,
     reveal: { wd: tW, open: tO, cur: tC },
-    wig: [[1.75, 3.85], [tW + 0.15, tW + 1.5], [tO + 0.15, tO + 1.65], [tC + 0.25, tC + 2.75]],
-    more: [tC + 2.9, tC + 3.9],                  // after the curators' wiggles the slider goes to "more" and stays
+    // [start, end, cycles]: two wiggles; the curators' runs a quarter cycle more, so it ends at "more" and stays there
+    wig: [[1.75, 3.85, 2], [tW + 0.15, tW + 1.5, 2], [tO + 0.15, tO + 1.65, 2], [tC + 0.25, tC + 2.95, 2.25]],
+    zoom: [tC + 3.0, tC + 5.2],                  // then a short, slight push toward the curator
     act: { wd: tW + 0.3, open: tO + 0.25, cur: tC + 0.6 },
   };
 }
-// the slider, 0 (less) .. 1 (more); rests at 0.5. A wiggle: twice up and down, eased in and out
+// the slider, 0 (less) .. 1 (more); rests at 0.5. A wiggle: up and down `cycles` times, eased in and out
 function exposure(T, B) {
   let e = 0.5;
-  for (const [a, b] of B.wig) { const u = glide(T, a, b, 0, 1); if (u > 0 && u < 1) e += 0.5 * Math.sin(4 * Math.PI * u); }
-  return e + glide(T, B.more[0], B.more[1], 0, 0.5);
+  for (const [a, b, c] of B.wig) e += 0.5 * Math.sin(2 * Math.PI * c * glide(T, a, b, 0, 1));
+  return e;
 }
 const valueAt = (line, e) => line[0] + line[1] * (2 * e - 1);
 
@@ -64,7 +66,10 @@ function plinth(T, B, k, e, others) {
   const grow = glide(T, 0.45, 1.5, 0, 1);
   const r0 = B.reveal[g], tint = glide(T, r0, r0 + 0.45, 0, 1);
   const line = g === 'cur' || others === 'data' ? LINE[g] : [LINE[g][0], 0];
-  const val = grow * lerp(valueAt(POOL, e), valueAt(line, e), tint);   // settles from the pooled height to its own, no reset
+  // before the split the grey plinth follows the pooled line; after it, a plinth not yet revealed holds still (the slider
+  // is at the middle at the split), and once revealed it settles to its own line and follows it. No reset.
+  const grey = T < B.tS ? valueAt(POOL, e) : valueAt(POOL, 0.5);
+  const val = grow * lerp(grey, valueAt(line, e), tint);
   const split = glide(T, B.tS + 0.05, B.tS + 0.55, 0, 1);
   const x = CX + (k - 1) * lerp(PW, SPACE, split);
   return { g, k, val, x, top: BASE - val * U, split, tint };
@@ -77,11 +82,11 @@ function BoilLine({ x1, y1, x2, y2, stroke, w, bf, amp, seed, op = 1 }) {
 }
 function Txt({ x, y, size, fill, a = 1, dy = 0, anchor = 'middle', rot, spacing = 0, children }) {
   if (a <= 0.01) return null;
-  return <text x={x} y={y + dy} fill={fill} opacity={a} fontFamily={FONT} fontWeight={700} fontSize={size} letterSpacing={spacing} textAnchor={anchor} transform={rot ? `rotate(${rot} ${x} ${y + dy})` : undefined}>{children}</text>;
+  return <text x={x} y={y + dy} fill={fill} opacity={a} fontFamily={FONT} textRendering="geometricPrecision" fontWeight={700} fontSize={size} letterSpacing={spacing} textAnchor={anchor} transform={rot ? `rotate(${rot} ${x} ${y + dy})` : undefined}>{children}</text>;
 }
 const pool = (cx, cy, rx, ry, op = 1) => <ellipse cx={cx} cy={cy} rx={rx} ry={ry} fill="url(#fuPool)" opacity={op} />;
 const cone = (x, y0, w0, y1, w1, op = 1) => <path d={`M ${x - w0} ${y0} L ${x + w0} ${y0} L ${x + w1} ${y1} L ${x - w1} ${y1} Z`} fill="url(#cbCone)" opacity={op} />;
-// a plinth in value (as in concept A): body light at the top and dark at the floor, a light lid, a shadow side.
+// a plinth in value (as in concept A), kept calm: the body in two bands (lighter at the top), a light lid, a flat shadow side.
 // side: how much of the right-hand shadow to draw (the grey plinth's inner parts have none until they split)
 function PlinthValue({ x, top, side = 1 }) {
   const h = BASE - top;
@@ -90,7 +95,7 @@ function PlinthValue({ x, top, side = 1 }) {
     <g>
       <rect x={x - PW / 2} y={top} width={PW} height={h} fill="url(#cbPlinth)" />
       <rect x={x - PW / 2 - 8} y={top - LID} width={PW + 16} height={LID + 2} fill={v(0.85)} />
-      {side > 0.01 && <rect x={x + PW / 2 - 40} y={top + 2} width="40" height={h - 2} fill={v(0.22)} opacity={0.6 * side} />}
+      {side > 0.01 && <rect x={x + PW / 2 - 40} y={top + 2} width="40" height={h - 2} fill={v(0.36)} opacity={side} />}
     </g>
   );
 }
@@ -112,14 +117,14 @@ function facing(turn) {   // as in the triptych: wide for most of a turn, edge-o
 
 // the posts that come with exposure: post j is there once the slider passes j / N. It pops in where it hovers (a small
 // overshoot, a little drop) and shrinks away as the slider falls, so the fast wiggles stay calm.
-const SWARM_N = 12;
+const SWARM_N = 12, SWARM_MIN = 2;   // at "less" a couple stay: less exposure is not none
 const SWARM = Array.from({ length: SWARM_N }, (_, j) => {
   const h = (n) => hash(j * 9.7 + n * 4.3 + 3);
   return { j, kind: POST_KINDS[(j * 4 + 1) % POST_KINDS.length], h, x: 640 + 780 * ((j * 0.618 + h(3) * 0.3) % 1), y: 80 + 150 * h(4), s: 0.95 + 0.35 * h(6) };
 });
 function swarm(T, e) {
   return SWARM.map((P) => {
-    const on = Math.min(1, Math.max(0, (e * SWARM_N - P.j) / 1.4));
+    const on = Math.min(1, Math.max(0, (SWARM_MIN + e * (SWARM_N - SWARM_MIN) - P.j) / 1.4));
     if (on <= 0.01) return null;
     const k = backOut(on);
     return { p: [P.x + 10 * osc(T, 2.3, P.h(7)), P.y - 30 * (1 - on) + 8 * osc(T, 1.7, P.h(8))], rot: 16 * Math.sin(T * 1.3 + P.h(9) * 5), flip: 0.62 + 0.36 * Math.cos(T * 2.6 + P.h(10) * 9), s: P.s * k, op: Math.min(1, on * 2), kind: P.kind };
@@ -136,6 +141,9 @@ function Piece({ guide, boil, boilAmp, wd, cur, others }) {
   const dimOf = (g) => (g === 'cur' ? 1 : 1 - 0.3 * spot);
   const ps = GROUPS.map((_, k) => plinth(T, B, k, e, others));
   const lightOn = glide(T, 0.0, 0.7, 0, 1);
+  // the end: a short, slight ease-in push toward the curator, anchored on them (their screen spot hardly moves)
+  const z = glide(T, B.zoom[0], B.zoom[1], 1, 1.07), anchor = [CX + SPACE, 560];
+  const CAM = `translate(${anchor[0]} ${anchor[1]}) scale(${z}) translate(${-anchor[0]} ${-anchor[1]})`;
 
   const figs = ps.map((p, n) => {
     const a = figure(T, B, p.k, wd, cur);
@@ -156,14 +164,17 @@ function Piece({ guide, boil, boilAmp, wd, cur, others }) {
   const loupeOf = figs.find((f) => f.g === 'open');
 
   // the spot over a plinth: a cone and a haze, out of focus; a pool on the floor
-  const haze = (p) => <g>{pool(p.x, p.top - 220, 250, 320, 0.5 * lightOn)}{cone(p.x, -20, 26, p.top, 120, 0.7 * lightOn)}</g>;
-  const floorPool = (p) => pool(p.x, BASE + 6, 230, 28, 0.6 * lightOn);
+  const haze = (p) => <g>{pool(p.x, p.top - 220, 250, 320, 0.5 * lightOn)}{cone(p.x, -20, 26, p.top, 120, 0.7 * lightOn)}{pool(p.x, BASE + 6, 230, 28, 0.6 * lightOn)}</g>;
   // the grey plinth's inner shadow sides appear as it splits; the right-hand one is always there
   const sideOf = (p) => (p.k === 2 ? 1 : p.split);
+  // plaques are drawn outside the push, at their pushed place but never scaled: type scaled by a slow push steps from
+  // pixel to pixel and jitters sideways
+  const px4k = (q) => Math.round(q * 2) / 2;   // whole pixels of the 4K frame: fractional type positions jitter
+  const toS = (x, y) => [anchor[0] + (x - anchor[0]) * z, anchor[1] + (y - anchor[1]) * z];
   const plaque = (p, text, R, a) => {
     if (a <= 0.01) return null;
-    const w = Math.max(130, text.length * 11.5 + 34), x = p.x - 14, y = Math.min(p.top + 46, BASE - 60);
-    return <g key={text + p.k} opacity={a}><rect x={x - w / 2} y={y} width={w} height="36" fill={R[6]} /><Txt x={x} y={y + 24} size={15} fill={R[0]} spacing={1.6}>{text.toUpperCase()}</Txt></g>;
+    const w = Math.max(130, text.length * 11.5 + 34), [x, y] = toS(p.x - 14, Math.min(p.top + 46, BASE - 60));
+    return <g key={text + p.k} opacity={a}><rect x={x - (w * z) / 2} y={y} width={w * z} height={36 * z} fill={R[6]} /><Txt x={px4k(x)} y={px4k(y + 18 * z + 6)} size={15} fill={R[0]} spacing={1.6}>{text.toUpperCase()}</Txt></g>;
   };
   const everyoneA = glide(T, 0.9, 1.4, 0, 1) * (1 - glide(T, B.tS, B.tS + 0.3, 0, 1));
 
@@ -177,9 +188,10 @@ function Piece({ guide, boil, boilAmp, wd, cur, others }) {
           <GradeFilter id="cbNeutFg" ramp={NEUT} poster />
           <GradeFilter id="cbWarm" ramp="cur" poster gain={1.18} />
           <linearGradient id="cbCone" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor={v(0.9)} stopOpacity="0.45" /><stop offset="1" stopColor={v(0.7)} stopOpacity="0.1" /></linearGradient>
-          <linearGradient id="cbPlinth" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor={v(0.66)} /><stop offset="0.5" stopColor={v(0.42)} /><stop offset="1" stopColor={v(0.24)} /></linearGradient>
+          <linearGradient id="cbPlinth" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor={v(0.63)} /><stop offset="1" stopColor={v(0.46)} /></linearGradient>
         </defs>
 
+        <g transform={CAM}>
         {/* the gallery, out of focus */}
         <g filter="url(#cbBack)">
           <rect x="-200" y="-200" width="2320" height="1480" fill={v(0.16)} />
@@ -190,24 +202,13 @@ function Piece({ guide, boil, boilAmp, wd, cur, others }) {
         {ps.map((p) => p.tint < 0.99 && <g key={'nh' + p.k} filter="url(#cbNeutBg)" opacity={1 - p.tint}>{haze(p)}</g>)}
         {ps.map((p) => p.tint > 0.01 && <g key={'gh' + p.k} filter={`url(#fuGradeBg-${p.g})`} opacity={p.tint * dimOf(p.g)}>{haze(p)}</g>)}
 
-        {/* y axis */}
-        <g opacity={ui}>
-          <BoilLine x1={AX} y1={BASE - 10} x2={AX} y2={TOP + 14} stroke={MUTED} w={3.5} bf={bf} amp={amp} seed={2} />
-          <path d={`M ${AX - 13} ${TOP + 22} L ${AX} ${TOP} L ${AX + 13} ${TOP + 22} Z`} fill={MUTED} />
-          <Txt x={AX - 34} y={(BASE + TOP) / 2} size={24} fill={INK} rot={-90}>Likelihood of voting for a populist radical party</Txt>
-        </g>
-
         {/* plinths and floor pools: grey (one shape until the split), then each in its group's ramp */}
         {ps.some((p) => p.tint < 0.99) && (
           <g filter="url(#cbNeutFg)">
-            {ps.map((p) => p.tint < 0.99 && <g key={p.k} opacity={1 - p.tint}>{floorPool(p)}<PlinthValue x={p.x} top={p.top} side={sideOf(p)} /></g>)}
+            {ps.map((p) => p.tint < 0.99 && <g key={p.k} opacity={1 - p.tint}><PlinthValue x={p.x} top={p.top} side={sideOf(p)} /></g>)}
           </g>
         )}
-        {ps.map((p) => p.tint > 0.01 && <g key={'gp' + p.k} filter={`url(#fuGradeFg-${p.g})`} opacity={p.tint * dimOf(p.g)}>{floorPool(p)}<PlinthValue x={p.x} top={p.top} side={sideOf(p)} /></g>)}
-        {/* plaques */}
-        {plaque({ x: CX + 14, top: ps[1].top, k: 9 }, 'everyone', NEUT, everyoneA)}
-        {ps.map((p) => plaque(p, NAME[p.g], RAMPS[p.g], glide(T, B.reveal[p.g] + 0.1, B.reveal[p.g] + 0.5, 0, 1) * dimOf(p.g)))}
-
+        {ps.map((p) => p.tint > 0.01 && <g key={'gp' + p.k} filter={`url(#fuGradeFg-${p.g})`} opacity={p.tint * dimOf(p.g)}><PlinthValue x={p.x} top={p.top} side={sideOf(p)} /></g>)}
         {/* the posts that come with exposure */}
         <g filter="url(#fuGradeFg-red)">{posts.map((q, k) => <PostValue key={k} x={q.p[0]} y={q.p[1]} s={q.s} rot={q.rot} flip={q.flip} kind={q.kind} op={q.op} />)}</g>
 
@@ -216,6 +217,19 @@ function Piece({ guide, boil, boilAmp, wd, cur, others }) {
         <g filter="url(#fuGradeFg-red)">{figs.flatMap((f) => f.a.cards.filter((c) => c.red).map((c, k) => card(f, c, `${f.n}-${k}`)))}</g>
         <g filter="url(#cbWarm)">{figs.flatMap((f) => f.a.cards.filter((c) => !c.red).map((c, k) => card(f, c, `${f.n}-${k}`)))}</g>
         {loupeOf && loupeOf.a.ls > 0.02 && <Loupe f={loupeOf} />}
+
+        </g>
+        {/* the axis and the slider stay outside the push: scaled type steps from pixel to pixel */}
+        {/* plaques */}
+        {plaque({ x: CX + 14, top: ps[1].top, k: 9 }, 'everyone', NEUT, everyoneA)}
+        {ps.map((p) => plaque(p, NAME[p.g], RAMPS[p.g], glide(T, B.reveal[p.g] + 0.1, B.reveal[p.g] + 0.5, 0, 1) * dimOf(p.g)))}
+
+        {/* y axis */}
+        <g opacity={ui}>
+          <BoilLine x1={AX} y1={BASE - 10} x2={AX} y2={TOP + 14} stroke={MUTED} w={3.5} bf={bf} amp={amp} seed={2} />
+          <path d={`M ${AX - 13} ${TOP + 22} L ${AX} ${TOP} L ${AX + 13} ${TOP + 22} Z`} fill={MUTED} />
+          <Txt x={AX - 34} y={(BASE + TOP) / 2} size={24} fill={INK} rot={-90}>Likelihood of voting for a populist radical party</Txt>
+        </g>
 
         {/* the exposure slider */}
         <g opacity={ui}>
@@ -251,15 +265,15 @@ function Loupe({ f }) {
 }
 
 function FUCrisisBars() {
-  const [t, setTweak] = useTweaks(window.TWEAK_DEFAULTS || { wd: 'turn', cur: 'warm', others: 'flat', referenceOverlay: false, lineBoil: true, boilAmp: 0.5 });
+  const [t, setTweak] = useTweaks(window.TWEAK_DEFAULTS || { wd: 'turn', cur: 'warm', others: 'data', referenceOverlay: false, lineBoil: true, boilAmp: 0.5 });
   return (
     <React.Fragment>
       <CompositionStage width={OUT_W} height={OUT_H} scenes={window.OM_SCENES} playback={window.OM_PLAYBACK} bg={NEUT[1]} autoplay={false}>
-        <Piece guide={t.referenceOverlay} boil={t.lineBoil} boilAmp={t.boilAmp ?? 0.5} wd={t.wd} cur={t.cur} others={t.others || 'flat'} />
+        <Piece guide={t.referenceOverlay} boil={t.lineBoil} boilAmp={t.boilAmp ?? 0.5} wd={t.wd} cur={t.cur} others={t.others || 'data'} />
       </CompositionStage>
       <TweaksPanel>
         <TweakSection label="Data" />
-        <TweakSelect label="Withdrawal and open" value={t.others || 'flat'} options={[{ value: 'flat', label: 'Hold still (only orange reacts)' }, { value: 'data', label: 'Their small, non-significant dips' }]} onChange={(x) => setTweak('others', x)} />
+        <TweakSelect label="Withdrawal and open" value={t.others || 'data'} options={[{ value: 'data', label: 'Their own data (small dips)' }, { value: 'flat', label: 'Hold still' }]} onChange={(x) => setTweak('others', x)} />
         <TweakSection label="Actions (from the triptych)" />
         <TweakSelect label="Withdrawal" value={t.wd} options={[{ value: 'turn', label: 'Turns their back' }, { value: 'shoo', label: 'Shoo, then turns away' }, { value: 'walk', label: 'Walks off' }]} onChange={(x) => setTweak('wd', x)} />
         <TweakSelect label="Curation" value={t.cur} options={[{ value: 'warm', label: 'Takes comfort posts, recoils from red' }, { value: 'red', label: 'All red' }]} onChange={(x) => setTweak('cur', x)} />
