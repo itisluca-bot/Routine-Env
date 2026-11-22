@@ -19,10 +19,11 @@ const { glide, hit } = MOTION;
 
 const GROUPS = ['wd', 'open', 'cur'];
 const LABEL = { wd: 'withdrawal', open: 'open engagement', cur: 'curation' };
-const HAIR = { wd: 'none', open: 'beanie', cur: 'long' };
+const HAIR = { wd: 'long', open: 'beanie', cur: 'none' };
 const PW = 640, FIG_S = 1.9, FLOOR = 920;
 const X0 = GROUPS.map((_, i) => i * PW);
 const WIN = (i) => [X0[i] + 470, 300];
+const LABEL_Y = 392;   // the labels' baseline, above the heads
 
 // ── helpers ───────────────────────────────────────────────────────────────────
 const clampN = (x, a, b) => Math.min(b, Math.max(a, x));
@@ -58,7 +59,7 @@ const WD_OPTIONS = {
 };
 const WD_POSTS = Array.from({ length: 5 }, (_, j) => {
   const h = (n) => hash(j * 7.3 + n * 3.1 + 11);
-  return { j, ta: -0.25 + 0.27 * j, from: [240 + 70 * h(1), -520 + 160 * h(2)], rest: [74 + 70 * h(3), -110 + 160 * h(4)], kind: POST_KINDS[(j * 2 + 1) % POST_KINDS.length], ph: h(5), h };
+  return { j, ta: -0.25 + 0.27 * j, from: [240 + 70 * h(1), -520 + 160 * h(2)], rest: [98 + 58 * h(3), -110 + 160 * h(4)], kind: POST_KINDS[(j * 2 + 1) % POST_KINDS.length], ph: h(5), h };
 });
 const FOLD_N = [-10, 125], FOLD_F = [-6, 120];
 const WINP = [(WIN(0)[0] - 240) / FIG_S, (WIN(0)[1] - FLOOR) / FIG_S];   // the window, in the post frame
@@ -88,7 +89,7 @@ function withdrawal(T, t0, mode) {
     pose = blendPose(pose, POSES.walk((D * go) / 150), wk);              // the walk cycle runs on the distance: feet stay put
     fold = glide(T, t0 + 1.95, t0 + 2.45, 0, 1);
     aloof = 0.7 * glide(T, t0 + 1.9, t0 + 2.6, 0, 1);
-    posts.forEach((q, j) => { q.p = add(q.p, [-34 * go * (0.4 + q.P.ph), 0]); });
+    posts.forEach((q) => { q.p = add(q.p, [-14 * go * q.P.ph, 26 * go * q.P.ph]); });
   } else if (mode === 'blind') {
     const reach = glide(T, t0 + 0.4, t0 + 0.75, 0, 1), pull = glide(T, t0 + 0.75, t0 + 1.35, 0, 1), rel = glide(T, t0 + 1.4, t0 + 1.75, 0, 1);
     blind = pull; light = 1 - 0.7 * pull;
@@ -119,8 +120,8 @@ function withdrawal(T, t0, mode) {
     pose.lean += 4 * Math.sin(Math.PI * turn);   // weight into the turn
     posts.forEach((q, j) => {
       const h = q.P.h, gather = glide(T, t0 + 1.0 + 0.1 * j, t0 + 1.9 + 0.1 * j, 0, 1);   // they drift round to the back
-      q.p = lerp2(q.p, add(add(Hc0, [46 + 56 * h(6), -100 + 150 * h(7)]), hover(T, q.P.ph * 5)), gather);
-      if (j % 2 === 0) { const leave = glide(T, t0 + 1.8 + 0.3 * j, t0 + 3.2 + 0.3 * j, 0, 1); q.p = add(q.p, [160 * leave, -320 * leave]); }
+      q.p = lerp2(q.p, add(add(Hc0, [46 + 56 * h(6), -26 + 110 * h(7)]), hover(T, q.P.ph * 5)), gather);   // below the label
+      if (j % 2 === 0) { const leave = glide(T, t0 + 1.8 + 0.3 * j, t0 + 3.2 + 0.3 * j, 0, 1); q.p = add(q.p, [280 * leave, -200 * leave]); }
     });
   }
   // they watch the first ones come; then aloof: chin up, leaning back a little; arms folded
@@ -270,7 +271,8 @@ function Panel({ f, ba, CAM, lab }) {
       </g>
     ), 'loupe'));
   }
-  out.push(lay(null, <Lbl x={X0[i] + PW / 2} y={1030} text={LABEL[g]} fill={RAMPS[g][6]} a={lab.a} dy={lab.dy * 0.4} />, 'label'));
+  // the label: there the whole time, above the character
+  out.push(lay(null, <Lbl x={f.hx0 + 22} y={LABEL_Y} size={26} text={LABEL[g]} fill={RAMPS[g][6]} />, 'label'));
   return <g>{out}</g>;
 }
 function figOf(i, a) {
