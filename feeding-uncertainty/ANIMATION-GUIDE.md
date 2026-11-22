@@ -301,3 +301,11 @@ The user: the toned bars' contours were too messy; use the plinths of the tripty
 - **Slider:** rests at the middle (average exposure) and wiggles twice (more, less, more, less, eased in and out) on each beat: Sample 1.75–3.85, each group's beat after its reveal. After the curators' wiggles it goes to "more" and stays. Red posts pop in place (a small overshoot) as it rises and shrink away as it falls, instead of flying in and out.
 - **No reset:** on "looked closer" the grey plinth only splits (Closer is 0.6 s now: Withdrawal 4.60, Open 6.20, Curators 8.00). On each group's beat its spot and plinth take its colour and the plinth settles from the pooled height to its own (`lerp` of the two lines by the tint), then the slider wiggles. Each figure does its triptych action on its own beat.
 
+### Round 4 (calmer plinths, only revealed plinths move, the end)
+
+The user: too much noise on the bars; plinths not yet revealed wiggled (by the pooled slope, the wrong extent): with each reveal only the plinths already revealed should move, correctly, and not the next ones; around 10.5 s it looked like the animation was resetting; end on a short, slight, eased zoom to the curator instead.
+
+- **Plinths:** the body in two bands (value 0.63 → 0.46 through the posterized grade), a light lid, a flat shadow side (`v(0.36)`); the floor pool moved into the out-of-focus spot haze (soft, no rings).
+- **Who moves:** before the split the grey plinth follows the pooled line; after it, a plinth not yet revealed holds still at the pooled value at average exposure, and once revealed it settles to its own line and follows the slider by it. `others` now defaults to `data` (withdrawal and open dip by their own small slopes: about 30 and 43 px across the slider, orange about 137 px); `flat` is kept.
+- **The end:** the curators' wiggle runs 2.25 cycles, so it ends at "more" and stays (it no longer drops back through "less" and climbs again, which read as a reset). At "less" two posts always stay (less exposure is not none). Then a 7% ease-in-out push anchored on the curator (11.0–13.2 s).
+
