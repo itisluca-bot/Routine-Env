@@ -55,6 +55,7 @@ This is the working guide for a new Claude session. Read it together with `CLAUD
 | `Three Groups Concepts.dc.html` + `three-groups-concepts.jsx` | Round-1 layout concepts for the three groups side by side (§16) |
 | `Three Groups.dc.html` + `three-groups.jsx` | **The three groups shot** (concept F, §17). Exported at 4K. `--set wd=turn|walk|blind|shoo,cur=warm|red`; `view=wd` shows the withdrawal options side by side |
 | `Crisis Bars.dc.html` + `crisis-bars.jsx` | **The crisis finding as a bar chart** (§18), replacing the crisis scatter. Loads `three-groups.jsx` for the characters' actions (`window.FU_THREE_GROUPS`). Needs `fonts/Futura-Bold.ttf` |
+| `Coping Concepts.dc.html` + `coping-concepts.jsx` | The last shot, replacing the Resistance alley: round-1 concepts (§21). `--set concept=pillars` or `triptych` |
 | `tools/render.mjs` | Headless renderer (§6) |
 
 Load order in a page: `./animations-v3.jsx ./tweaks-panel.jsx ./rigs/bean-rig.jsx ./open-engagers-concepts.jsx ./your-shot.jsx`.
@@ -113,6 +114,7 @@ node tools/render.mjs "<page>" --frames 0,120,300 --half --guide                
 7. **End credits** (12.00 s, silent for now). Round-1 concepts A–H (§14); the user chose H's look, made simple and clean (§15).
 8. **The three groups side by side** (7.00 s, no SRT yet). Round-1 layout concepts A–H (§16); the user chose **F · Triptych** (§17).
 9. **The crisis finding** (16.00 s, the crisis scatter's v6 narration timing). The scatter (a separate Python handoff) was found too hard to read; replaced by a bar chart with the triptych's characters (§18).
+10. **The last shot** (same line as Resistance, 10.00 s), replacing the Resistance alley; all three groups in frame again. Round-1 concept stills (§21).
 4. **Vulnerability** (5.00 s, no SRT yet). Round 1, the city of apartment blocks (`vulnerability.jsx`, variant 1), was exported at 4K; the user then found it too busy. Round 2 is the alley (`vulnerability-alley.jsx`, §10).
 
 ## 8. Open engagers shot: what is approved
@@ -384,3 +386,9 @@ The user chose D from §19 and asked for the reflection to start from the curato
 - **Set:** the curator phone shot's phone, mitt and feed (`curator-phone-kit.jsx`), a coffee table and rug below, the sofa's arms at the edges (very soft), the wall with the TV (the concepts' `TVNews`), a sideboard with a plant, a picture, a curtained window; the TV's flicker lights the wall; red posts drift round the TV.
 - **The eye:** the POV is drawn with a margin (it needs more than 1920 × 1080: the eye is round), bowed by a displacement map baked once on a canvas (a point at radius r shows the POV at r·(1 + 0.55·ρ²), ρ = r / 600), mirrored (a reflection), scaled into an eye of radius 360 and darkened toward its rim, with a catchlight. The camera is locked on the eye; as the eye turns up, the face around it moves down 34 px and the light on the skin moves from the phone below toward the TV.
 - **Fixed:** a red-graded group whose posts all lay outside the frame drew a dark square in the top-left corner; only posts inside the frame are drawn now. The phone's focus blur with a frame-wide region left a black smudge in the same corner while the blur grew; its region now hugs the phone and hands.
+## 21. The last shot: round 1 (concept stills)
+
+The user is replacing the second alley shot (Resistance, §13) with a last shot on the same line: "Coping is a form of resistance. The question is, what do people have to resist with?" The first alley (Vulnerability) is being reworked elsewhere as the eye-reflection shot. Brief: all three groups visible again, zooming out a bit on "coping". `Coping Concepts.dc.html` + `coping-concepts.jsx`, the Resistance timing (10.00 s: Resistance, Question, With, Tail, Hold). Stills at frame 150 (6.0 s).
+
+- **1 · Pillars** (`concept=pillars`): the bar plot again without axes or labels. Three plinths in their group's ramp (posterized, a darker side face), heights blue < teal < orange, on a neutral night with the plot's grid far out of focus. Blue sit at the left edge of the lowest plinth, legs dangling, facing away and chatting. Teal look at a post one of them holds, a hand on the other's shoulder; a third sits on the right edge looking up at orange. Orange are highest, inside the red swarm: one cowers, one teeters over the right edge (leaning out, arms windmilling, a foot lifted) and a third grabs their back. Camera: a zoom out from teal (1.5) to the whole plot (1.08) over 0.3–3.2 s.
+- **2 · Triptych** (`concept=triptych`): three panels with dark gutters, each under a hanging lamp in its own ramp. Blue: three friends in a huddle, talking, red posts behind them that none of them looks at. Teal: a family; the two kids study one post through loupes (`Loupe`, drawn after the toning), each parent has a hand on a kid's shoulder (IK). Orange: one curator alone in a wider pool, hand to head, eyes moving from side to side; posts only as outlines in the dark.
