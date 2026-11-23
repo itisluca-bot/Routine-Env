@@ -316,7 +316,9 @@ const FACES = {
   patch: 'E · Screen patches: the phone\'s small patch under the eye, then the TV\'s wide patch rises over the face',
   rings: 'F · Rings: rings of light open out from the eye',
   sweep: 'G · Sweep: light fills the face from its front edge backward',
+  liftc: 'H · D\'s tone slide on C\'s opening contours (the darker contour kept clear of the eye, one more light contour bottom right)',
 };
+const EYE_RISE = 0.06, EYE_RISE_R = 2.0, BR_RISE = 0.12, BR_RISE_R = 1.45;   // H's touches (eye radii)
 const ss = (a, b, x) => { const t = clamp((x - a) / (b - a), 0, 1); return t * t * (3 - 2 * t); };
 const norm3 = (a) => { const n = Math.hypot(a[0], a[1], a[2]); return [a[0] / n, a[1] / n, a[2] / n]; };
 // the light value (before noise) at a point, for each variant. dx, dy: from the head's centre; ex, ey: from the eye
@@ -337,6 +339,12 @@ function faceField(face, look, r, lit) {
     };
     case 'rings': return (x, y, dx, dy, rho, ex, ey) => { const R = lerp(0.25, 0.95, look) * r, d = Math.hypot(ex, ey) / R; return (0.3 + 0.06 * look) * (1 - hmEdge(rho)) + lerp(0.2, 0.55, look) * Math.exp(-d * d); };
     case 'sweep': return (x, y, dx, dy, rho) => { const n = sphere(dx, dy), s0 = -0.85 * n[0] + 0.3 * n[1], t = lerp(1.05, -0.25, look); return 0.26 * (1 - hmEdge(rho)) + lerp(0.25, 0.5, look) * ss(t - 0.35, t + 0.35, s0); };
+    // H: C's field frozen at the start (on the phone), with two touches: a soft rise round the eye keeps the darker
+    // contour clear of it, a soft rise in the bottom right adds one lighter contour there. The tones slide (see `shift`)
+    case 'liftc': { const c0 = faceField('wrap', 0, r, lit), e = 3.8 * S_HEAD, br = [1880 - EYE_AT[0], 1100 - EYE_AT[1]];
+      return (x, y, dx, dy, rho, ex, ey) => c0(x, y, dx, dy, rho)
+        + EYE_RISE * Math.exp(-((ex + 0.9 * e) ** 2 + (ey + 0.9 * e) ** 2) / Math.pow(EYE_RISE_R * e, 2))   // centred up and left of the eye: it pushes the darker contour there away, not the light one bottom right
+        + BR_RISE * Math.exp(-((ex - br[0]) ** 2 + (ey - br[1]) ** 2) / Math.pow(BR_RISE_R * e, 2)); }
     default: return (x, y, dx, dy, rho) => {   // 'lobes', and 'lift' (its lights are frozen; the tones slide instead)
       let keep = 1;
       for (const l of lit) keep *= 1 - l.f * hmLight(Math.hypot(x - l.c[0], y - l.c[1]) / l.R);
@@ -347,7 +355,7 @@ function faceField(face, look, r, lit) {
 function headImage(C, r, ang, lit, bf, amp, face = 'lobes', look = 0) {
   const field = faceField(face, look, r, lit), E = EYE_AT;
   // 'lift': each band's colour slides toward the next tone up, so the contours stay where they are
-  const shift = face === 'lift' ? ss(0, 1, look) : 0;
+  const shift = face === 'lift' || face === 'liftc' ? ss(0, 1, look) : 0;
   const PAL = HM_RGB.map((c, k) => { const d = HM_RGB[Math.min(k + 1, HM_RGB.length - 1)]; return c.map((x, j) => x + (d[j] - x) * shift); });
   const gw = Math.ceil(HM_W / HM_G) + 2, gh = Math.ceil(HM_H / HM_G) + 2, F = new Float32Array(gw * gh);
   const ca = Math.cos(-ang), sa = Math.sin(-ang), cell = 0.18 * r, bcell = 0.09 * r, ba = 0.0025 * amp;
@@ -394,7 +402,7 @@ function HeadMacro({ pose, lights, cam, bf, amp, face, look }) {
     </g>
   );
 }
-function EyeView({ T, k, look, face = 'lobes' }) {
+function EyeView({ T, k, look, face = 'liftc' }) {
   const pose = headPose(T), eW = toW(eyeLocal(pose));
   const c = [EYE_AT[0] - eW[0], EYE_AT[1] - eW[1]];
   const slide = -ROOM_SLIDE * look;   // the room slides up as he looks up (it slides, it does not turn: the user)
@@ -482,16 +490,16 @@ function Piece({ view, face, guide, boil, boilAmp }) {
 }
 
 function FUCuratorEye() {
-  const [t, setTweak] = useTweaks(window.TWEAK_DEFAULTS || { view: 'eye', face: 'lobes', referenceOverlay: false, lineBoil: true, boilAmp: 0.5 });
+  const [t, setTweak] = useTweaks(window.TWEAK_DEFAULTS || { view: 'eye', face: 'liftc', referenceOverlay: false, lineBoil: true, boilAmp: 0.5 });
   return (
     <React.Fragment>
       <CompositionStage width={OUT_W} height={OUT_H} scenes={window.OM_SCENES} playback={window.OM_PLAYBACK} bg={RC[0]}>
-        <Piece view={t.view} face={t.face || 'lobes'} guide={t.referenceOverlay} boil={t.lineBoil} boilAmp={t.boilAmp ?? 0.5} />
+        <Piece view={t.view} face={t.face || 'liftc'} guide={t.referenceOverlay} boil={t.lineBoil} boilAmp={t.boilAmp ?? 0.5} />
       </CompositionStage>
       <TweaksPanel>
         <TweakSection label="Shot" />
         <TweakSelect label="View" value={t.view} options={[{ value: 'eye', label: 'In the eye (reflection)' }, { value: 'pov', label: 'POV (what the eye sees)' }]} onChange={(x) => setTweak('view', x)} />
-        <TweakSelect label="Face light" value={t.face || 'lobes'} options={Object.keys(FACES).map((key) => ({ value: key, label: FACES[key] }))} onChange={(x) => setTweak('face', x)} />
+        <TweakSelect label="Face light" value={t.face || 'liftc'} options={Object.keys(FACES).map((key) => ({ value: key, label: FACES[key] }))} onChange={(x) => setTweak('face', x)} />
         <TweakSection label="Preview" />
         <TweakToggle label="Narration guide" value={t.referenceOverlay} onChange={(x) => setTweak('referenceOverlay', x)} />
         <TweakToggle label="Line boil (8 fps)" value={t.lineBoil} onChange={(x) => setTweak('lineBoil', x)} />

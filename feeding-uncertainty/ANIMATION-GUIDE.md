@@ -445,6 +445,10 @@ The user narrowed it to C (`wrap`) or D (`lift`). C: the brighter light has to b
 
 The user: the backgrounds were wrong; looking down at the phone, the background should be wall and ceiling; looking ahead at the TV, the wall. Since round 5 the room had slid down as he looked up, bringing a window and lamp above into view on the TV: the wrong way. Now it slides up (`ROOM_SLIDE` 540 px): on the phone the strip past the profile shows the ceiling with a hanging lamp, the cornice and the top of the wall with a window; on the TV, the wall with the TV's glow level with the eye and the sideboard under it.
 
+### Round 9 (H: D's tone slide on C's contours, the default)
+
+The user chose D with C's contours from the start: `face=liftc` (H), now the default. The field is C's frozen at look 0 (on the phone), and the tones slide up one step as he looks up (D's `shift`), so the contours hold still. Two touches, both soft Gaussian rises in the field: one centred up and left of the eye (`EYE_RISE` 0.06, radius 2 eye radii, centre 0.9 eye radii up and left) keeps the darker contour clear of the eye; one in the bottom right (`BR_RISE` 0.12, radius 1.45 eye radii, centre (1880, 1100)) adds one lighter contour there. A rise centred on the eye itself pulled the new light contour onto the eye's lower edge, hence the offset.
+
 ## 21. The last shot: round 1 (concept stills)
 
 The user is replacing the second alley shot (Resistance, §13) with a last shot on the same line: "Coping is a form of resistance. The question is, what do people have to resist with?" The first alley is being reworked as the eye shot (§19–20). Brief: all three groups visible again, zooming out a bit on "coping". Two ideas, each built on a shot the audience has already seen. `Coping Concepts.dc.html` + `coping-concepts.jsx` (loads `curator-phone-kit.jsx` for `WarmPost`), on the Resistance timing (10.00 s: Resistance, Question, With, Tail, Hold). Stills at frame 150 (6.0 s).
