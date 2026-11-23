@@ -318,7 +318,7 @@ const FACES = {
   sweep: 'G · Sweep: light fills the face from its front edge backward',
   liftc: 'H · D\'s tone slide on C\'s opening contours (the darker contour kept clear of the eye, one more light contour bottom right)',
 };
-const EYE_RISE = 0.06, EYE_RISE_R = 2.0, BR_RISE = 0.12, BR_RISE_R = 1.45;   // H's touches (eye radii)
+const EYE_RISE = 0.06, EYE_RISE_R = 2.0, BR_RISE = 0.13, BR_RISE_R = 2.1;   // H's touches (eye radii); the bottom-right rise is centred past the frame's right edge, so its contour climbs to the edge and peaks there
 const ss = (a, b, x) => { const t = clamp((x - a) / (b - a), 0, 1); return t * t * (3 - 2 * t); };
 const norm3 = (a) => { const n = Math.hypot(a[0], a[1], a[2]); return [a[0] / n, a[1] / n, a[2] / n]; };
 // the light value (before noise) at a point, for each variant. dx, dy: from the head's centre; ex, ey: from the eye
@@ -341,7 +341,7 @@ function faceField(face, look, r, lit) {
     case 'sweep': return (x, y, dx, dy, rho) => { const n = sphere(dx, dy), s0 = -0.85 * n[0] + 0.3 * n[1], t = lerp(1.05, -0.25, look); return 0.26 * (1 - hmEdge(rho)) + lerp(0.25, 0.5, look) * ss(t - 0.35, t + 0.35, s0); };
     // H: C's field frozen at the start (on the phone), with two touches: a soft rise round the eye keeps the darker
     // contour clear of it, a soft rise in the bottom right adds one lighter contour there. The tones slide (see `shift`)
-    case 'liftc': { const c0 = faceField('wrap', 0, r, lit), e = 3.8 * S_HEAD, br = [1880 - EYE_AT[0], 1100 - EYE_AT[1]];
+    case 'liftc': { const c0 = faceField('wrap', 0, r, lit), e = 3.8 * S_HEAD, br = [2160 - EYE_AT[0], 1130 - EYE_AT[1]];
       return (x, y, dx, dy, rho, ex, ey) => c0(x, y, dx, dy, rho)
         + EYE_RISE * Math.exp(-((ex + 0.9 * e) ** 2 + (ey + 0.9 * e) ** 2) / Math.pow(EYE_RISE_R * e, 2))   // centred up and left of the eye: it pushes the darker contour there away, not the light one bottom right
         + BR_RISE * Math.exp(-((ex - br[0]) ** 2 + (ey - br[1]) ** 2) / Math.pow(BR_RISE_R * e, 2)); }
@@ -422,7 +422,7 @@ function Lid({ tone, b, E, er }) {
     </g>
   );
 }
-function EyeView({ T, k, look, face = 'liftc', blink = false }) {
+function EyeView({ T, k, look, face = 'liftc', blink = true }) {
   const pose = headPose(T), eW = toW(eyeLocal(pose));
   const c = [EYE_AT[0] - eW[0], EYE_AT[1] - eW[1]];
   const slide = -ROOM_SLIDE * look;   // the room slides up as he looks up (it slides, it does not turn: the user)
@@ -512,17 +512,17 @@ function Piece({ view, face, blink, guide, boil, boilAmp }) {
 }
 
 function FUCuratorEye() {
-  const [t, setTweak] = useTweaks(window.TWEAK_DEFAULTS || { view: 'eye', face: 'liftc', blink: false, referenceOverlay: false, lineBoil: true, boilAmp: 0.5 });
+  const [t, setTweak] = useTweaks(window.TWEAK_DEFAULTS || { view: 'eye', face: 'liftc', blink: true, referenceOverlay: false, lineBoil: true, boilAmp: 0.5 });
   return (
     <React.Fragment>
       <CompositionStage width={OUT_W} height={OUT_H} scenes={window.OM_SCENES} playback={window.OM_PLAYBACK} bg={RC[0]}>
-        <Piece view={t.view} face={t.face || 'liftc'} blink={!!t.blink} guide={t.referenceOverlay} boil={t.lineBoil} boilAmp={t.boilAmp ?? 0.5} />
+        <Piece view={t.view} face={t.face || 'liftc'} blink={t.blink ?? true} guide={t.referenceOverlay} boil={t.lineBoil} boilAmp={t.boilAmp ?? 0.5} />
       </CompositionStage>
       <TweaksPanel>
         <TweakSection label="Shot" />
         <TweakSelect label="View" value={t.view} options={[{ value: 'eye', label: 'In the eye (reflection)' }, { value: 'pov', label: 'POV (what the eye sees)' }]} onChange={(x) => setTweak('view', x)} />
         <TweakSelect label="Face light" value={t.face || 'liftc'} options={Object.keys(FACES).map((key) => ({ value: key, label: FACES[key] }))} onChange={(x) => setTweak('face', x)} />
-        <TweakToggle label="Blink at 1 s" value={!!t.blink} onChange={(x) => setTweak('blink', x)} />
+        <TweakToggle label="Blink at 1 s" value={t.blink ?? true} onChange={(x) => setTweak('blink', x)} />
         <TweakSection label="Preview" />
         <TweakToggle label="Narration guide" value={t.referenceOverlay} onChange={(x) => setTweak('referenceOverlay', x)} />
         <TweakToggle label="Line boil (8 fps)" value={t.lineBoil} onChange={(x) => setTweak('lineBoil', x)} />

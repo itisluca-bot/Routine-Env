@@ -453,6 +453,10 @@ The user chose D with C's contours from the start: `face=liftc` (H), now the def
 
 `--set blink=true` (default off): one blink at 1 s. A lid made of the face's own toned skin (the head image again, clipped to the eye and to an ellipse whose lower edge bows down) closes over the eye from 0.96 to 1.04 s, stays shut to 1.08 s and opens by 1.22 s (`BLINK`), with a dark line along its edge. The head's tone is computed once per frame (`headTone`) and drawn twice: the face, then the lid.
 
+### Round 11 (the blink kept; the light contour climbs to the edge)
+
+The user kept the blink (now on by default) and did not like the lightest contour (bottom right) dropping again toward the frame's edge: its highest point should be at the edge. The rise that makes it is now centred past the right edge, (2160, 1130), wider (2.1 eye radii) and a little stronger (0.13), so the contour climbs all the way to the edge.
+
 ## 21. The last shot: round 1 (concept stills)
 
 The user is replacing the second alley shot (Resistance, §13) with a last shot on the same line: "Coping is a form of resistance. The question is, what do people have to resist with?" The first alley is being reworked as the eye shot (§19–20). Brief: all three groups visible again, zooming out a bit on "coping". Two ideas, each built on a shot the audience has already seen. `Coping Concepts.dc.html` + `coping-concepts.jsx` (loads `curator-phone-kit.jsx` for `WarmPost`), on the Resistance timing (10.00 s: Resistance, Question, With, Tail, Hold). Stills at frame 150 (6.0 s).
