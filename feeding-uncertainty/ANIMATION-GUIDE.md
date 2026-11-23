@@ -449,6 +449,10 @@ The user: the backgrounds were wrong; looking down at the phone, the background 
 
 The user chose D with C's contours from the start: `face=liftc` (H), now the default. The field is C's frozen at look 0 (on the phone), and the tones slide up one step as he looks up (D's `shift`), so the contours hold still. Two touches, both soft Gaussian rises in the field: one centred up and left of the eye (`EYE_RISE` 0.06, radius 2 eye radii, centre 0.9 eye radii up and left) keeps the darker contour clear of the eye; one in the bottom right (`BR_RISE` 0.12, radius 1.45 eye radii, centre (1880, 1100)) adds one lighter contour there. A rise centred on the eye itself pulled the new light contour onto the eye's lower edge, hence the offset.
 
+### Round 10 (a blink, as a variant)
+
+`--set blink=true` (default off): one blink at 1 s. A lid made of the face's own toned skin (the head image again, clipped to the eye and to an ellipse whose lower edge bows down) closes over the eye from 0.96 to 1.04 s, stays shut to 1.08 s and opens by 1.22 s (`BLINK`), with a dark line along its edge. The head's tone is computed once per frame (`headTone`) and drawn twice: the face, then the lid.
+
 ## 21. The last shot: round 1 (concept stills)
 
 The user is replacing the second alley shot (Resistance, §13) with a last shot on the same line: "Coping is a form of resistance. The question is, what do people have to resist with?" The first alley is being reworked as the eye shot (§19–20). Brief: all three groups visible again, zooming out a bit on "coping". Two ideas, each built on a shot the audience has already seen. `Coping Concepts.dc.html` + `coping-concepts.jsx` (loads `curator-phone-kit.jsx` for `WarmPost`), on the Resistance timing (10.00 s: Resistance, Question, With, Tail, Hold). Stills at frame 150 (6.0 s).

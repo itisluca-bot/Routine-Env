@@ -388,21 +388,41 @@ function headImage(C, r, ang, lit, bf, amp, face = 'lobes', look = 0) {
   return cv.toDataURL('image/png');
 }
 // the head (in screen coordinates: C is the head's centre on screen), cut to its crisp outline
-function HeadMacro({ pose, lights, cam, bf, amp, face, look }) {
+function headTone({ pose, lights, cam, bf, amp, face, look }) {
   const R = window.FU_BEAN.rig(pose), Cw = toW(R.Hc), r = R.r * S_HEAD, C = [Cw[0] + cam[0], Cw[1] + cam[1]];
   const ang = -((pose.lean + pose.tilt) * Math.PI) / 180;   // the head's turn on screen (the figure faces left)
   // lights are directions from the head (u) with an intensity (i)
   // each light a broad, soft lobe toward its side of the head (round 3's bands, which the user preferred)
   const lit = lights.map((L) => ({ c: [C[0] + L.u[0] * r * 0.85, C[1] + L.u[1] * r * 0.85], R: r * 1.9, f: clamp(L.i, 0, 1) }));
-  const href = headImage(C, r, ang, lit, bf, amp, face, look);
+  return { href: headImage(C, r, ang, lit, bf, amp, face, look), C, r };
+}
+function HeadMacro({ tone }) {
   return (
     <g>
-      <clipPath id="hmClip"><circle cx={C[0]} cy={C[1]} r={r} /></clipPath>
-      <image href={href} x="0" y="0" width={HM_W} height={HM_H} clipPath="url(#hmClip)" preserveAspectRatio="none" />
+      <clipPath id="hmClip"><circle cx={tone.C[0]} cy={tone.C[1]} r={tone.r} /></clipPath>
+      <image href={tone.href} x="0" y="0" width={HM_W} height={HM_H} clipPath="url(#hmClip)" preserveAspectRatio="none" />
     </g>
   );
 }
-function EyeView({ T, k, look, face = 'liftc' }) {
+// the blink (variant `blink`): a lid of the face's own toned skin closes down over the eye and opens again, with a dark
+// line along its edge. BLINK: start closing, closed, start opening, open again (s)
+const BLINK = [0.96, 1.04, 1.08, 1.22];
+const blinkAt = (T) => ss(BLINK[0], BLINK[1], T) * (1 - ss(BLINK[2], BLINK[3], T));
+function Lid({ tone, b, E, er }) {
+  if (b < 0.005) return null;
+  const rx = 1.5 * er, ry = 1.1 * er, edge = E[1] - 1.06 * er + 2.14 * er * b, cy = edge - ry;   // the lid's lower edge bows down
+  return (
+    <g>
+      <clipPath id="lidEye"><circle cx={E[0]} cy={E[1]} r={er + 1.5} /></clipPath>
+      <clipPath id="lidShape"><ellipse cx={E[0]} cy={cy} rx={rx} ry={ry} /></clipPath>
+      <g clipPath="url(#lidEye)">
+        <g clipPath="url(#lidShape)"><image href={tone.href} x="0" y="0" width={HM_W} height={HM_H} preserveAspectRatio="none" /></g>
+        <ellipse cx={E[0]} cy={cy} rx={rx} ry={ry} fill="none" stroke={RC[0]} strokeWidth={0.05 * er} />
+      </g>
+    </g>
+  );
+}
+function EyeView({ T, k, look, face = 'liftc', blink = false }) {
   const pose = headPose(T), eW = toW(eyeLocal(pose));
   const c = [EYE_AT[0] - eW[0], EYE_AT[1] - eW[1]];
   const slide = -ROOM_SLIDE * look;   // the room slides up as he looks up (it slides, it does not turn: the user)
@@ -414,6 +434,7 @@ function EyeView({ T, k, look, face = 'liftc' }) {
   const dim = face === 'lift' ? 0.8 : 1;     // and a little dimmer: its brightest band was an island cut off by the frame's edge
   const lights = [headLight(pose, lerp(18, 18 + HEAD_TURN, lk), dim * lerp(0.45, 0.25, lk)), headLight(pose, lerp(-HEAD_TURN, 0, lk), dim * lerp(0.2, 0.78, lk))];
   const er = 3.8 * S_HEAD, m = er / RC_EYE, E = EYE_AT;
+  const tone = headTone({ pose, lights, cam: c, bf: k.bf, amp: k.amp, face, look });
   return (
     <g>
       <defs>
@@ -450,7 +471,7 @@ function EyeView({ T, k, look, face = 'liftc' }) {
         </g>
       </g>
       {/* the head, toned, lit by the phone and the TV */}
-      <HeadMacro pose={pose} lights={lights} cam={c} bf={k.bf} amp={k.amp} face={face} look={look} />
+      <HeadMacro tone={tone} />
       {/* the eye: a crisp dark disc in the rig's proportion; in it, the POV, mirrored and bowed */}
       <circle cx={E[0]} cy={E[1]} r={er} fill={RC[0]} />
       <g clipPath="url(#eyeClip)">
@@ -460,12 +481,13 @@ function EyeView({ T, k, look, face = 'liftc' }) {
         <circle cx={E[0]} cy={E[1]} r={er} fill="url(#eyeBall)" />
         <path d={`M ${E[0] - 0.66 * er} ${E[1] - 0.42 * er} Q ${E[0] - 0.52 * er} ${E[1] - 0.7 * er} ${E[0] - 0.24 * er} ${E[1] - 0.8 * er} Q ${E[0] - 0.46 * er} ${E[1] - 0.6 * er} ${E[0] - 0.58 * er} ${E[1] - 0.34 * er} Z`} fill={RC[6]} opacity="0.7" />
       </g>
+      {blink && <Lid tone={tone} b={blinkAt(T)} E={E} er={er} />}
     </g>
   );
 }
 
 // ── page ──────────────────────────────────────────────────────────────────────
-function Piece({ view, face, guide, boil, boilAmp }) {
+function Piece({ view, face, blink, guide, boil, boilAmp }) {
   const { T, CUES } = useComposition();
   const bf = Math.floor(T * 8), amp = boil ? boilAmp : 0;
   const k = { T, bf, amp };
@@ -481,7 +503,7 @@ function Piece({ view, face, guide, boil, boilAmp }) {
       <svg width={W} height={H} style={{ position: 'absolute', left: 0, top: 0 }}>
         <LookDefs ramps={['cur']} bf={bf} amp={amp} />
         <rect width={W} height={H} fill={RC[0]} />
-        {view === 'pov' ? <POV T={T} k={k} look={look} /> : <EyeView T={T} k={k} look={look} face={face} />}
+        {view === 'pov' ? <POV T={T} k={k} look={look} /> : <EyeView T={T} k={k} look={look} face={face} blink={blink} />}
       </svg>
       {guide && view !== 'pov' && <div style={{ position: 'absolute', left: 40, top: 30, font: '700 30px "Open Sans", sans-serif', color: '#fff', textShadow: '0 1px 12px rgba(0,0,0,0.8)' }}>{FACES[face] || face}</div>}
       {guide && <Captions items={items} style={{ font: '500 40px "Open Sans", sans-serif', bottom: '5%', textShadow: '0 1px 14px rgba(0,0,0,0.8)' }} />}
@@ -490,16 +512,17 @@ function Piece({ view, face, guide, boil, boilAmp }) {
 }
 
 function FUCuratorEye() {
-  const [t, setTweak] = useTweaks(window.TWEAK_DEFAULTS || { view: 'eye', face: 'liftc', referenceOverlay: false, lineBoil: true, boilAmp: 0.5 });
+  const [t, setTweak] = useTweaks(window.TWEAK_DEFAULTS || { view: 'eye', face: 'liftc', blink: false, referenceOverlay: false, lineBoil: true, boilAmp: 0.5 });
   return (
     <React.Fragment>
       <CompositionStage width={OUT_W} height={OUT_H} scenes={window.OM_SCENES} playback={window.OM_PLAYBACK} bg={RC[0]}>
-        <Piece view={t.view} face={t.face || 'liftc'} guide={t.referenceOverlay} boil={t.lineBoil} boilAmp={t.boilAmp ?? 0.5} />
+        <Piece view={t.view} face={t.face || 'liftc'} blink={!!t.blink} guide={t.referenceOverlay} boil={t.lineBoil} boilAmp={t.boilAmp ?? 0.5} />
       </CompositionStage>
       <TweaksPanel>
         <TweakSection label="Shot" />
         <TweakSelect label="View" value={t.view} options={[{ value: 'eye', label: 'In the eye (reflection)' }, { value: 'pov', label: 'POV (what the eye sees)' }]} onChange={(x) => setTweak('view', x)} />
         <TweakSelect label="Face light" value={t.face || 'liftc'} options={Object.keys(FACES).map((key) => ({ value: key, label: FACES[key] }))} onChange={(x) => setTweak('face', x)} />
+        <TweakToggle label="Blink at 1 s" value={!!t.blink} onChange={(x) => setTweak('blink', x)} />
         <TweakSection label="Preview" />
         <TweakToggle label="Narration guide" value={t.referenceOverlay} onChange={(x) => setTweak('referenceOverlay', x)} />
         <TweakToggle label="Line boil (8 fps)" value={t.lineBoil} onChange={(x) => setTweak('lineBoil', x)} />
