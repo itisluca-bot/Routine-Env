@@ -49,6 +49,14 @@ function reachArm(f, P) {
 }
 const armTo = (f, P, t = 1) => { if (t <= 0) return; f.pose = { ...f.pose, armN: mixA(f.pose.armN, reachArm(f, P), t) }; };
 const FOLD_N = [-10, 125], FOLD_F = [-6, 120];
+const ABOVE = 90;   // world y above the top edge of the zoomed frame (world 195 is the frame's top), where cards start
+const easeOut3 = (u) => 1 - Math.pow(1 - clampN(u, 0, 1), 3);
+// a card flying in from above: k 0..1 over [ta, ta + dur]; x0 its start x; to the resting {x, y, rot, flip}; sway: sideways bow
+function flyIn(T, ta, dur, x0, to, sway, ph) {
+  const u = clampN((T - ta) / dur, 0, 1), k = easeOut3(u);
+  return { k, x: lerp(x0, to.x, k) + sway * Math.sin(Math.PI * k), y: lerp(ABOVE, to.y, k),
+    rot: lerp(40 * Math.sin(T * 2.3 + 6 * ph), to.rot, k), flip: lerp(Math.cos(T * 6 + 9 * ph), to.flip, k * k) };
+}
 function Bean({ f, k, id, lights }) {
   return <ToneBean x={f.x} y={f.y} dir={f.dir ?? 1} s={f.s} pose={f.pose} ramp={f.ramp} hair={f.hair || 'none'} lights={lights}
     headScale={f.headScale || 1} id={id} bf={k.bf} amp={k.amp} />;
@@ -215,13 +223,13 @@ function blue(T, w) {
   const [wx, wy] = WIN[0];
   const posts = Array.from({ length: 12 }, (_, j) => {
     const h = (n) => hash(j * 7.3 + n * 3.1 + 11);
-    const ta = 0.2 + 0.7 * j, arr = glide(T, ta, ta + 1.4, 0, 1);
+    const ta = 0.1 + 0.7 * j;
     if (T < ta) return null;
     const a = (T - ta) * (0.25 + 0.2 * h(10)) * (h(11) > 0.5 ? 1 : -1);   // a slow drift round where they settle
     const rest = [x0 + 470 + 170 * h(1) + 40 * Math.cos(a + 6 * h(12)), 420 + 320 * h(3) + 30 * Math.sin(a + 6 * h(12))];
-    return { x: lerp(wx - 40 + 80 * h(2), rest[0], arr) + 8 * osc(T, 1.3, h(2)) * arr, y: lerp(wy - 60 + 120 * h(4), rest[1], arr) + 8 * osc(T, 0.9, h(4)) * arr,
-      rot: lerp(30 * Math.sin(T * 1.7 + 6 * h(5)), -10 + 20 * h(5) + 5 * osc(T, 2.1, h(6)), arr), flip: lerp(Math.cos(T * 5 + 9 * h(7)), 0.8 + 0.12 * osc(T, 1.6 + h(7), h(8)), arr),
-      s: lerp(0.45, 1.1 + 0.3 * h(9), arr), op: glide(T, ta, ta + 0.25, 0, 1), kind: POST_KINDS[(j * 2 + 1) % POST_KINDS.length] };
+    const to = { x: rest[0] + 8 * osc(T, 1.3, h(2)), y: rest[1] + 8 * osc(T, 0.9, h(4)), rot: -10 + 20 * h(5) + 5 * osc(T, 2.1, h(6)), flip: 0.8 + 0.12 * osc(T, 1.6 + h(7), h(8)) };
+    const f = flyIn(T, ta, 1.6 + 0.4 * h(13), rest[0] - 120 + 200 * h(2), to, -60 + 120 * h(14), h(7));
+    return { x: f.x, y: f.y, rot: f.rot, flip: f.flip, s: 1.1 + 0.3 * h(9), kind: POST_KINDS[(j * 2 + 1) % POST_KINDS.length] };
   }).filter(Boolean);
   return {
     back: <ToneBean key="c" x={x0 + 272} y={FLOOR - 28} s={GS * 0.92} view="front" pose={C} ramp="wd" hair="none" lights={lightsOf(0)} id={3} />,
@@ -234,10 +242,10 @@ function teal(T, w) {
   const [wx, wy] = WIN[1];
   // the post comes in through the window and settles between the kids at their eye height; once the loupes are on it,
   // it hardly moves
-  const arr = glide(T, 0.3, 1.9, 0, 1), held = glide(T, 1.6, 2.4, 0, 1);
+  const held = glide(T, 1.6, 2.4, 0, 1);
   const rest = [cx + lerp(6, 2, held) * osc(T, 2.6), FLOOR - 205 + lerp(6, 2, held) * osc(T, 1.9, 0.3)];
-  const p = { x: lerp(wx, rest[0], arr), y: lerp(wy, rest[1], arr), rot: lerp(30 * Math.sin(T * 1.6 + 2), -4 + lerp(4, 1.5, held) * osc(T, 2.1, 0.4), arr), s: lerp(0.5, 2.3, arr),
-    flip: lerp(Math.cos(T * 5 + 1), 0.97 + 0.02 * osc(T, 1.7), arr), kind: 'chart', op: glide(T, 0.3, 0.5, 0, 1) };
+  const fp = flyIn(T, 0.1, 1.8, rest[0] + 140, { x: rest[0], y: rest[1], rot: -4 + lerp(4, 1.5, held) * osc(T, 2.1, 0.4), flip: 0.97 + 0.02 * osc(T, 1.7) }, -50, 0.3);
+  const p = { x: fp.x, y: fp.y, rot: fp.rot, s: 2.3, flip: fp.flip, kind: 'chart' };
   const kid = (x, dir, ph, hair) => ({ x, y: FLOOR, s: GS * KS, dir, ramp: 'open', hair, headScale: 1.3, pose: { ...POSES.idle(T + ph) } });
   const K1 = kid(cx - 86, 1, 0.3, 'long'), K2 = kid(cx + 88, -1, 1.6, 'none');
   const loupe = [];
@@ -270,9 +278,12 @@ function teal(T, w) {
   const room = Array.from({ length: 4 }, (_, j) => {
     const h = (n) => hash(j * 5.1 + n * 2.7 + 31);
     const a = T * (0.3 + 0.2 * h(1)) * (h(2) > 0.5 ? 1 : -1) + 6.28 * h(3);
-    return { x: wx - 20 + (120 + 70 * h(4)) * Math.cos(a), y: wy + 10 + (90 + 50 * h(5)) * Math.sin(a), rot: -20 + 40 * h(6) + 10 * osc(T, 1.8, h(7)),
-      flip: 0.75 + 0.22 * Math.cos(T * 2.2 + 9 * h(8)), s: 0.9 + 0.3 * h(9), kind: POST_KINDS[(j * 3 + 2) % POST_KINDS.length], op: glide(T, 0.2 + 0.6 * j, 0.6 + 0.6 * j, 0, 1) };
-  });
+    const to = { x: wx - 20 + (120 + 70 * h(4)) * Math.cos(a), y: wy + 10 + (90 + 50 * h(5)) * Math.sin(a), rot: -20 + 40 * h(6) + 10 * osc(T, 1.8, h(7)), flip: 0.75 + 0.22 * Math.cos(T * 2.2 + 9 * h(8)) };
+    const ta = 0.6 + 1.1 * j;
+    if (T < ta) return null;
+    const f = flyIn(T, ta, 1.7, to.x - 100 + 200 * h(10), to, -50 + 100 * h(11), h(8));
+    return { x: f.x, y: f.y, rot: f.rot, flip: f.flip, s: 0.9 + 0.3 * h(9), kind: POST_KINDS[(j * 3 + 2) % POST_KINDS.length] };
+  }).filter(Boolean);
   return { figs: [{ f: P1, id: 11 }, { f: P2, id: 12 }, { f: K1, id: 13 }, { f: K2, id: 14 }], post: p, loupe, room };
 }
 function orange(T, w) {
