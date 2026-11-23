@@ -306,16 +306,53 @@ const hmEdge = (rho) => {   // the edge field of a circle: darker toward the out
   return S[S.length - 1][1];
 };
 const hmLight = (t) => (t >= 1 ? 0 : t < 0.45 ? 1 - (0.3 * t) / 0.45 : 0.7 * (1 - (t - 0.45) / 0.55));
-function headImage(C, r, ang, lit, bf, amp) {
+// Face-light variants (round 6, the `face` tweak). The rule for all: the face gets brighter as he looks up at the TV.
+const FACES = {
+  lobes: 'A · Lobes (round 5): the TV light comes in as a lobe beside the eye',
+  moon: 'B · Moon: the head as a sphere, one light swinging from below to the front; the terminator crosses the face',
+  wrap: 'C · Soft moon: the same light, wrapped round the head: wide, slow bands',
+  lift: 'D · Lift: the bands hold still; every band slides up one tone',
+  patch: 'E · Screen patches: the phone\'s small patch under the eye, then the TV\'s wide patch rises over the face',
+  rings: 'F · Rings: rings of light open out from the eye',
+  sweep: 'G · Sweep: light fills the face from its front edge backward',
+};
+const ss = (a, b, x) => { const t = clamp((x - a) / (b - a), 0, 1); return t * t * (3 - 2 * t); };
+const norm3 = (a) => { const n = Math.hypot(a[0], a[1], a[2]); return [a[0] / n, a[1] / n, a[2] / n]; };
+// the light value (before noise) at a point, for each variant. dx, dy: from the head's centre; ex, ey: from the eye
+function faceField(face, look, r, lit) {
+  const L = norm3([lerp(-0.45, -0.95, look), lerp(0.85, 0.05, look), 0.3]), I = lerp(0.62, 1, look);
+  const sphere = (dx, dy) => { const nx = dx / r, ny = dy / r; return [nx, ny, Math.sqrt(Math.max(0, 1 - nx * nx - ny * ny))]; };
+  const box = (x, y, a, b) => Math.pow(Math.pow(Math.abs(x / a), 4) + Math.pow(Math.abs(y / b), 4), 0.25);
+  switch (face) {
+    case 'moon': return (x, y, dx, dy, rho) => { const n = sphere(dx, dy); return 0.18 + 0.78 * I * Math.max(0, n[0] * L[0] + n[1] * L[1] + n[2] * L[2]) - 0.06 * hmEdge(rho); };
+    case 'wrap': return (x, y, dx, dy, rho) => { const n = sphere(dx, dy), d = n[0] * L[0] + n[1] * L[1] + n[2] * L[2]; return 0.2 + 0.7 * I * Math.max(0, (d + 0.7) / 1.7) - 0.08 * hmEdge(rho); };
+    case 'patch': return (x, y, dx, dy, rho, ex, ey) => {
+      const e = 3.8 * S_HEAD;   // sizes in eye radii: the frame shows about two eye radii either side of the eye
+      const ph = (1 - look) * 0.36 * ss(1, 0.55, box(ex - 0.1 * e, ey - 1.45 * e, 0.42 * e, 0.62 * e));
+      const tv = look * 0.62 * ss(1, 0.5, box(ex + 0.1 * e, ey - lerp(3.4, 0.1, look) * e, 1.75 * e, 1.2 * e));
+      return 0.34 * (1 - hmEdge(rho)) + ph + tv;
+    };
+    case 'rings': return (x, y, dx, dy, rho, ex, ey) => { const R = lerp(0.25, 0.95, look) * r, d = Math.hypot(ex, ey) / R; return (0.3 + 0.06 * look) * (1 - hmEdge(rho)) + lerp(0.2, 0.55, look) * Math.exp(-d * d); };
+    case 'sweep': return (x, y, dx, dy, rho) => { const n = sphere(dx, dy), s0 = -0.85 * n[0] + 0.3 * n[1], t = lerp(1.05, -0.25, look); return 0.26 * (1 - hmEdge(rho)) + lerp(0.25, 0.5, look) * ss(t - 0.35, t + 0.35, s0); };
+    default: return (x, y, dx, dy, rho) => {   // 'lobes', and 'lift' (its lights are frozen; the tones slide instead)
+      let keep = 1;
+      for (const l of lit) keep *= 1 - l.f * hmLight(Math.hypot(x - l.c[0], y - l.c[1]) / l.R);
+      return (1 - 0.66 * keep) * (1 - hmEdge(rho));
+    };
+  }
+}
+function headImage(C, r, ang, lit, bf, amp, face = 'lobes', look = 0) {
+  const field = faceField(face, look, r, lit), E = EYE_AT;
+  // 'lift': each band's colour slides toward the next tone up, so the contours stay where they are
+  const shift = face === 'lift' ? ss(0, 1, look) : 0;
+  const PAL = HM_RGB.map((c, k) => { const d = HM_RGB[Math.min(k + 1, HM_RGB.length - 1)]; return c.map((x, j) => x + (d[j] - x) * shift); });
   const gw = Math.ceil(HM_W / HM_G) + 2, gh = Math.ceil(HM_H / HM_G) + 2, F = new Float32Array(gw * gh);
   const ca = Math.cos(-ang), sa = Math.sin(-ang), cell = 0.18 * r, bcell = 0.09 * r, ba = 0.0025 * amp;
   for (let j = 0; j < gh; j++) for (let i = 0; i < gw; i++) {
     const x = (i - 1) * HM_G, y = (j - 1) * HM_G, dx = x - C[0], dy = y - C[1];
     const rho = Math.hypot(dx, dy) / r;
-    let keep = 1;
-    for (const L of lit) keep *= 1 - L.f * hmLight(Math.hypot(x - L.c[0], y - L.c[1]) / L.R);
     const hx = dx * ca - dy * sa, hy = dx * sa + dy * ca;   // noise fixed to the head, so it turns with it
-    F[j * gw + i] = (1 - 0.66 * keep) * (1 - hmEdge(rho)) + 0.022 * hmNoise(hx / cell, hy / cell, 3) + ba * hmNoise(hx / bcell, hy / bcell, 11 + (bf % 4) * 7);
+    F[j * gw + i] = field(x, y, dx, dy, rho, x - E[0], y - E[1]) + 0.022 * hmNoise(hx / cell, hy / cell, 3) + ba * hmNoise(hx / bcell, hy / bcell, 11 + (bf % 4) * 7);
   }
   const cv = document.createElement('canvas'); cv.width = HM_W; cv.height = HM_H;
   const g = cv.getContext('2d'), im = g.createImageData(HM_W, HM_H), D = im.data, N = 7;
@@ -329,9 +366,9 @@ function headImage(C, r, ang, lit, bf, amp) {
       const grad = Math.hypot(gxv, gyv) + 1e-6, k = clamp(val * N, 0, N - 1e-4), band = Math.floor(k);
       // distance (px) to the nearest threshold; blend across it over one pixel
       const up = (band + 1 - k) / N / grad, dn = (k - band) / N / grad;
-      let c0 = HM_RGB[band], c1 = c0, t = 0;
-      if (up < 0.5 && band < N - 1) { c1 = HM_RGB[band + 1]; t = 0.5 - up; }
-      else if (dn < 0.5 && band > 0) { c1 = HM_RGB[band - 1]; t = 0.5 - dn; }
+      let c0 = PAL[band], c1 = c0, t = 0;
+      if (up < 0.5 && band < N - 1) { c1 = PAL[band + 1]; t = 0.5 - up; }
+      else if (dn < 0.5 && band > 0) { c1 = PAL[band - 1]; t = 0.5 - dn; }
       const q = (y * HM_W + x) * 4;
       D[q] = c0[0] + (c1[0] - c0[0]) * t; D[q + 1] = c0[1] + (c1[1] - c0[1]) * t; D[q + 2] = c0[2] + (c1[2] - c0[2]) * t; D[q + 3] = 255;
     }
@@ -340,13 +377,13 @@ function headImage(C, r, ang, lit, bf, amp) {
   return cv.toDataURL('image/png');
 }
 // the head (in screen coordinates: C is the head's centre on screen), cut to its crisp outline
-function HeadMacro({ pose, lights, cam, bf, amp }) {
+function HeadMacro({ pose, lights, cam, bf, amp, face, look }) {
   const R = window.FU_BEAN.rig(pose), Cw = toW(R.Hc), r = R.r * S_HEAD, C = [Cw[0] + cam[0], Cw[1] + cam[1]];
   const ang = -((pose.lean + pose.tilt) * Math.PI) / 180;   // the head's turn on screen (the figure faces left)
   // lights are directions from the head (u) with an intensity (i)
   // each light a broad, soft lobe toward its side of the head (round 3's bands, which the user preferred)
   const lit = lights.map((L) => ({ c: [C[0] + L.u[0] * r * 0.85, C[1] + L.u[1] * r * 0.85], R: r * 1.9, f: clamp(L.i, 0, 1) }));
-  const href = headImage(C, r, ang, lit, bf, amp);
+  const href = headImage(C, r, ang, lit, bf, amp, face, look);
   return (
     <g>
       <clipPath id="hmClip"><circle cx={C[0]} cy={C[1]} r={r} /></clipPath>
@@ -354,7 +391,7 @@ function HeadMacro({ pose, lights, cam, bf, amp }) {
     </g>
   );
 }
-function EyeView({ T, k, look }) {
+function EyeView({ T, k, look, face = 'lobes' }) {
   const pose = headPose(T), eW = toW(eyeLocal(pose));
   const c = [EYE_AT[0] - eW[0], EYE_AT[1] - eW[1]];
   const slide = ROOM_SLIDE * look;   // the room slides down as he looks up (it slides, it does not turn: the user)
@@ -362,7 +399,8 @@ function EyeView({ T, k, look }) {
   // one light leads at a time (two equal lights from above and below pinched the bands at eye level): the phone while
   // they read, the TV once they face it, brighter, so the face is more lit
   // round 3's bands, inverted as the user asked: there the face lost its highlight when he looked up; here it gains it
-  const lights = [headLight(pose, lerp(18, 18 + HEAD_TURN, look), lerp(0.45, 0.25, look)), headLight(pose, lerp(-HEAD_TURN, 0, look), lerp(0.2, 0.78, look))];
+  const lk = face === 'lift' ? 0.5 : look;   // 'lift' holds the lobes' lights half way and slides the tones instead
+  const lights = [headLight(pose, lerp(18, 18 + HEAD_TURN, lk), lerp(0.45, 0.25, lk)), headLight(pose, lerp(-HEAD_TURN, 0, lk), lerp(0.2, 0.78, lk))];
   const er = 3.8 * S_HEAD, m = er / RC_EYE, E = EYE_AT;
   return (
     <g>
@@ -398,7 +436,7 @@ function EyeView({ T, k, look }) {
         </g>
       </g>
       {/* the head, toned, lit by the phone and the TV */}
-      <HeadMacro pose={pose} lights={lights} cam={c} bf={k.bf} amp={k.amp} />
+      <HeadMacro pose={pose} lights={lights} cam={c} bf={k.bf} amp={k.amp} face={face} look={look} />
       {/* the eye: a crisp dark disc in the rig's proportion; in it, the POV, mirrored and bowed */}
       <circle cx={E[0]} cy={E[1]} r={er} fill={RC[0]} />
       <g clipPath="url(#eyeClip)">
@@ -413,7 +451,7 @@ function EyeView({ T, k, look }) {
 }
 
 // ── page ──────────────────────────────────────────────────────────────────────
-function Piece({ view, guide, boil, boilAmp }) {
+function Piece({ view, face, guide, boil, boilAmp }) {
   const { T, CUES } = useComposition();
   const bf = Math.floor(T * 8), amp = boil ? boilAmp : 0;
   const k = { T, bf, amp };
@@ -429,23 +467,25 @@ function Piece({ view, guide, boil, boilAmp }) {
       <svg width={W} height={H} style={{ position: 'absolute', left: 0, top: 0 }}>
         <LookDefs ramps={['cur']} bf={bf} amp={amp} />
         <rect width={W} height={H} fill={RC[0]} />
-        {view === 'pov' ? <POV T={T} k={k} look={look} /> : <EyeView T={T} k={k} look={look} />}
+        {view === 'pov' ? <POV T={T} k={k} look={look} /> : <EyeView T={T} k={k} look={look} face={face} />}
       </svg>
+      {guide && view !== 'pov' && <div style={{ position: 'absolute', left: 40, top: 30, font: '700 30px "Open Sans", sans-serif', color: '#fff', textShadow: '0 1px 12px rgba(0,0,0,0.8)' }}>{FACES[face] || face}</div>}
       {guide && <Captions items={items} style={{ font: '500 40px "Open Sans", sans-serif', bottom: '5%', textShadow: '0 1px 14px rgba(0,0,0,0.8)' }} />}
     </div>
   );
 }
 
 function FUCuratorEye() {
-  const [t, setTweak] = useTweaks(window.TWEAK_DEFAULTS || { view: 'eye', referenceOverlay: false, lineBoil: true, boilAmp: 0.5 });
+  const [t, setTweak] = useTweaks(window.TWEAK_DEFAULTS || { view: 'eye', face: 'lobes', referenceOverlay: false, lineBoil: true, boilAmp: 0.5 });
   return (
     <React.Fragment>
       <CompositionStage width={OUT_W} height={OUT_H} scenes={window.OM_SCENES} playback={window.OM_PLAYBACK} bg={RC[0]}>
-        <Piece view={t.view} guide={t.referenceOverlay} boil={t.lineBoil} boilAmp={t.boilAmp ?? 0.5} />
+        <Piece view={t.view} face={t.face || 'lobes'} guide={t.referenceOverlay} boil={t.lineBoil} boilAmp={t.boilAmp ?? 0.5} />
       </CompositionStage>
       <TweaksPanel>
         <TweakSection label="Shot" />
         <TweakSelect label="View" value={t.view} options={[{ value: 'eye', label: 'In the eye (reflection)' }, { value: 'pov', label: 'POV (what the eye sees)' }]} onChange={(x) => setTweak('view', x)} />
+        <TweakSelect label="Face light" value={t.face || 'lobes'} options={Object.keys(FACES).map((key) => ({ value: key, label: FACES[key] }))} onChange={(x) => setTweak('face', x)} />
         <TweakSection label="Preview" />
         <TweakToggle label="Narration guide" value={t.referenceOverlay} onChange={(x) => setTweak('referenceOverlay', x)} />
         <TweakToggle label="Line boil (8 fps)" value={t.lineBoil} onChange={(x) => setTweak('lineBoil', x)} />

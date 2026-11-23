@@ -423,6 +423,20 @@ The user: the background should slide, not rotate; they liked round 3's contours
 - **The room slides** straight down (`ROOM_SLIDE` 540 px) as he looks up; the head and camera stay fixed. Laid out as seen on the phone: the TV glow ends straight ahead of the face, a window and a lamp above come down into view.
 - **Bands:** round 3's again (edge falloff from 0.3 of the radius to 0.56 at the outline; each light a broad lobe, centred 0.85 r toward its side, 1.9 r wide), with round 3's behaviour inverted: there the face lost its highlight as he looked up; now it gains it. On the phone: phone 18° below the gaze at 0.45, TV above at 0.2 (darker, bands parallel to the outline); on the TV: the TV straight ahead at 0.78, the phone 44° below at 0.25 (a light lobe beside the eye).
 
+### Round 6 (face-light variations)
+
+The user found the face's contours odd and asked for variations; the rule for all: the face gets brighter as he looks up. `--set face=<key>` (default `lobes`); with `--guide` the variant's name shows top left.
+
+| Key | Variant |
+|---|---|
+| `lobes` | A · round 5: the TV light comes in as a lobe beside the eye |
+| `moon` | B · the head as a sphere lit by one light that swings from below (phone) to the front (TV), brighter on the TV; the terminator crosses the face like a moon's phase |
+| `wrap` | C · the same light wrapped round the head: wide, slow bands |
+| `lift` | D · the lobes' lights held half way, so the contours stay put; every band's colour slides up one tone |
+| `patch` | E · screen-shaped patches: the phone's small upright patch under the eye fades, the TV's wide patch rises from below over the eye |
+| `rings` | F · rings of light open out from the eye |
+| `sweep` | G · light fills the face from its front edge backward; near-straight contours travel across the face |
+
 ## 21. The last shot: round 1 (concept stills)
 
 The user is replacing the second alley shot (Resistance, §13) with a last shot on the same line: "Coping is a form of resistance. The question is, what do people have to resist with?" The first alley is being reworked as the eye shot (§19–20). Brief: all three groups visible again, zooming out a bit on "coping". Two ideas, each built on a shot the audience has already seen. `Coping Concepts.dc.html` + `coping-concepts.jsx` (loads `curator-phone-kit.jsx` for `WarmPost`), on the Resistance timing (10.00 s: Resistance, Question, With, Tail, Hold). Stills at frame 150 (6.0 s).
