@@ -252,7 +252,8 @@ const HAND_AT = [960, 560];
 // its edge blur needs a filter surface of several gigabytes.) The lights are the scene's: the phone below and in front,
 // the TV in front (to the left).
 // The camera is fixed to the head, locked on the eye: the face holds still on screen. When the curator looks up, the
-// room behind slides down (ROOM_SLIDE) and the lights swing round the face by HEAD_TURN. The TV comes round to the front of the face and lights it more;
+// room behind slides up (ROOM_SLIDE): on the phone the strip past the profile shows the top of the wall and the
+// ceiling, on the TV the wall with the TV's glow level with the eye. The lights swing round the face by HEAD_TURN. The TV comes round to the front of the face and lights it more;
 // the phone falls away below. (Round 2 moved the camera with the eye while the head tilted about the neck: the eye
 // swung up and back by nearly 1000 px and the room slid sideways instead of dropping.)
 const S_HEAD = 80, EYE_AT = [1290, 540];
@@ -275,7 +276,7 @@ const FISH = (() => {
 })();
 // the head as the camera sees it (fixed to the head: only a breath of movement)
 const HEAD_TURN = 26;   // degrees the head turns back from the phone to the TV (swings the lights round the face)
-const ROOM_SLIDE = 540; // px the room behind slides down as he looks up
+const ROOM_SLIDE = 540; // px the room behind slides up as he looks up (round 7 slid it down: the wrong way)
 const headPose = (T) => ({ hx: 0, lean: 8 + 0.3 * osc(T, 3.6), tilt: 0 + 0.4 * osc(T, 2.9, 0.2),
   legN: [82, 84], legF: [78, 80], armN: [26, 100], armF: [20, 106], phone: 0 });
 // a light seen from the head: `a` degrees below the gaze (negative: above), intensity i
@@ -396,7 +397,7 @@ function HeadMacro({ pose, lights, cam, bf, amp, face, look }) {
 function EyeView({ T, k, look, face = 'lobes' }) {
   const pose = headPose(T), eW = toW(eyeLocal(pose));
   const c = [EYE_AT[0] - eW[0], EYE_AT[1] - eW[1]];
-  const slide = ROOM_SLIDE * look;   // the room slides down as he looks up (it slides, it does not turn: the user)
+  const slide = -ROOM_SLIDE * look;   // the room slides up as he looks up (it slides, it does not turn: the user)
   // on the phone: the phone just below the gaze, the TV above it; on the TV: the TV straight ahead, the phone far below
   // one light leads at a time (two equal lights from above and below pinched the bands at eye level): the phone while
   // they read, the TV once they face it, brighter, so the face is more lit
@@ -422,20 +423,22 @@ function EyeView({ T, k, look, face = 'lobes' }) {
       {/* the room in front of the curator, behind their profile, out of focus */}
       <g filter="url(#eyeRoom)">
         <g transform={`translate(0 ${slide.toFixed(2)})`}>
-          {/* laid out as seen while looking at the phone; it slides down ROOM_SLIDE as he looks up. The TV ends straight
-              ahead of the face (along the gaze, 8° below level); a window and a lamp above come down into view */}
-          <rect x="-400" y="-900" width="2720" height="2400" fill={v(0.15)} />
-          <ellipse cx="110" cy="170" rx="420" ry="320" fill={v(0.4)} />
-          <rect x="-50" y="60" width="320" height="220" rx="10" fill={v(0.68)} />
-          <rect x="-50" y="286" width="320" height="22" fill={v(0.24)} />
-          <rect x="-200" y="560" width="900" height="16" fill={v(0.26)} />
-          <rect x="300" y="500" width="70" height="60" fill={v(0.22)} /><rect x="390" y="480" width="44" height="80" fill={v(0.3)} />
-          <rect x="-200" y="760" width="900" height="600" fill={v(0.1)} />
-          <rect x="360" y="-520" width="290" height="380" fill={v(0.3)} />
-          <rect x="380" y="-500" width="250" height="340" fill={v(0.07)} />
-          <rect x="498" y="-500" width="14" height="340" fill={v(0.3)} /><rect x="380" y="-350" width="250" height="14" fill={v(0.3)} />
-          <ellipse cx="-40" cy="-380" rx="150" ry="110" fill={v(0.55)} />
-          <rect x="-200" y="-760" width="900" height="70" fill={v(0.2)} />
+          {/* laid out as seen while looking at the phone: the ceiling with a hanging lamp, the cornice, the top of the wall
+              with a window. It slides up ROOM_SLIDE as he looks up, until the wall shows with the TV's glow level with the
+              eye (along the gaze, 8° below level) and the sideboard under it */}
+          <rect x="-400" y="-900" width="2720" height="3000" fill={v(0.15)} />
+          <rect x="-400" y="-900" width="2720" height="1230" fill={v(0.2)} />
+          <ellipse cx="90" cy="150" rx="260" ry="170" fill={v(0.34)} />
+          <rect x="86" y="-900" width="8" height="1000" fill={v(0.3)} />
+          <path d="M 40 150 Q 90 70 140 150 Z" fill={v(0.62)} />
+          <rect x="-400" y="330" width="2720" height="18" fill={v(0.28)} />
+          <rect x="50" y="470" width="290" height="420" fill={v(0.27)} />
+          <rect x="70" y="490" width="250" height="380" fill={v(0.07)} />
+          <rect x="188" y="490" width="14" height="380" fill={v(0.27)} /><rect x="70" y="660" width="250" height="14" fill={v(0.27)} />
+          <ellipse cx="110" cy="1250" rx="420" ry="320" fill={v(0.4)} />
+          <rect x="-50" y="1140" width="320" height="220" rx="10" fill={v(0.68)} />
+          <rect x="-200" y="1420" width="900" height="80" fill={v(0.22)} />
+          <rect x="-400" y="1580" width="2720" height="600" fill={v(0.1)} />
         </g>
       </g>
       {/* the head, toned, lit by the phone and the TV */}

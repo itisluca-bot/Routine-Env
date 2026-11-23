@@ -441,6 +441,10 @@ The user found the face's contours odd and asked for variations; the rule for al
 
 The user narrowed it to C (`wrap`) or D (`lift`). C: the brighter light has to be on the right; its light now comes from the right, behind the eye, and toward the camera (direction from (0.15, 0.85, 0.65) on the phone to (0.55, 0.05, 0.65) on the TV), so on the TV the brightest bands are right of the eye. D: a bright field on the right looked clipped (its brightest band was an island cut by the frame's edge); D's lights are 20% dimmer, so that band no longer forms.
 
+### Round 8 (the room slides the right way)
+
+The user: the backgrounds were wrong; looking down at the phone, the background should be wall and ceiling; looking ahead at the TV, the wall. Since round 5 the room had slid down as he looked up, bringing a window and lamp above into view on the TV: the wrong way. Now it slides up (`ROOM_SLIDE` 540 px): on the phone the strip past the profile shows the ceiling with a hanging lamp, the cornice and the top of the wall with a window; on the TV, the wall with the TV's glow level with the eye and the sideboard under it.
+
 ## 21. The last shot: round 1 (concept stills)
 
 The user is replacing the second alley shot (Resistance, §13) with a last shot on the same line: "Coping is a form of resistance. The question is, what do people have to resist with?" The first alley is being reworked as the eye shot (§19–20). Brief: all three groups visible again, zooming out a bit on "coping". Two ideas, each built on a shot the audience has already seen. `Coping Concepts.dc.html` + `coping-concepts.jsx` (loads `curator-phone-kit.jsx` for `WarmPost`), on the Resistance timing (10.00 s: Resistance, Question, With, Tail, Hold). Stills at frame 150 (6.0 s).
