@@ -325,7 +325,9 @@ function faceField(face, look, r, lit) {
   const box = (x, y, a, b) => Math.pow(Math.pow(Math.abs(x / a), 4) + Math.pow(Math.abs(y / b), 4), 0.25);
   switch (face) {
     case 'moon': return (x, y, dx, dy, rho) => { const n = sphere(dx, dy); return 0.18 + 0.78 * I * Math.max(0, n[0] * L[0] + n[1] * L[1] + n[2] * L[2]) - 0.06 * hmEdge(rho); };
-    case 'wrap': return (x, y, dx, dy, rho) => { const n = sphere(dx, dy), d = n[0] * L[0] + n[1] * L[1] + n[2] * L[2]; return 0.2 + 0.7 * I * Math.max(0, (d + 0.7) / 1.7) - 0.08 * hmEdge(rho); };
+    // the light comes from the right, behind the eye (the user: the brighter light on the right), toward the camera
+    case 'wrap': { const Lr = norm3([lerp(0.15, 0.55, look), lerp(0.85, 0.05, look), 0.65]);
+      return (x, y, dx, dy, rho) => { const n = sphere(dx, dy), d = n[0] * Lr[0] + n[1] * Lr[1] + n[2] * Lr[2]; return 0.2 + 0.7 * I * Math.max(0, (d + 0.7) / 1.7) - 0.08 * hmEdge(rho); }; }
     case 'patch': return (x, y, dx, dy, rho, ex, ey) => {
       const e = 3.8 * S_HEAD;   // sizes in eye radii: the frame shows about two eye radii either side of the eye
       const ph = (1 - look) * 0.36 * ss(1, 0.55, box(ex - 0.1 * e, ey - 1.45 * e, 0.42 * e, 0.62 * e));
@@ -400,7 +402,8 @@ function EyeView({ T, k, look, face = 'lobes' }) {
   // they read, the TV once they face it, brighter, so the face is more lit
   // round 3's bands, inverted as the user asked: there the face lost its highlight when he looked up; here it gains it
   const lk = face === 'lift' ? 0.5 : look;   // 'lift' holds the lobes' lights half way and slides the tones instead
-  const lights = [headLight(pose, lerp(18, 18 + HEAD_TURN, lk), lerp(0.45, 0.25, lk)), headLight(pose, lerp(-HEAD_TURN, 0, lk), lerp(0.2, 0.78, lk))];
+  const dim = face === 'lift' ? 0.8 : 1;     // and a little dimmer: its brightest band was an island cut off by the frame's edge
+  const lights = [headLight(pose, lerp(18, 18 + HEAD_TURN, lk), dim * lerp(0.45, 0.25, lk)), headLight(pose, lerp(-HEAD_TURN, 0, lk), dim * lerp(0.2, 0.78, lk))];
   const er = 3.8 * S_HEAD, m = er / RC_EYE, E = EYE_AT;
   return (
     <g>
