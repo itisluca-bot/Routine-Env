@@ -459,6 +459,10 @@ The user kept the blink (now on by default) and did not like the lightest contou
 
 **Exported at 4K** (November 2026): `node tools/render.mjs "Curator Eye.dc.html" --settle 60 --preview` with the defaults (`view=eye`, `face=liftc`, `blink=true`, no captions): 225 frames, 3840 × 2160, in `renders/curator-eye/` (about 9.5 minutes). Checked: no isolated jumps between frames (the largest changes are the two glances and the blink); frames 25–29 are smaller files because the eye is shut, not because a tile is missing. The timing is still the estimate (9.00 s); retime when the SRT arrives.
 
+### Round 12 (a larger TV)
+
+The user: the TV can be a bit larger. In the POV it is now 920 wide (was 720) and spans -0.17 to 0.33 rad (was -0.12 to 0.27); the picture is scaled uniformly (it was stretched vertically to the screen, which would have squashed the beanoids at the new size); its glow on the wall, the posts round it and the sideboard (now 1160 wide, the plant moved to its right end) grow with it; the TV's glow behind the head in the eye view is larger to match. Re-exported at 4K.
+
 ## 21. The last shot: round 1 (concept stills)
 
 The user is replacing the second alley shot (Resistance, §13) with a last shot on the same line: "Coping is a form of resistance. The question is, what do people have to resist with?" The first alley is being reworked as the eye shot (§19–20). Brief: all three groups visible again, zooming out a bit on "coping". Two ideas, each built on a shot the audience has already seen. `Coping Concepts.dc.html` + `coping-concepts.jsx` (loads `curator-phone-kit.jsx` for `WarmPost`), on the Resistance timing (10.00 s: Resistance, Question, With, Tail, Hold). Stills at frame 150 (6.0 s).

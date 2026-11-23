@@ -172,14 +172,14 @@ function POV({ T, k, look }) {
   const press = SWIPES.some(([a, b]) => T > a && T < b) ? 1 : 0;
 
   // the room, by elevation: wall from the skirting (-0.3) up, the TV on the wall, a sideboard under it
-  const [wy, wh] = span(-0.3, 1.2, p), [tvy, tvh] = span(-0.12, 0.27, p), [sby, sbh] = span(-0.3, -0.19, p);
+  const [wy, wh] = span(-0.3, 1.2, p), [tvy, tvh] = span(-0.17, 0.33, p), [sby, sbh] = span(-0.3, -0.19, p);
   const [piy, pih] = span(0.02, 0.24, p), [wiy, wih] = span(-0.06, 0.36, p);
-  const tv = [600, tvy, 720, tvh];
+  const tv = [500, tvy, 920, tvh];   // round 12: larger (was 720 wide, -0.12..0.27)
   const [cty, cth] = span(-0.52, -0.37, p), [cfy, cfh] = span(-0.64, -0.52, p);
   // only the posts inside the frame (a red-graded group lying wholly outside it left a dark square in the corner)
   const moths = Array.from({ length: 5 }, (_, i) => {
     const h = (n) => hash(i * 6.1 + n * 2.7 + 9), a = T * (0.5 + 0.4 * h(1)) * (h(2) > 0.5 ? 1 : -1) + 6.28 * h(3);
-    const e = 0.08 + 0.2 * h(4) * Math.sin(a), x = 960 + (420 + 160 * h(5)) * Math.cos(a), y = Yp(e, p);
+    const e = 0.08 + 0.2 * h(4) * Math.sin(a), x = 960 + (540 + 160 * h(5)) * Math.cos(a), y = Yp(e, p);
     return y > -60 && y < 1140 ? <PostValue key={i} kind={POST_KINDS[(i * 4 + 2) % POST_KINDS.length]} x={x} y={y} s={1.5 + 0.5 * h(6)} rot={-30 + 60 * h(7) + 12 * osc(T, 1.3 + h(8))} flip={Math.cos(T * (2 + 2 * h(9)) + 6 * h(1))} /> : null;
   }).filter(Boolean);
   return (
@@ -195,8 +195,8 @@ function POV({ T, k, look }) {
       <g filter="url(#povFar)">
         <rect x="-400" y="-700" width="2720" height="2500" fill={v(0.1)} />
         <rect x="-400" y={wy} width="2720" height={wh} fill={v(0.17)} />
-        <ellipse cx="960" cy={tvy + tvh * 0.5} rx={760 * fl} ry={tvh * 1.25 * fl} fill={v(0.27)} />
-        <ellipse cx="960" cy={tvy + tvh * 0.5} rx={500 * fl} ry={tvh * 0.85 * fl} fill={v(0.38)} />
+        <ellipse cx="960" cy={tvy + tvh * 0.5} rx={900 * fl} ry={tvh * 1.2 * fl} fill={v(0.27)} />
+        <ellipse cx="960" cy={tvy + tvh * 0.5} rx={620 * fl} ry={tvh * 0.82 * fl} fill={v(0.38)} />
         <rect x="1500" y={wiy} width="300" height={wih} fill={v(0.24)} />
         <rect x="1520" y={wiy + 16} width="260" height={wih - 32} fill={v(0.07)} />
         <rect x="1644" y={wiy + 16} width="12" height={wih - 32} fill={v(0.22)} />
@@ -204,15 +204,15 @@ function POV({ T, k, look }) {
         <rect x="150" y={piy} width="230" height={pih} fill={v(0.12)} stroke={v(0.3)} strokeWidth="12" />
         <rect x="-400" y={wy + wh - 18} width="2720" height="18" fill={v(0.1)} />
         <rect x="-400" y={wy + wh} width="2720" height="1600" fill={v(0.12)} />
-        <rect x="520" y={sby} width="880" height={sbh} fill={v(0.2)} />
-        <rect x="520" y={sby} width="880" height={sbh * 0.14} fill={v(0.3)} />
-        <rect x="560" y={sby + sbh * 0.3} width="380" height={sbh * 0.5} fill={v(0.15)} /><rect x="980" y={sby + sbh * 0.3} width="380" height={sbh * 0.5} fill={v(0.15)} />
-        <path d={`M 1300 ${sby} q -50 ${-sbh * 1.2} -10 ${-sbh * 2.2} q 30 ${sbh} 30 ${sbh * 2.2} Z M 1320 ${sby} q 40 ${-sbh * 1.5} 80 ${-sbh * 1.9} q -40 ${sbh * 0.8} -60 ${sbh * 1.9} Z`} fill={v(0.2)} />
-        <rect x="1290" y={sby - sbh * 0.3} width="50" height={sbh * 0.3} fill={v(0.3)} />
+        <rect x="420" y={sby} width="1160" height={sbh} fill={v(0.2)} />
+        <rect x="420" y={sby} width="1160" height={sbh * 0.14} fill={v(0.3)} />
+        <rect x="460" y={sby + sbh * 0.3} width="520" height={sbh * 0.5} fill={v(0.15)} /><rect x="1020" y={sby + sbh * 0.3} width="520" height={sbh * 0.5} fill={v(0.15)} />
+        <path d={`M 1480 ${sby} q -50 ${-sbh * 1.2} -10 ${-sbh * 2.2} q 30 ${sbh} 30 ${sbh * 2.2} Z M 1500 ${sby} q 40 ${-sbh * 1.5} 80 ${-sbh * 1.9} q -40 ${sbh * 0.8} -60 ${sbh * 1.9} Z`} fill={v(0.2)} />
+        <rect x="1470" y={sby - sbh * 0.3} width="50" height={sbh * 0.3} fill={v(0.3)} />
         <rect x={tv[0] - 14} y={tv[1] - 14} width={tv[2] + 28} height={tv[3] + 28} rx="6" fill={v(0.06)} />
       </g>
       <g filter="url(#povTV)">
-        <g transform={`translate(${tv[0]} ${tv[1]}) scale(1 ${tv[3] / 400})`}><TVNews w={tv[2]} h={400} T={T} kind={T < CUT_T ? 'anchor' : 'podium'} /></g>
+        <g transform={`translate(${tv[0]} ${tv[1]}) scale(${tv[3] / 400})`}><TVNews w={(tv[2] * 400) / tv[3]} h={400} T={T} kind={T < CUT_T ? 'anchor' : 'podium'} /></g>
       </g>
       {moths.length > 0 && <g filter="url(#povTV)">{moths}</g>}
       {/* mid: the coffee table and the rug; the phone's glow on the lap */}
@@ -464,9 +464,9 @@ function EyeView({ T, k, look, face = 'liftc', blink = true }) {
           <rect x="50" y="470" width="290" height="420" fill={v(0.27)} />
           <rect x="70" y="490" width="250" height="380" fill={v(0.07)} />
           <rect x="188" y="490" width="14" height="380" fill={v(0.27)} /><rect x="70" y="660" width="250" height="14" fill={v(0.27)} />
-          <ellipse cx="110" cy="1250" rx="420" ry="320" fill={v(0.4)} />
-          <rect x="-50" y="1140" width="320" height="220" rx="10" fill={v(0.68)} />
-          <rect x="-200" y="1420" width="900" height="80" fill={v(0.22)} />
+          <ellipse cx="110" cy="1250" rx="520" ry="400" fill={v(0.4)} />
+          <rect x="-120" y="1100" width="420" height="290" rx="10" fill={v(0.68)} />
+          <rect x="-200" y="1440" width="900" height="80" fill={v(0.22)} />
           <rect x="-400" y="1580" width="2720" height="600" fill={v(0.1)} />
         </g>
       </g>
