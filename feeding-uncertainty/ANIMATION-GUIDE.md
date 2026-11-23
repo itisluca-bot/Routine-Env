@@ -457,6 +457,8 @@ The user chose D with C's contours from the start: `face=liftc` (H), now the def
 
 The user kept the blink (now on by default) and did not like the lightest contour (bottom right) dropping again toward the frame's edge: its highest point should be at the edge. The rise that makes it is now centred past the right edge, (2160, 1130), wider (2.1 eye radii) and a little stronger (0.13), so the contour climbs all the way to the edge.
 
+**Exported at 4K** (November 2026): `node tools/render.mjs "Curator Eye.dc.html" --settle 60 --preview` with the defaults (`view=eye`, `face=liftc`, `blink=true`, no captions): 225 frames, 3840 × 2160, in `renders/curator-eye/` (about 9.5 minutes). Checked: no isolated jumps between frames (the largest changes are the two glances and the blink); frames 25–29 are smaller files because the eye is shut, not because a tile is missing. The timing is still the estimate (9.00 s); retime when the SRT arrives.
+
 ## 21. The last shot: round 1 (concept stills)
 
 The user is replacing the second alley shot (Resistance, §13) with a last shot on the same line: "Coping is a form of resistance. The question is, what do people have to resist with?" The first alley is being reworked as the eye shot (§19–20). Brief: all three groups visible again, zooming out a bit on "coping". Two ideas, each built on a shot the audience has already seen. `Coping Concepts.dc.html` + `coping-concepts.jsx` (loads `curator-phone-kit.jsx` for `WarmPost`), on the Resistance timing (10.00 s: Resistance, Question, With, Tail, Hold). Stills at frame 150 (6.0 s).
