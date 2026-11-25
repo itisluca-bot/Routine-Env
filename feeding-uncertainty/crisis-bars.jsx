@@ -34,6 +34,9 @@ const GROUPS = ['wd', 'open', 'cur'];
 const NAME = { wd: 'Withdrawal', open: 'Open Engagement', cur: 'Curation' };
 const TXT = { wd: '#8ea6b6', open: '#8cc2b8', cur: '#e0a165' };   // the group colours lifted for type on the dark
 const LINE = { wd: [25.7, -1.06], open: [28.2, -1.54], cur: [21.7, 4.91] }, POOL = [25.92, -0.24];
+// `level` = 'lowered' (default, the user's call, round 9): withdrawal and open stand 3 points below their Figure 3 levels,
+// so the curator stands out more at "more"; 'paper' keeps the figure's levels.
+const LOWER = 3;
 // `others` = 'soft' (default, the user's call): withdrawal and open dip at about a sixth of their estimated slopes, so
 // they swing 7.5 and 10.5 px across the slider (orange 221 px); their slopes are small and not significant. 'data': the full estimates.
 const SOFT = { wd: -0.1667, open: -0.2333 };
@@ -56,7 +59,10 @@ function beats(CUES) {
     tS, tW, tO, tC,
     reveal: { wd: tW, open: tO, cur: tC },
     // [start, end, cycles]: two wiggles; the curators' runs a quarter cycle more, so it ends at "more" and stays there
-    wig: [[1.3, 3.6, 2], [tW + 0.35, tW + 1.55, 2], [tO + 0.35, tO + 1.75, 2], [tC + 0.45, tC + 3.05, 2.25]],
+    // [start, end, cycles, amplitude]. Each group's wiggle fills its beat (1.7 s) at 0.4 (90% of the track), so it moves at
+    // about the pace of the opening's (round 9: they jiggled too fast); it ends back at the middle exactly when the next
+    // group is revealed. The curators' wiggle runs the full track, so it ends at "more".
+    wig: [[1.3, 3.6, 2, 0.5], [tW + 0.1, tO, 2, 0.4], [tO + 0.1, tC, 2, 0.4], [tC + 0.45, tC + 3.05, 2.25, 0.5]],
     zoom: [tC + 3.15, tC + 5.35],                // then a short, slight camera push toward the curator
     act: { wd: tW + 0.3, open: tO + 0.25, cur: tC + 0.6 },
   };
@@ -64,17 +70,18 @@ function beats(CUES) {
 // the slider, 0 (less) .. 1 (more); rests at 0.5. A wiggle: up and down `cycles` times, eased in and out
 function exposure(T, B) {
   let e = 0.5;
-  for (const [a, b, c] of B.wig) e += 0.5 * Math.sin(2 * Math.PI * c * glide(T, a, b, 0, 1));
+  for (const [a, b, c, amp] of B.wig) e += amp * Math.sin(2 * Math.PI * c * glide(T, a, b, 0, 1));
   return e;
 }
 const valueAt = (line, e) => line[0] + line[1] * X_RANGE * (2 * e - 1);
 
-function plinth(T, B, k, e, others) {
+function plinth(T, B, k, e, others, level) {
   const g = GROUPS[k];
-  const split = glide(T, B.tS + 0.05, B.tS + 0.55, 0, 1);
+  const split = glide(T, B.tS + 0.02, B.tS + 0.4, 0, 1);
   const revealed = T >= B.reveal[g];
   const tint = glide(T, B.reveal[g], B.reveal[g] + 0.35, 0, 1);
-  const line = g === 'cur' || others === 'data' ? LINE[g] : others === 'soft' ? [LINE[g][0], SOFT[g]] : [LINE[g][0], 0];
+  const base = g !== 'cur' && level !== 'paper' ? LINE[g][0] - LOWER : LINE[g][0];
+  const line = g === 'cur' ? LINE[g] : others === 'data' ? [base, LINE[g][1]] : others === 'soft' ? [base, SOFT[g]] : [base, 0];
   // pooled line until the split; at the split (slider at rest) each settles to its own height at average exposure;
   // from its reveal on it follows the slider by its own line. A plinth not yet revealed holds still.
   const val = T < B.tS ? valueAt(POOL, e) : lerp(valueAt(POOL, 0.5), valueAt(line, revealed ? e : 0.5), split);
@@ -139,7 +146,7 @@ function swarm(T, e) {
   }).filter(Boolean);
 }
 
-function Piece({ guide, boil, boilAmp, wd, cur, others }) {
+function Piece({ guide, boil, boilAmp, wd, cur, others, level }) {
   const { T, CUES } = useComposition();
   const bf = Math.floor(T * 8), amp = boil ? boilAmp : 0;
   const B = beats(CUES);
@@ -147,7 +154,7 @@ function Piece({ guide, boil, boilAmp, wd, cur, others }) {
   const ui = glide(T, 0.0, 0.5, 0, 1);
   const spot = glide(T, B.tC, B.tC + 0.5, 0, 1);   // the curators' beat dims the other two a little
   const dimOf = (g) => (g === 'cur' ? 1 : 1 - 0.3 * spot);
-  const ps = GROUPS.map((_, k) => plinth(T, B, k, e, others));
+  const ps = GROUPS.map((_, k) => plinth(T, B, k, e, others, level));
   const lightOn = glide(T, 0.0, 0.6, 0, 1);
   // the camera: at the end a short, slight push toward the curator, anchored on them. Everything is inside it.
   const z = glide(T, B.zoom[0], B.zoom[1], 1, 1.06);
@@ -258,15 +265,16 @@ function Loupe({ f }) {
 }
 
 function FUCrisisBars() {
-  const [t, setTweak] = useTweaks(window.TWEAK_DEFAULTS || { wd: 'turn', cur: 'warm', others: 'soft', referenceOverlay: false, lineBoil: true, boilAmp: 0.5 });
+  const [t, setTweak] = useTweaks(window.TWEAK_DEFAULTS || { wd: 'turn', cur: 'warm', others: 'soft', level: 'lowered', referenceOverlay: false, lineBoil: true, boilAmp: 0.5 });
   return (
     <React.Fragment>
       <CompositionStage width={OUT_W} height={OUT_H} scenes={window.OM_SCENES} playback={window.OM_PLAYBACK} bg={NEUT[1]} autoplay={false}>
-        <Piece guide={t.referenceOverlay} boil={t.lineBoil} boilAmp={t.boilAmp ?? 0.5} wd={t.wd} cur={t.cur} others={t.others || 'soft'} />
+        <Piece guide={t.referenceOverlay} boil={t.lineBoil} boilAmp={t.boilAmp ?? 0.5} wd={t.wd} cur={t.cur} others={t.others || 'soft'} level={t.level || 'lowered'} />
       </CompositionStage>
       <TweaksPanel>
         <TweakSection label="Data" />
         <TweakSelect label="Withdrawal and open" value={t.others || 'soft'} options={[{ value: 'soft', label: 'Small dips, softened (7.5 / 10.5 px)' }, { value: 'data', label: 'Their full estimates (48 / 69 px)' }, { value: 'flat', label: 'Hold still' }]} onChange={(x) => setTweak('others', x)} />
+        <TweakSelect label="Withdrawal and open level" value={t.level || 'lowered'} options={[{ value: 'lowered', label: '3 points lower (curator stands out)' }, { value: 'paper', label: "The paper's levels" }]} onChange={(x) => setTweak('level', x)} />
         <TweakSection label="Actions (from the triptych)" />
         <TweakSelect label="Withdrawal" value={t.wd} options={[{ value: 'turn', label: 'Turns their back' }, { value: 'shoo', label: 'Shoo, then turns away' }, { value: 'walk', label: 'Walks off' }]} onChange={(x) => setTweak('wd', x)} />
         <TweakSelect label="Curation" value={t.cur} options={[{ value: 'warm', label: 'Takes comfort posts, recoils from red' }, { value: 'red', label: 'All red' }]} onChange={(x) => setTweak('cur', x)} />

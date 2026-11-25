@@ -358,6 +358,13 @@ The user: at maximum exposure teal was still the highest, which does not match t
 - **Softened dips** rescaled to keep 7.5 and 10.5 px over the wider range: −0.167 and −0.233 per point (about a sixth of the estimates).
 - **Exported at 4K** (round 8): `node tools/render.mjs "Crisis Bars.dc.html" --set referenceOverlay=false --settle 150`, PNG sequence only, 400 frames, about 2 s a frame. The renderer names the folder after the `--set` value (`renders/crisis-bars-false/`); it was renamed to `renders/crisis-bars/crisis-bars_0000.png` … `_0399.png`. Pop check clean (every flagged step is an 8 fps boil step); the first six frames are small files because the shot fades up from the dark.
 
+### Round 9 (calmer group wiggles, blue and teal lower) — preview only
+
+The user: the individual groups' wiggles jiggled too erratically; lower the first two bars so the curator stands out more. Preview only (the 4K export above is round 8).
+
+- **Wiggles:** each group's wiggle fills its beat, 1.7 s (was 1.2–1.4), at 0.4 of the range (90% of the track), so the knob peaks at about 4.6 track lengths a second, the opening's pace (4.3); before, about twice that. Beats retimed to fit: Closer 0.4 s (the split takes 0.38 s), Withdrawal 4.40–6.20, Open 6.20–8.00; "the curators!" stays at 8.00. Each wiggle ends at the middle exactly when the next group is revealed, so the coupling holds (checked: no plinth moves without the slider outside the split).
+- **Levels** (`level` = `lowered`, default): withdrawal and open stand 3 points below their Figure 3 levels. At "more": curators 29.1, teal 24.9, blue 22.4 (at "less": 14.3, 25.5, 23.0). This departs from the paper's levels; `paper` restores them.
+
 ## 19. The curator's weight: round 1 (concept frames)
 
 `Curator Weight Concepts.dc.html` + `curator-weight-concepts.jsx` (loads `curator-phone-kit.jsx` for `WarmPost`). A curator shot to replace the Vulnerability alley (found too complex), placed after the curator at the table, as the curators' counterpart of the open engagers' table. Line, for reference only (the user: don't be too literal): "They bear the weight of vulnerability, produced by the ongoing crisis, by platforms built to keep you scrolling, and inequality in who gets heard." No SRT or length yet.
