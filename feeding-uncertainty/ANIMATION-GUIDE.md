@@ -379,8 +379,8 @@ The user asked for a variation, from a cue sheet they reviewed: the axes appear 
 | 2.60–3.20 | Posts fade in (then follow the slider as in A) |
 | 2.80–10.80 | The slider climbs from "less" to "more", eased: orange 14.3 → 29.1; orange passes teal at 8.0 ("the curators!") |
 | 4.4 / 5.8 / 7.0 | Triptych actions: blue ("group by group"), teal, orange (the flinch lands on 8.0) |
-| 7.75–8.45 | Punch-in on "the curators!": to 1.05, cubic ease-in-out (fastest on 8.0; the first version, 0.3 s ease-out expo, was far too fast and uneased) |
-| 8.20–15.76 | Slow zoom on to 1.10 (eased), starting while the punch settles, to the end |
+| 7.35–8.75 | Punch-in on "the curators!": to 1.05, cubic ease-in-out, fastest at 8.05 (first 0.3 s ease-out expo: far too fast and uneased; then 0.7 s; the user asked for half that speed) |
+| 8.50–15.76 | Slow zoom on to 1.10 (eased), starting while the punch settles, to the end |
 
 - **Camera (user note):** a bit of a punch-in on "the curators!" followed by the slow zoom; it replaces the 11.0–13.2 s push. Anchored on the orange bean's x and at y 700 (the top of their plinth), so the labels and the fader stay in frame at 1.10.
 - **Blue and teal's wobble** is a function of the slider, not the clock (`WOB`: ±5 px, two cycles over the slider's travel, phases 0 and 2.2, zero at "less"), on top of their softened dip. It is not data: it stands for "no real effect". Coupling holds: nothing moves while the slider is still.

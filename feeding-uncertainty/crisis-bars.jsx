@@ -84,9 +84,9 @@ const VBT = {
   base: [0.3, 0.75], yax: [0.6, 1.0], arrow: 0.95, ytitle: [0.7, 1.2], track: [0.9, 1.45], knob: 1.3, stext: [1.2, 1.7],
   // sil: the plinths and figures fade in as faint silhouettes after the axes
   sil: [1.5, 1.9], spots: [1.9, 2.25, 2.6], posts: [2.6, 3.2], climb: [2.8, 10.8],
-  // the camera: a punch-in on "the curators!" (to 1.05 over 0.7 s, cubic ease-in-out, its fastest moment on 8.0), then a
-  // slow zoom on to 1.10 that starts while the punch settles, so the camera never stops between them
-  punch: [7.75, 8.45, 1.05], slow: [8.2, 15.76, 1.10], anchorY: 700,
+  // the camera: a punch-in on "the curators!" (to 1.05 over 1.4 s, cubic ease-in-out, its fastest moment on 8.05; the user
+  // halved its speed twice), then a slow zoom on to 1.10 that starts while the punch settles, so the camera never stops
+  punch: [7.35, 8.75, 1.05], slow: [8.5, 15.76, 1.10], anchorY: 700,
   act: { wd: 4.4, open: 5.8, cur: 7.0 },
 };
 const inOutCubic = (t) => { t = Math.min(1, Math.max(0, t)); return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2; };
