@@ -104,7 +104,7 @@ function plinthB(k, e, others, level, heightB) {
   return { g, k, val, x: CX + (k - 1) * SPACE, top: BASE - val * U, split: 1, tint: 1 };
 }
 
-function plinth(T, B, k, e, others, level) {
+function plinth(T, B, k, e, others, level, heightB) {
   const g = GROUPS[k];
   const split = glide(T, B.tS + 0.02, B.tS + 0.4, 0, 1);
   const revealed = T >= B.reveal[g];
@@ -113,7 +113,9 @@ function plinth(T, B, k, e, others, level) {
   const line = g === 'cur' ? LINE[g] : others === 'data' ? [base, LINE[g][1]] : others === 'soft' ? [base, SOFT[g]] : [base, 0];
   // pooled line until the split; at the split (slider at rest) each settles to its own height at average exposure;
   // from its reveal on it follows the slider by its own line. A plinth not yet revealed holds still.
-  const val = T < B.tS ? valueAt(POOL, e) : lerp(valueAt(POOL, 0.5), valueAt(line, revealed ? e : 0.5), split);
+  // blue and teal at 65% of their height (`heightB` = 'short', default in both variants), so the curators clearly surpass them
+  const sh = g !== 'cur' && heightB !== 'full' ? SHORT_B : 1;
+  const val = T < B.tS ? valueAt(POOL, e) : lerp(valueAt(POOL, 0.5), valueAt(line, revealed ? e : 0.5) * sh, split);
   const x = CX + (k - 1) * lerp(PW, SPACE, split);
   return { g, k, val, x, top: BASE - val * U, split, tint };
 }
@@ -184,7 +186,7 @@ function Piece({ guide, boil, boilAmp, wd, cur, others, level, variant, heightB 
   const ui = isB ? 1 : glide(T, 0.0, 0.5, 0, 1);
   const spot = isB ? 0 : glide(T, B.tC, B.tC + 0.5, 0, 1);   // the curators' beat dims the other two a little
   const dimOf = (g) => (g === 'cur' ? 1 : 1 - 0.3 * spot);
-  const ps = GROUPS.map((_, k) => (isB ? plinthB(k, e, others, level, heightB) : plinth(T, B, k, e, others, level)));
+  const ps = GROUPS.map((_, k) => (isB ? plinthB(k, e, others, level, heightB) : plinth(T, B, k, e, others, level, heightB)));
   const lightOn = isB ? 1 : glide(T, 0.0, 0.6, 0, 1);
   // B: each spot snaps on over 0.15 s (1 elsewhere); the axes and the fader draw on
   const Lsp = GROUPS.map((_, k) => (isB ? glide(T, VBT.spots[k], VBT.spots[k] + 0.15, 0, 1) : 1));
@@ -317,7 +319,7 @@ function FUCrisisBars() {
       <TweaksPanel>
         <TweakSection label="Version" />
         <TweakSelect label="Variant" value={t.variant || 'A'} options={[{ value: 'A', label: 'A · Everyone, split, wiggles per group' }, { value: 'B', label: 'B · Axes, spots, one slow climb' }]} onChange={(x) => setTweak('variant', x)} />
-        <TweakSelect label="B: blue and teal height" value={t.heightB || 'short'} options={[{ value: 'short', label: '65% (curators clearly on top)' }, { value: 'full', label: 'As in A' }]} onChange={(x) => setTweak('heightB', x)} />
+        <TweakSelect label="Blue and teal height" value={t.heightB || 'short'} options={[{ value: 'short', label: '65% (curators clearly on top)' }, { value: 'full', label: 'Full (before)' }]} onChange={(x) => setTweak('heightB', x)} />
         <TweakSection label="Data" />
         <TweakSelect label="Withdrawal and open" value={t.others || 'soft'} options={[{ value: 'soft', label: 'Small dips, softened (7.5 / 10.5 px)' }, { value: 'data', label: 'Their full estimates (48 / 69 px)' }, { value: 'flat', label: 'Hold still' }]} onChange={(x) => setTweak('others', x)} />
         <TweakSelect label="Withdrawal and open level" value={t.level || 'lowered'} options={[{ value: 'lowered', label: '3 points lower (curator stands out)' }, { value: 'paper', label: "The paper's levels" }]} onChange={(x) => setTweak('level', x)} />
