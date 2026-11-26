@@ -365,6 +365,26 @@ The user: the individual groups' wiggles jiggled too erratically; lower the firs
 - **Wiggles:** each group's wiggle fills its beat, 1.7 s (was 1.2–1.4), at 0.4 of the range (90% of the track), so the knob peaks at about 4.6 track lengths a second, the opening's pace (4.3); before, about twice that. Beats retimed to fit: Closer 0.4 s (the split takes 0.38 s), Withdrawal 4.40–6.20, Open 6.20–8.00; "the curators!" stays at 8.00. Each wiggle ends at the middle exactly when the next group is revealed, so the coupling holds (checked: no plinth moves without the slider outside the split).
 - **Levels** (`level` = `lowered`, default): withdrawal and open stand 3 points below their Figure 3 levels. At "more": curators 29.1, teal 24.9, blue 22.4 (at "less": 14.3, 25.5, 23.0). This departs from the paper's levels; `paper` restores them.
 
+### Variation B (`--set variant=B`): axes, spots, one slow climb
+
+The user asked for a variation, from a cue sheet they reviewed: the axes appear first (baseline, the y axis and its arrow, the fader), then the plinths already split, the spots on one after the other in quick succession, then the slider climbs slowly; blue and teal barely move, with a slight, slow up-and-down tied to the slider; orange climbs steadily and ends on top. The narration stays the v6 line; timed to it loosely. Variant A (the original, above) is unchanged and stays the default.
+
+| Time (s) | What happens |
+|---|---|
+| 0.30–0.75 | Baseline draws left to right |
+| 0.60–1.00 | Y axis draws upward; arrowhead pops at 0.95; y title fades in 0.70–1.20 |
+| 0.90–1.45 | Fader track draws bottom to top; knob pops at "less" at 1.30; fader title and labels 1.20–1.70 |
+| 1.50–1.90 | Plinths and figures fade in as faint silhouettes (plinths at 18%, figures at 35% and unlit) |
+| 1.90 / 2.25 / 2.60 | Spots snap on (0.15 s): blue, teal, orange; each label fades in with its spot |
+| 2.60–3.20 | Posts fade in (then follow the slider as in A) |
+| 2.80–10.80 | The slider climbs from "less" to "more", eased: orange 14.3 → 29.1; orange passes teal at 8.0 ("the curators!") |
+| 4.4 / 5.8 / 7.0 | Triptych actions: blue ("group by group"), teal, orange (the flinch lands on 8.0) |
+| 11.00–13.20 | 6% camera push anchored on the orange bean |
+| 13.20–16.00 | Hold |
+
+- **Blue and teal's wobble** is a function of the slider, not the clock (`WOB`: ±5 px, two cycles over the slider's travel, phases 0 and 2.2, zero at "less"), on top of their softened dip. It is not data: it stands for "no real effect". Coupling holds: nothing moves while the slider is still.
+- Previews with burned-in subtitles (the v6 line: 0–4.0, 4.0–7.8, 8.0–9.6) are made with ffmpeg's `subtitles` filter on the 1080p preview; review only.
+
 ## 19. The curator's weight: round 1 (concept frames)
 
 `Curator Weight Concepts.dc.html` + `curator-weight-concepts.jsx` (loads `curator-phone-kit.jsx` for `WarmPost`). A curator shot to replace the Vulnerability alley (found too complex), placed after the curator at the table, as the curators' counterpart of the open engagers' table. Line, for reference only (the user: don't be too literal): "They bear the weight of vulnerability, produced by the ongoing crisis, by platforms built to keep you scrolling, and inequality in who gets heard." No SRT or length yet.

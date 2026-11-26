@@ -75,6 +75,28 @@ function exposure(T, B) {
 }
 const valueAt = (line, e) => line[0] + line[1] * X_RANGE * (2 * e - 1);
 
+// ── variation B (`variant` = 'B'): no Everyone beat. The axes draw on (baseline, the y axis and its arrow, the fader), the
+// three plinths stand in the dark already split, the spots come on one after the other, then the slider climbs slowly
+// from "less" to "more" once: orange climbs steadily, blue and teal barely move (their small dip plus a slight, slow
+// up-and-down that is a function of the slider, so they still only move while it does). Timed to the v6 narration: the
+// climb is set so orange passes teal on "the curators!" (8.0 s); blue acts on "group by group", orange flinches on 8.0.
+const VBT = {
+  base: [0.3, 0.75], yax: [0.6, 1.0], arrow: 0.95, ytitle: [0.7, 1.2], track: [0.9, 1.45], knob: 1.3, stext: [1.2, 1.7],
+  // sil: the plinths and figures fade in as faint silhouettes after the axes
+  sil: [1.5, 1.9], spots: [1.9, 2.25, 2.6], posts: [2.6, 3.2], climb: [2.8, 10.8], zoom: [11.0, 13.2],
+  act: { wd: 4.4, open: 5.8, cur: 7.0 },
+};
+const WOB = { amp: 5 / 15, cycles: 2, phase: { wd: 0, open: 2.2 } };   // ±5 px, two slow swings over the climb
+function plinthB(k, e, others, level) {
+  const g = GROUPS[k];
+  const base = g !== 'cur' && level !== 'paper' ? LINE[g][0] - LOWER : LINE[g][0];
+  const line = g === 'cur' ? LINE[g] : others === 'data' ? [base, LINE[g][1]] : others === 'soft' ? [base, SOFT[g]] : [base, 0];
+  const ph = WOB.phase[g];
+  const wob = g === 'cur' ? 0 : WOB.amp * (Math.sin(2 * Math.PI * WOB.cycles * e + ph) - Math.sin(ph));
+  const val = valueAt(line, e) + wob;
+  return { g, k, val, x: CX + (k - 1) * SPACE, top: BASE - val * U, split: 1, tint: 1 };
+}
+
 function plinth(T, B, k, e, others, level) {
   const g = GROUPS[k];
   const split = glide(T, B.tS + 0.02, B.tS + 0.4, 0, 1);
@@ -146,24 +168,35 @@ function swarm(T, e) {
   }).filter(Boolean);
 }
 
-function Piece({ guide, boil, boilAmp, wd, cur, others, level }) {
+function Piece({ guide, boil, boilAmp, wd, cur, others, level, variant }) {
   const { T, CUES } = useComposition();
   const bf = Math.floor(T * 8), amp = boil ? boilAmp : 0;
-  const B = beats(CUES);
-  const e = exposure(T, B);
-  const ui = glide(T, 0.0, 0.5, 0, 1);
-  const spot = glide(T, B.tC, B.tC + 0.5, 0, 1);   // the curators' beat dims the other two a little
+  const isB = variant === 'B';
+  const B0 = beats(CUES), B = isB ? { ...B0, act: VBT.act } : B0;
+  const e = isB ? glide(T, VBT.climb[0], VBT.climb[1], 0, 1) : exposure(T, B);
+  const ui = isB ? 1 : glide(T, 0.0, 0.5, 0, 1);
+  const spot = isB ? 0 : glide(T, B.tC, B.tC + 0.5, 0, 1);   // the curators' beat dims the other two a little
   const dimOf = (g) => (g === 'cur' ? 1 : 1 - 0.3 * spot);
-  const ps = GROUPS.map((_, k) => plinth(T, B, k, e, others, level));
-  const lightOn = glide(T, 0.0, 0.6, 0, 1);
+  const ps = GROUPS.map((_, k) => (isB ? plinthB(k, e, others, level) : plinth(T, B, k, e, others, level)));
+  const lightOn = isB ? 1 : glide(T, 0.0, 0.6, 0, 1);
+  // B: each spot snaps on over 0.15 s (1 elsewhere); the axes and the fader draw on
+  const Lsp = GROUPS.map((_, k) => (isB ? glide(T, VBT.spots[k], VBT.spots[k] + 0.15, 0, 1) : 1));
+  const draw = isB ? {
+    base: glide(T, VBT.base[0], VBT.base[1], 0, 1), yax: glide(T, VBT.yax[0], VBT.yax[1], 0, 1), arrow: Math.max(0, backOut((T - VBT.arrow) / 0.3)),
+    ytitle: glide(T, VBT.ytitle[0], VBT.ytitle[1], 0, 1), track: glide(T, VBT.track[0], VBT.track[1], 0, 1), knob: Math.max(0, backOut((T - VBT.knob) / 0.3)),
+    stext: glide(T, VBT.stext[0], VBT.stext[1], 0, 1),
+  } : { base: 1, yax: 1, arrow: 1, ytitle: 1, track: 1, knob: 1, stext: 1 };
+  const sil = isB ? glide(T, VBT.sil[0], VBT.sil[1], 0, 1) : 1;
+  const postsA = isB ? glide(T, VBT.posts[0], VBT.posts[1], 0, 1) : ui;
   // the camera: at the end a short, slight push toward the curator, anchored on them. Everything is inside it.
-  const z = glide(T, B.zoom[0], B.zoom[1], 1, 1.06);
+  const z = isB ? glide(T, VBT.zoom[0], VBT.zoom[1], 1, 1.06) : glide(T, B.zoom[0], B.zoom[1], 1, 1.06);
 
   const figs = ps.map((p, n) => {
     const a = figure(T, B, p.k, wd, cur);
     const t0 = 0.15 + 0.09 * n;
-    const pop = glide(T, t0, t0 + 0.2, 0, 1), drop = backOut((T - t0) / 0.42);
-    return { ...p, a, y: p.top - LID - 38 * (1 - Math.min(1, drop)), op: pop * dimOf(p.g), dir: facing(a.turn || 0), n, lights: [{ x: p.x - 50, y: -80, i: 1, reach: 820 }, { dir: [0.3, 1], i: 0.08 }] };
+    const pop = isB ? 1 : glide(T, t0, t0 + 0.2, 0, 1), drop = isB ? 1 : backOut((T - t0) / 0.42);
+    const L = Lsp[n];   // B: in the dark until their spot comes on (a silhouette in the ramp's darkest tones)
+    return { ...p, a, L, y: p.top - LID - 38 * (1 - Math.min(1, drop)), op: pop * dimOf(p.g) * sil * (isB ? lerp(0.35, 1, L) : 1), dir: facing(a.turn || 0), n, amb: lerp(0.1, 0.34, L), lights: [{ x: p.x - 50, y: -80, i: lerp(0.03, 1, L), reach: 820 }, { dir: [0.3, 1], i: 0.08 * L }] };
   });
   // anchored on the orange bean (the middle of their body; the slider holds at "more" through the push, so they stand still)
   const anchor = [figs[2].x, figs[2].y - 117];
@@ -182,7 +215,7 @@ function Piece({ guide, boil, boilAmp, wd, cur, others, level }) {
   // the spot over a plinth: a cone and a haze, out of focus (no pool on the floor: the plinths stand on the baseline)
   const haze = (p) => <g>{pool(p.x, p.top - 260, 330, 400, 0.5 * lightOn)}{cone(p.x, -20, 34, p.top, 170, 0.7 * lightOn)}</g>;
   const sideOf = (p) => (p.k === 2 ? 1 : p.split);   // the grey plinth's inner shadow sides appear as it splits
-  const everyoneA = 1 - glide(T, B.tS, B.tS + 0.3, 0, 1);
+  const everyoneA = isB ? 0 : 1 - glide(T, B.tS, B.tS + 0.3, 0, 1);
 
   return (
     <div data-screen-label="Crisis bars" style={{ position: 'absolute', left: 0, top: 0, width: W, height: H, overflow: 'hidden', background: NEUT[1], transform: `scale(${OUT_W / W})`, transformOrigin: '0 0' }}>
@@ -202,42 +235,42 @@ function Piece({ guide, boil, boilAmp, wd, cur, others, level }) {
           <g filter="url(#cbBack)"><rect x="-200" y="-200" width="2320" height="1480" fill={v(0.16)} /></g>
           {/* spots: white over the grey plinth, each group's ramp once it is revealed */}
           {ps.map((p) => p.tint < 0.99 && <g key={'nh' + p.k} filter="url(#cbNeutBg)" opacity={1 - p.tint}>{haze(p)}</g>)}
-          {ps.map((p) => p.tint > 0.01 && <g key={'gh' + p.k} filter={`url(#fuGradeBg-${p.g})`} opacity={p.tint * dimOf(p.g)}>{haze(p)}</g>)}
+          {ps.map((p) => p.tint > 0.01 && Lsp[p.k] > 0.01 && <g key={'gh' + p.k} filter={`url(#fuGradeBg-${p.g})`} opacity={p.tint * dimOf(p.g) * Lsp[p.k]}>{haze(p)}</g>)}
 
           {/* plinths: grey (one shape until the split), then each in its group's ramp */}
           {ps.some((p) => p.tint < 0.99) && <g filter="url(#cbNeutFg)" opacity={lightOn}>{ps.map((p) => p.tint < 0.99 && <g key={p.k} opacity={1 - p.tint}><PlinthValue x={p.x} top={p.top} side={sideOf(p)} /></g>)}</g>}
-          {ps.map((p) => p.tint > 0.01 && <g key={'gp' + p.k} filter={`url(#fuGradeFg-${p.g})`} opacity={p.tint * dimOf(p.g)}><PlinthValue x={p.x} top={p.top} side={sideOf(p)} /></g>)}
+          {ps.map((p) => p.tint > 0.01 && <g key={'gp' + p.k} filter={`url(#fuGradeFg-${p.g})`} opacity={p.tint * dimOf(p.g) * sil * lerp(0.18, 1, Lsp[p.k])}><PlinthValue x={p.x} top={p.top} side={sideOf(p)} /></g>)}
 
           {/* axes: a hard white baseline the plinths stand on, and the y axis */}
           <g opacity={ui}>
-            <BoilLine x1={AX} y1={BASE} x2={XR} y2={BASE} stroke={LINE_W} w={4} bf={bf} amp={amp} seed={1} />
-            <BoilLine x1={AX} y1={BASE} x2={AX} y2={TOP + 16} stroke={LINE_W} w={4} bf={bf} amp={amp} seed={2} />
-            <path d={`M ${AX - 14} ${TOP + 24} L ${AX} ${TOP} L ${AX + 14} ${TOP + 24} Z`} fill={LINE_W} />
-            <Txt x={AX - 38} y={(BASE + TOP) / 2} size={28} fill={INK} rot={-90}>Likelihood of voting for a populist radical party</Txt>
+            {draw.base > 0.005 && <BoilLine x1={AX} y1={BASE} x2={lerp(AX, XR, draw.base)} y2={BASE} stroke={LINE_W} w={4} bf={bf} amp={amp} seed={1} />}
+            {draw.yax > 0.005 && <BoilLine x1={AX} y1={BASE} x2={AX} y2={lerp(BASE, TOP + 16, draw.yax)} stroke={LINE_W} w={4} bf={bf} amp={amp} seed={2} />}
+            {draw.arrow > 0.01 && <path transform={`translate(${AX} ${TOP + 16}) scale(${draw.arrow}) translate(${-AX} ${-(TOP + 16)})`} d={`M ${AX - 14} ${TOP + 24} L ${AX} ${TOP} L ${AX + 14} ${TOP + 24} Z`} fill={LINE_W} />}
+            <Txt x={AX - 38} y={(BASE + TOP) / 2} size={28} fill={INK} rot={-90} a={draw.ytitle}>Likelihood of voting for a populist radical party</Txt>
           </g>
 
           {/* labels under the baseline, centred on each plinth */}
           <Txt x={CX} y={BASE + 44} size={30} fill={INK} a={ui * everyoneA}>Everyone</Txt>
-          {ps.map((p) => <Txt key={'l' + p.k} x={p.x} y={BASE + 44} size={30} fill={TXT[p.g]} a={p.tint * dimOf(p.g)}>{NAME[p.g]}</Txt>)}
+          {ps.map((p) => <Txt key={'l' + p.k} x={p.x} y={BASE + 44} size={30} fill={TXT[p.g]} a={p.tint * dimOf(p.g) * Lsp[p.k]}>{NAME[p.g]}</Txt>)}
 
           {/* the posts that come with exposure */}
-          <g filter="url(#fuGradeFg-red)">{posts.map((q, k) => <PostValue key={k} x={q.p[0]} y={q.p[1]} s={q.s} rot={q.rot} flip={q.flip} kind={q.kind} op={q.op * ui} />)}</g>
+          <g filter="url(#fuGradeFg-red)">{posts.map((q, k) => <PostValue key={k} x={q.p[0]} y={q.p[1]} s={q.s} rot={q.rot} flip={q.flip} kind={q.kind} op={q.op * postsA} />)}</g>
 
           {/* the figures and their posts */}
-          {figs.map((f) => f.op > 0.01 && <ToneBean key={f.n} bf={bf} amp={amp} id={f.n + 1} x={f.x + FS * (f.a.dx || 0)} y={f.y} s={FS} dir={f.dir} pose={f.a.pose} ramp={f.g} hair={HAIR[f.g]} lights={f.lights} op={f.op} />)}
+          {figs.map((f) => f.op > 0.01 && <ToneBean key={f.n} bf={bf} amp={amp} id={f.n + 1} x={f.x + FS * (f.a.dx || 0)} y={f.y} s={FS} dir={f.dir} pose={f.a.pose} ramp={f.g} hair={HAIR[f.g]} lights={f.lights} amb={f.amb} op={f.op} />)}
           <g filter="url(#fuGradeFg-red)">{figs.flatMap((f) => f.a.cards.filter((c) => c.red).map((c, k) => card(f, c, `${f.n}-${k}`)))}</g>
           <g filter="url(#cbWarm)">{figs.flatMap((f) => f.a.cards.filter((c) => !c.red).map((c, k) => card(f, c, `${f.n}-${k}`)))}</g>
           {loupeOf && loupeOf.a.ls > 0.02 && <Loupe f={loupeOf} />}
 
           {/* the exposure slider: a bold vertical fader on the right, filling red from "less" up to the knob */}
           <g opacity={ui}>
-            <Txt x={SL.x} y={SL.y1 - 150} size={34} fill={INK}>Crisis exposure</Txt>
-            <Txt x={SL.x} y={SL.y1 - 110} size={34} fill={INK}>on social media</Txt>
-            <Txt x={SL.x} y={SL.y1 - 54} size={28} fill={INK}>more</Txt>
-            <Txt x={SL.x} y={SL.y0 + 76} size={28} fill={INK}>less</Txt>
-            <BoilLine x1={SL.x} y1={SL.y0} x2={SL.x} y2={SL.y1} stroke={NEUT[4]} w={24} bf={bf} amp={amp} seed={3} />
+            <Txt x={SL.x} y={SL.y1 - 150} size={34} fill={INK} a={draw.stext}>Crisis exposure</Txt>
+            <Txt x={SL.x} y={SL.y1 - 110} size={34} fill={INK} a={draw.stext}>on social media</Txt>
+            <Txt x={SL.x} y={SL.y1 - 54} size={28} fill={INK} a={draw.stext}>more</Txt>
+            <Txt x={SL.x} y={SL.y0 + 76} size={28} fill={INK} a={draw.stext}>less</Txt>
+            {draw.track > 0.005 && <BoilLine x1={SL.x} y1={SL.y0} x2={SL.x} y2={lerp(SL.y0, SL.y1, draw.track)} stroke={NEUT[4]} w={24} bf={bf} amp={amp} seed={3} />}
             {sy < SL.y0 - 1 && <BoilLine x1={SL.x} y1={SL.y0} x2={SL.x} y2={sy} stroke={RED[4]} w={24} bf={bf} amp={amp} seed={4} />}
-            <circle cx={SL.x + jit(5, bf, 1, amp)} cy={sy + jit(5, bf, 2, amp)} r="36" fill={RED[6]} stroke={RED[3]} strokeWidth="8" />
+            {draw.knob > 0.01 && <circle cx={SL.x + jit(5, bf, 1, amp)} cy={sy + jit(5, bf, 2, amp)} r={36 * draw.knob} fill={RED[6]} stroke={RED[3]} strokeWidth="8" />}
           </g>
         </g>
       </svg>
@@ -265,13 +298,15 @@ function Loupe({ f }) {
 }
 
 function FUCrisisBars() {
-  const [t, setTweak] = useTweaks(window.TWEAK_DEFAULTS || { wd: 'turn', cur: 'warm', others: 'soft', level: 'lowered', referenceOverlay: false, lineBoil: true, boilAmp: 0.5 });
+  const [t, setTweak] = useTweaks(window.TWEAK_DEFAULTS || { wd: 'turn', cur: 'warm', variant: 'A', others: 'soft', level: 'lowered', referenceOverlay: false, lineBoil: true, boilAmp: 0.5 });
   return (
     <React.Fragment>
       <CompositionStage width={OUT_W} height={OUT_H} scenes={window.OM_SCENES} playback={window.OM_PLAYBACK} bg={NEUT[1]} autoplay={false}>
-        <Piece guide={t.referenceOverlay} boil={t.lineBoil} boilAmp={t.boilAmp ?? 0.5} wd={t.wd} cur={t.cur} others={t.others || 'soft'} level={t.level || 'lowered'} />
+        <Piece guide={t.referenceOverlay} boil={t.lineBoil} boilAmp={t.boilAmp ?? 0.5} wd={t.wd} cur={t.cur} others={t.others || 'soft'} level={t.level || 'lowered'} variant={t.variant || 'A'} />
       </CompositionStage>
       <TweaksPanel>
+        <TweakSection label="Version" />
+        <TweakSelect label="Variant" value={t.variant || 'A'} options={[{ value: 'A', label: 'A · Everyone, split, wiggles per group' }, { value: 'B', label: 'B · Axes, spots, one slow climb' }]} onChange={(x) => setTweak('variant', x)} />
         <TweakSection label="Data" />
         <TweakSelect label="Withdrawal and open" value={t.others || 'soft'} options={[{ value: 'soft', label: 'Small dips, softened (7.5 / 10.5 px)' }, { value: 'data', label: 'Their full estimates (48 / 69 px)' }, { value: 'flat', label: 'Hold still' }]} onChange={(x) => setTweak('others', x)} />
         <TweakSelect label="Withdrawal and open level" value={t.level || 'lowered'} options={[{ value: 'lowered', label: '3 points lower (curator stands out)' }, { value: 'paper', label: "The paper's levels" }]} onChange={(x) => setTweak('level', x)} />
