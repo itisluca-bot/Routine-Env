@@ -90,14 +90,17 @@ const VBT = {
   act: { wd: 4.4, open: 5.8, cur: 7.0 },
 };
 const inOutCubic = (t) => { t = Math.min(1, Math.max(0, t)); return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2; };
+const SHORT_B = 0.65;
 const WOB = { amp: 5 / 15, cycles: 2, phase: { wd: 0, open: 2.2 } };   // ±5 px, two slow swings over the climb
-function plinthB(k, e, others, level) {
+function plinthB(k, e, others, level, heightB) {
   const g = GROUPS[k];
   const base = g !== 'cur' && level !== 'paper' ? LINE[g][0] - LOWER : LINE[g][0];
   const line = g === 'cur' ? LINE[g] : others === 'data' ? [base, LINE[g][1]] : others === 'soft' ? [base, SOFT[g]] : [base, 0];
   const ph = WOB.phase[g];
   const wob = g === 'cur' ? 0 : WOB.amp * (Math.sin(2 * Math.PI * WOB.cycles * e + ph) - Math.sin(ph));
-  const val = valueAt(line, e) + wob;
+  // `heightB` = 'short' (default, the user's call): blue and teal at 65% of their height (dip and wobble included), so the
+  // curators clearly surpass them; 'full' keeps them as in A
+  const val = (valueAt(line, e) + wob) * (g !== 'cur' && heightB !== 'full' ? SHORT_B : 1);
   return { g, k, val, x: CX + (k - 1) * SPACE, top: BASE - val * U, split: 1, tint: 1 };
 }
 
@@ -172,7 +175,7 @@ function swarm(T, e) {
   }).filter(Boolean);
 }
 
-function Piece({ guide, boil, boilAmp, wd, cur, others, level, variant }) {
+function Piece({ guide, boil, boilAmp, wd, cur, others, level, variant, heightB }) {
   const { T, CUES } = useComposition();
   const bf = Math.floor(T * 8), amp = boil ? boilAmp : 0;
   const isB = variant === 'B';
@@ -181,7 +184,7 @@ function Piece({ guide, boil, boilAmp, wd, cur, others, level, variant }) {
   const ui = isB ? 1 : glide(T, 0.0, 0.5, 0, 1);
   const spot = isB ? 0 : glide(T, B.tC, B.tC + 0.5, 0, 1);   // the curators' beat dims the other two a little
   const dimOf = (g) => (g === 'cur' ? 1 : 1 - 0.3 * spot);
-  const ps = GROUPS.map((_, k) => (isB ? plinthB(k, e, others, level) : plinth(T, B, k, e, others, level)));
+  const ps = GROUPS.map((_, k) => (isB ? plinthB(k, e, others, level, heightB) : plinth(T, B, k, e, others, level)));
   const lightOn = isB ? 1 : glide(T, 0.0, 0.6, 0, 1);
   // B: each spot snaps on over 0.15 s (1 elsewhere); the axes and the fader draw on
   const Lsp = GROUPS.map((_, k) => (isB ? glide(T, VBT.spots[k], VBT.spots[k] + 0.15, 0, 1) : 1));
@@ -305,15 +308,16 @@ function Loupe({ f }) {
 }
 
 function FUCrisisBars() {
-  const [t, setTweak] = useTweaks(window.TWEAK_DEFAULTS || { wd: 'turn', cur: 'warm', variant: 'A', others: 'soft', level: 'lowered', referenceOverlay: false, lineBoil: true, boilAmp: 0.5 });
+  const [t, setTweak] = useTweaks(window.TWEAK_DEFAULTS || { wd: 'turn', cur: 'warm', variant: 'A', heightB: 'short', others: 'soft', level: 'lowered', referenceOverlay: false, lineBoil: true, boilAmp: 0.5 });
   return (
     <React.Fragment>
       <CompositionStage width={OUT_W} height={OUT_H} scenes={window.OM_SCENES} playback={window.OM_PLAYBACK} bg={NEUT[1]} autoplay={false}>
-        <Piece guide={t.referenceOverlay} boil={t.lineBoil} boilAmp={t.boilAmp ?? 0.5} wd={t.wd} cur={t.cur} others={t.others || 'soft'} level={t.level || 'lowered'} variant={t.variant || 'A'} />
+        <Piece guide={t.referenceOverlay} boil={t.lineBoil} boilAmp={t.boilAmp ?? 0.5} wd={t.wd} cur={t.cur} others={t.others || 'soft'} level={t.level || 'lowered'} variant={t.variant || 'A'} heightB={t.heightB || 'short'} />
       </CompositionStage>
       <TweaksPanel>
         <TweakSection label="Version" />
         <TweakSelect label="Variant" value={t.variant || 'A'} options={[{ value: 'A', label: 'A · Everyone, split, wiggles per group' }, { value: 'B', label: 'B · Axes, spots, one slow climb' }]} onChange={(x) => setTweak('variant', x)} />
+        <TweakSelect label="B: blue and teal height" value={t.heightB || 'short'} options={[{ value: 'short', label: '65% (curators clearly on top)' }, { value: 'full', label: 'As in A' }]} onChange={(x) => setTweak('heightB', x)} />
         <TweakSection label="Data" />
         <TweakSelect label="Withdrawal and open" value={t.others || 'soft'} options={[{ value: 'soft', label: 'Small dips, softened (7.5 / 10.5 px)' }, { value: 'data', label: 'Their full estimates (48 / 69 px)' }, { value: 'flat', label: 'Hold still' }]} onChange={(x) => setTweak('others', x)} />
         <TweakSelect label="Withdrawal and open level" value={t.level || 'lowered'} options={[{ value: 'lowered', label: '3 points lower (curator stands out)' }, { value: 'paper', label: "The paper's levels" }]} onChange={(x) => setTweak('level', x)} />
