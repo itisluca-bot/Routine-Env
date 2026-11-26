@@ -27,7 +27,7 @@ const { W, H, OUT_W, OUT_H, MOTION, osc, lerp, lerp2, mix, hash } = window.FU_RI
 const { RAMPS, v, LookDefs, ToneBean, PostValue, POST_KINDS, GradeFilter } = window.FU_LOOK;
 const { WarmPost } = window.FU_PHONE;
 const { withdrawal, openEng, curation, HAIR, backOut } = window.FU_THREE_GROUPS;
-const { glide } = MOTION;
+const { glide, hit } = MOTION;
 
 // ── layout (1920 × 1080 design units) ────────────────────────────────────────
 const GROUPS = ['wd', 'open', 'cur'];
@@ -83,7 +83,9 @@ const valueAt = (line, e) => line[0] + line[1] * X_RANGE * (2 * e - 1);
 const VBT = {
   base: [0.3, 0.75], yax: [0.6, 1.0], arrow: 0.95, ytitle: [0.7, 1.2], track: [0.9, 1.45], knob: 1.3, stext: [1.2, 1.7],
   // sil: the plinths and figures fade in as faint silhouettes after the axes
-  sil: [1.5, 1.9], spots: [1.9, 2.25, 2.6], posts: [2.6, 3.2], climb: [2.8, 10.8], zoom: [11.0, 13.2],
+  sil: [1.5, 1.9], spots: [1.9, 2.25, 2.6], posts: [2.6, 3.2], climb: [2.8, 10.8],
+  // the camera: a punch-in on "the curators!" (to 1.05 in 0.3 s, ease-out expo), then a slow zoom on to 1.10 until the end
+  punch: [8.0, 8.3, 1.05], slow: [8.3, 15.76, 1.10], anchorY: 700,
   act: { wd: 4.4, open: 5.8, cur: 7.0 },
 };
 const WOB = { amp: 5 / 15, cycles: 2, phase: { wd: 0, open: 2.2 } };   // ±5 px, two slow swings over the climb
@@ -189,7 +191,9 @@ function Piece({ guide, boil, boilAmp, wd, cur, others, level, variant }) {
   const sil = isB ? glide(T, VBT.sil[0], VBT.sil[1], 0, 1) : 1;
   const postsA = isB ? glide(T, VBT.posts[0], VBT.posts[1], 0, 1) : ui;
   // the camera: at the end a short, slight push toward the curator, anchored on them. Everything is inside it.
-  const z = isB ? glide(T, VBT.zoom[0], VBT.zoom[1], 1, 1.06) : glide(T, B.zoom[0], B.zoom[1], 1, 1.06);
+  const z = isB
+    ? hit(T, VBT.punch[0], VBT.punch[1], 1, VBT.punch[2]) + glide(T, VBT.slow[0], VBT.slow[1], 0, VBT.slow[2] - VBT.punch[2])
+    : glide(T, B.zoom[0], B.zoom[1], 1, 1.06);
 
   const figs = ps.map((p, n) => {
     const a = figure(T, B, p.k, wd, cur);
@@ -199,7 +203,8 @@ function Piece({ guide, boil, boilAmp, wd, cur, others, level, variant }) {
     return { ...p, a, L, y: p.top - LID - 38 * (1 - Math.min(1, drop)), op: pop * dimOf(p.g) * sil * (isB ? lerp(0.35, 1, L) : 1), dir: facing(a.turn || 0), n, amb: lerp(0.1, 0.34, L), lights: [{ x: p.x - 50, y: -80, i: lerp(0.03, 1, L), reach: 820 }, { dir: [0.3, 1], i: 0.08 * L }] };
   });
   // anchored on the orange bean (the middle of their body; the slider holds at "more" through the push, so they stand still)
-  const anchor = [figs[2].x, figs[2].y - 117];
+  // B: on the orange bean's x, and low enough (the plinth's top) that the labels and the fader stay in frame at 1.10
+  const anchor = isB ? [figs[2].x, VBT.anchorY] : [figs[2].x, figs[2].y - 117];
   const CAM = `translate(${anchor[0]} ${anchor[1]}) scale(${z}) translate(${-anchor[0]} ${-anchor[1]})`;
   const posts = swarm(T, e);
   const sy = lerp(SL.y0, SL.y1, e);
