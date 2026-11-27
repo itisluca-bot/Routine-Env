@@ -84,11 +84,19 @@ const VBT = {
   base: [0.3, 0.75], yax: [0.6, 1.0], arrow: 0.95, ytitle: [0.7, 1.2], track: [0.9, 1.45], knob: 1.3, stext: [1.2, 1.7],
   // sil: the plinths and figures fade in as faint silhouettes after the axes
   sil: [1.5, 1.9], spots: [1.9, 2.25, 2.6], posts: [2.6, 3.2], climb: [2.8, 10.8],
-  // the camera: a punch-in on "the curators!" (to 1.05 over 1.4 s, cubic ease-in-out, its fastest moment on 8.05; the user
-  // halved its speed twice), then a slow zoom on to 1.10 that starts while the punch settles, so the camera never stops
-  punch: [7.35, 8.75, 1.05], slow: [8.5, 15.76, 1.10], anchorY: 700,
+  // the camera: a punch-in on "the curators!" (+0.05 over 1.4 s, cubic ease-in-out, fastest at 8.05), and under it a slow
+  // zoom that ramps in with the punch (to full speed by 8.05) and then runs at one constant speed to the last frame, so
+  // after the punch the push is continuous (user note); about 1.10 at the end
+  punch: [7.35, 8.75, 0.05], slowIn: [7.35, 8.05], slowTo: 0.05, anchorY: 700,
   act: { wd: 4.4, open: 5.8, cur: 7.0 },
 };
+// the slow push: speed ramps in smoothly over slowIn, then stays constant to the end of the shot (16 s); its total is slowTo
+function slowPush(T) {
+  const [a, b] = VBT.slowIn, end = 16, vel = VBT.slowTo / ((b - a) / 2 + (end - b));
+  if (T <= a) return 0;
+  if (T < b) { const u = (T - a) / (b - a); return vel * (b - a) * (u * u * u - (u * u * u * u) / 2); }
+  return vel * ((b - a) / 2 + (T - b));
+}
 const inOutCubic = (t) => { t = Math.min(1, Math.max(0, t)); return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2; };
 const SHORT_B = 0.65;
 const WOB = { amp: 5 / 15, cycles: 2, phase: { wd: 0, open: 2.2 } };   // ±5 px, two slow swings over the climb
@@ -199,7 +207,7 @@ function Piece({ guide, boil, boilAmp, wd, cur, others, level, variant, heightB 
   const postsA = isB ? glide(T, VBT.posts[0], VBT.posts[1], 0, 1) : ui;
   // the camera: at the end a short, slight push toward the curator, anchored on them. Everything is inside it.
   const z = isB
-    ? lerp(1, VBT.punch[2], inOutCubic((T - VBT.punch[0]) / (VBT.punch[1] - VBT.punch[0]))) + glide(T, VBT.slow[0], VBT.slow[1], 0, VBT.slow[2] - VBT.punch[2])
+    ? 1 + VBT.punch[2] * inOutCubic((T - VBT.punch[0]) / (VBT.punch[1] - VBT.punch[0])) + slowPush(T)
     : glide(T, B.zoom[0], B.zoom[1], 1, 1.06);
 
   const figs = ps.map((p, n) => {
