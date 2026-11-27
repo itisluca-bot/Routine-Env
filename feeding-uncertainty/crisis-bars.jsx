@@ -46,7 +46,7 @@ const X_RANGE = 1.5;
 const PW = 280, SIDE = 56, LID = 18, OVER = 10;             // plinth width, shadow side, lid height, lid overhang
 const SPACE = 440, CX = 930, BASE = 980, U = 15, FS = 1.3;
 const AX = 200, TOP = 150, XR = 1580;                       // y axis, baseline's right end
-const SL = { x: 1715, y0: 860, y1: 350 };   // x leaves room for the push at the end (it grows round the bean)                   // the slider: a vertical fader on the right, "less" at the bottom
+const SL = { x: 1700, y0: 860, y1: 350 };   // x leaves room for the push at the end (it grows round the bean)                   // the slider: a vertical fader on the right, "less" at the bottom
 const NEUT = ['#121413', '#1a1d1c', '#232725', '#2e3330', '#444a46', '#666c67', '#a3a69e'];   // the room outside the light
 const LINE_W = '#e9e7e1', MUTED = '#8c8c90', INK = '#d6d6d8';
 const FONT = "'FU Futura', 'Jost', 'Inter', sans-serif";
@@ -87,9 +87,18 @@ const VBT = {
   // the camera: a punch-in on "the curators!" (+0.05 over 1.4 s, cubic ease-in-out, fastest at 8.05), and under it a slow
   // zoom that ramps in with the punch (to full speed by 8.05) and then runs at one constant speed to the last frame, so
   // after the punch the push is continuous (user note); about 1.10 at the end
-  punch: [7.35, 8.75, 0.05], slowIn: [7.35, 8.05], slowTo: 0.05, anchorY: 700,
+  // The punch's speed rises smoothly (sin²) to its peak on 8.0 and then decays exponentially (τ 0.5 s), so it glides into
+  // the slow push instead of braking to a near-stop first (user note: a cubic ease-out read as stopping before the zoom).
+  punch: { t0: 7.6, tp: 8.0, tau: 0.5, amount: 0.05 }, slowIn: [7.6, 8.4], slowTo: 0.06, anchorY: 700,
   act: { wd: 4.4, open: 5.8, cur: 7.0 },
 };
+// the punch: speed A·sin²(π/2·u) from t0 to the peak at tp, then A·e^(−(t−tp)/τ); its total is `amount`
+function punchPush(T) {
+  const { t0, tp, tau, amount } = VBT.punch, d = tp - t0, A = amount / (d / 2 + tau);
+  if (T <= t0) return 0;
+  if (T < tp) { const u = (T - t0) / d; return A * (d / 2) * (u - Math.sin(Math.PI * u) / Math.PI); }
+  return A * (d / 2 + tau * (1 - Math.exp(-(T - tp) / tau)));
+}
 // the slow push: speed ramps in smoothly over slowIn, then stays constant to the end of the shot (16 s); its total is slowTo
 function slowPush(T) {
   const [a, b] = VBT.slowIn, end = 16, vel = VBT.slowTo / ((b - a) / 2 + (end - b));
@@ -97,7 +106,6 @@ function slowPush(T) {
   if (T < b) { const u = (T - a) / (b - a); return vel * (b - a) * (u * u * u - (u * u * u * u) / 2); }
   return vel * ((b - a) / 2 + (T - b));
 }
-const inOutCubic = (t) => { t = Math.min(1, Math.max(0, t)); return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2; };
 const SHORT_B = 0.65;
 const WOB = { amp: 5 / 15, cycles: 2, phase: { wd: 0, open: 2.2 } };   // ±5 px, two slow swings over the climb
 function plinthB(k, e, others, level, heightB) {
@@ -207,7 +215,7 @@ function Piece({ guide, boil, boilAmp, wd, cur, others, level, variant, heightB 
   const postsA = isB ? glide(T, VBT.posts[0], VBT.posts[1], 0, 1) : ui;
   // the camera: at the end a short, slight push toward the curator, anchored on them. Everything is inside it.
   const z = isB
-    ? 1 + VBT.punch[2] * inOutCubic((T - VBT.punch[0]) / (VBT.punch[1] - VBT.punch[0])) + slowPush(T)
+    ? 1 + punchPush(T) + slowPush(T)
     : glide(T, B.zoom[0], B.zoom[1], 1, 1.06);
 
   const figs = ps.map((p, n) => {

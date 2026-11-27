@@ -379,8 +379,8 @@ The user asked for a variation, from a cue sheet they reviewed: the axes appear 
 | 2.60–3.20 | Posts fade in (then follow the slider as in A) |
 | 2.80–10.80 | The slider climbs from "less" to "more", eased: orange 14.3 → 29.1; orange passes teal at 8.0 ("the curators!") |
 | 4.4 / 5.8 / 7.0 | Triptych actions: blue ("group by group"), teal, orange (the flinch lands on 8.0) |
-| 7.35–8.75 | Punch-in on "the curators!": +0.05, cubic ease-in-out, fastest at 8.05 (first 0.3 s ease-out expo: far too fast and uneased; then 0.7 s; the user asked for half that speed) |
-| 7.35–16.00 | Slow push under it: ramps in with the punch (full speed by 8.05), then one constant speed to the last frame (user: continuous after the punch; an eased-out zoom slowed to a stop); about 1.10 at the end |
+| 7.60–… | Punch-in on "the curators!": +0.05; its speed rises smoothly (sin², 0.4 s) to a peak on 8.0 and then decays exponentially (τ 0.5 s), gliding into the slow push. History: 0.3 s ease-out expo (far too fast, uneased), 0.7 s and 1.4 s cubic ease-in-out (its ease-out braked to a near-stop before the slow zoom) |
+| 7.60–16.00 | Slow push under it: ramps in over 7.6–8.4, then one constant speed (about 0.7% a second) to the last frame; about 1.11 at the end |
 
 - **Camera (user note):** a bit of a punch-in on "the curators!" followed by the slow zoom; it replaces the 11.0–13.2 s push. Anchored on the orange bean's x and at y 700 (the top of their plinth), so the labels and the fader stay in frame at 1.10.
 - **Heights (user note):** blue and teal at 65% of their height, in B and then also in A (`heightB` = `short`, default for both; `full` = before). In A they settle to the short heights at the split, so all three drop there from the grey Everyone plinth (389 px), which now stands taller than every group, dip and wobble included, so the curators clearly surpass them: at "more" 436 px against 219 and 242 px. Trade-off: at "less" orange (215 px) now starts about level with blue (224) and just below teal (249), instead of far below. This departs from the paper's levels.
